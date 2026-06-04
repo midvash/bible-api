@@ -1,0 +1,32 @@
+name = "midvash-api"
+main = "src/index.ts"
+compatibility_date = "2026-02-19"
+compatibility_flags = ["nodejs_compat"]
+
+# Routes
+routes = [
+  { pattern = "api.midvash.com/*", zone_name = "midvash.com" }
+]
+
+# R2 Bucket Binding — única origem para conteúdo bíblico.
+# Cache API + Cloudflare Cache Rules absorvem 99%+ das requests no edge;
+# R2 só é tocado em cold miss (datacenter novo / após purge).
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "bible"
+
+# Observability - Logs e traces para debug
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1

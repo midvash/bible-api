@@ -1,0 +1,24 @@
+{
+  "name": "bible-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Free, no-key public Bible API — verses, chapters and versions across 80+ public-domain translations. Powers api.midvash.com.",
+  "license": "MIT",
+  "homepage": "https://api.midvash.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/midvash/bible-api.git"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260424.1",
+    "typescript": "~6.0",
+    "wrangler": "^4.95.0"
+  }
+}
