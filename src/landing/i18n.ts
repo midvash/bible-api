@@ -454,7 +454,7 @@ const en: Translations = {
     groups: COMMON_GROUPS('en'),
   },
   footer: {
-    builtBy: 'Built by',
+    builtBy: 'Developed by',
     tagline: 'Open source · Free forever · No signup',
     ecosystemLabel: 'Midvash ecosystem',
     ecosystem: [
@@ -472,7 +472,7 @@ const en: Translations = {
     soonLabel: 'Soon',
     socialLabel: 'Follow us',
     instagramLabel: 'Visit our Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. All rights reserved.`,
+    copyright: '© 2025-{year} Midvash. All rights reserved.',
   },
 };
 
@@ -540,7 +540,7 @@ const es: Translations = {
     groups: COMMON_GROUPS('es'),
   },
   footer: {
-    builtBy: 'Construido por',
+    builtBy: 'Desarrollado por',
     tagline: 'Código abierto · Gratis para siempre · Sin registro',
     ecosystemLabel: 'Ecosistema Midvash',
     ecosystem: [
@@ -558,7 +558,7 @@ const es: Translations = {
     soonLabel: 'Pronto',
     socialLabel: 'Síguenos',
     instagramLabel: 'Visite nuestro Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. Todos los derechos reservados.`,
+    copyright: '© 2025-{year} Midvash. Todos los derechos reservados.',
   },
 };
 
@@ -626,7 +626,7 @@ const ptBr: Translations = {
     groups: COMMON_GROUPS('pt-br'),
   },
   footer: {
-    builtBy: 'Construído por',
+    builtBy: 'Desenvolvido por',
     tagline: 'Código aberto · Grátis para sempre · Sem cadastro',
     ecosystemLabel: 'Ecossistema Midvash',
     ecosystem: [
@@ -644,7 +644,7 @@ const ptBr: Translations = {
     soonLabel: 'Em breve',
     socialLabel: 'Siga a gente',
     instagramLabel: 'Visite nosso Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. Todos os direitos reservados.`,
+    copyright: '© 2025-{year} Midvash. Todos os direitos reservados.',
   },
 };
 
@@ -785,7 +785,7 @@ const fr: Translations = {
     groups: COMMON_GROUPS('fr'),
   },
   footer: {
-    builtBy: 'Construit par',
+    builtBy: 'Développé par',
     tagline: 'Open source · Gratuite à vie · Sans inscription',
     ecosystemLabel: 'Écosystème Midvash',
     ecosystem: [
@@ -803,7 +803,7 @@ const fr: Translations = {
     soonLabel: 'Bientôt',
     socialLabel: 'Suivez-nous',
     instagramLabel: 'Visitez notre Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. Tous droits réservés.`,
+    copyright: '© 2025-{year} Midvash. Tous droits réservés.',
   },
 };
 
@@ -860,7 +860,7 @@ const de: Translations = {
     groups: COMMON_GROUPS('de'),
   },
   footer: {
-    builtBy: 'Gebaut von',
+    builtBy: 'Entwickelt von',
     tagline: 'Open Source · Für immer kostenlos · Keine Anmeldung',
     ecosystemLabel: 'Midvash-Ökosystem',
     ecosystem: [
@@ -878,7 +878,7 @@ const de: Translations = {
     soonLabel: 'Bald',
     socialLabel: 'Folgen Sie uns',
     instagramLabel: 'Besuchen Sie unser Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. Alle Rechte vorbehalten.`,
+    copyright: '© 2025-{year} Midvash. Alle Rechte vorbehalten.',
   },
 };
 
@@ -935,7 +935,7 @@ const it: Translations = {
     groups: COMMON_GROUPS('it'),
   },
   footer: {
-    builtBy: 'Costruito da',
+    builtBy: 'Sviluppato da',
     tagline: 'Open source · Gratuita per sempre · Senza registrazione',
     ecosystemLabel: 'Ecosistema Midvash',
     ecosystem: [
@@ -953,7 +953,7 @@ const it: Translations = {
     soonLabel: 'Presto',
     socialLabel: 'Seguici',
     instagramLabel: 'Visita il nostro Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. Tutti i diritti riservati.`,
+    copyright: '© 2025-{year} Midvash. Tutti i diritti riservati.',
   },
 };
 
@@ -1010,7 +1010,7 @@ const zh: Translations = {
     groups: COMMON_GROUPS('zh'),
   },
   footer: {
-    builtBy: '由',
+    builtBy: '开发者',
     tagline: '开源 · 永久免费 · 无需注册',
     ecosystemLabel: 'Midvash 生态',
     ecosystem: [
@@ -1028,7 +1028,7 @@ const zh: Translations = {
     soonLabel: '即将',
     socialLabel: '关注我们',
     instagramLabel: '访问我们的 Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash 保留所有权利。`,
+    copyright: '© 2025-{year} Midvash 保留所有权利。',
   },
 };
 
@@ -1085,7 +1085,7 @@ const ru: Translations = {
     groups: COMMON_GROUPS('ru'),
   },
   footer: {
-    builtBy: 'Создано',
+    builtBy: 'Разработано',
     tagline: 'Open source · Бесплатно навсегда · Без регистрации',
     ecosystemLabel: 'Экосистема Midvash',
     ecosystem: [
@@ -1103,7 +1103,7 @@ const ru: Translations = {
     soonLabel: 'Скоро',
     socialLabel: 'Подписывайтесь',
     instagramLabel: 'Посетите наш Instagram',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. Все права защищены.`,
+    copyright: '© 2025-{year} Midvash. Все права защищены.',
   },
 };
 
@@ -1160,7 +1160,7 @@ const ko: Translations = {
     groups: COMMON_GROUPS('ko'),
   },
   footer: {
-    builtBy: '제작:',
+    builtBy: '개발:',
     tagline: '오픈 소스 · 영구 무료 · 가입 불필요',
     ecosystemLabel: 'Midvash 생태계',
     ecosystem: [
@@ -1178,7 +1178,7 @@ const ko: Translations = {
     soonLabel: '곧',
     socialLabel: '팔로우',
     instagramLabel: '인스타그램 방문',
-    copyright: `© 2025-${new Date().getFullYear()} Midvash. 모든 권리 보유.`,
+    copyright: '© 2025-{year} Midvash. 모든 권리 보유.',
   },
 };
 

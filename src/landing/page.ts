@@ -418,11 +418,12 @@ function renderVersionsSection(
  * mantém as contagens da landing sempre em sincronia — adicionar uma versão no
  * R2 atualiza a página sem precisar editar copy nos 9 idiomas.
  */
-function fillCounts<T>(value: T, vars: { versions: number; languages: number }): T {
+function fillCounts<T>(value: T, vars: { versions: number; languages: number; year: number }): T {
   if (typeof value === 'string') {
     return value
       .replace(/\{versions\}/g, String(vars.versions))
-      .replace(/\{languages\}/g, String(vars.languages)) as unknown as T;
+      .replace(/\{languages\}/g, String(vars.languages))
+      .replace(/\{year\}/g, String(vars.year)) as unknown as T;
   }
   if (Array.isArray(value)) {
     return value.map((v) => fillCounts(v, vars)) as unknown as T;
@@ -613,7 +614,14 @@ export function renderLandingPage(locale: Locale, versions: readonly VersionDefi
   // {versions}/{languages} das traduções. Mantém a copy sempre atual.
   const versionCount = versions.length;
   const languageCount = new Set(versions.map((v) => v.language)).size;
-  const t = fillCounts(TRANSLATIONS[locale], { versions: versionCount, languages: languageCount });
+  // year is read at request time — Workers freeze Date() during module load,
+  // so doing this in the i18n constants would lock the copyright at 1970.
+  const year = new Date().getFullYear();
+  const t = fillCounts(TRANSLATIONS[locale], {
+    versions: versionCount,
+    languages: languageCount,
+    year,
+  });
   const docs = DOCS_STRINGS[locale];
 
   const alternates = SUPPORTED_LOCALES.map(
@@ -1576,7 +1584,7 @@ ${renderGuidesSection(docs)}
     <div class="footer-bottom">
       <p class="footer-tagline">${escapeHtml(t.footer.tagline)}</p>
       <p class="footer-copyright">${escapeHtml(t.footer.copyright)}</p>
-      <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://midvash.com" target="_blank" rel="noopener">Midvash</a></p>
+      <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://netogregorio.com" target="_blank" rel="noopener">Neto Gregório</a></p>
     </div>
   </div>
 </footer>
