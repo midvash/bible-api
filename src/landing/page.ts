@@ -14,7 +14,7 @@ const SITE_URL = 'https://api.midvash.com';
 const REPO_URL = 'https://github.com/midvash/bible-api';
 
 const ALTERNATE_NAMES: Partial<Record<Locale, string>> = {
-  en: 'Midvash Bible API',
+  en: 'Bible API by Midvash',
   'pt-br': 'API da Bíblia Midvash',
   es: 'API de la Biblia Midvash',
   fr: 'API de la Bible Midvash',
@@ -151,7 +151,10 @@ function midvashLogo(): string {
  * Phosphor Icons paths (duotone weight não fica bem em SVG estático,
  * então uso regular weight com currentColor).
  */
-const ECOSYSTEM_ICONS: Record<'reader' | 'api' | 'mcp' | 'wordpress', string> = {
+const ECOSYSTEM_ICONS: Record<
+  'reader' | 'api' | 'mcp' | 'wordpress' | 'chrome' | 'ios' | 'android',
+  string
+> = {
   reader:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M224,48H160a40,40,0,0,0-32,16A40,40,0,0,0,96,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H96a24,24,0,0,1,24,24,8,8,0,0,0,16,0,24,24,0,0,1,24-24h64a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM96,192H32V64H96a24,24,0,0,1,24,24V200A39.81,39.81,0,0,0,96,192Zm128,0H160a39.81,39.81,0,0,0-24,8V88a24,24,0,0,1,24-24h64Z"/></svg>',
   api:
@@ -160,7 +163,25 @@ const ECOSYSTEM_ICONS: Record<'reader' | 'api' | 'mcp' | 'wordpress', string> = 
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200,48H136V16a8,8,0,0,0-16,0V48H56A32,32,0,0,0,24,80V192a32,32,0,0,0,32,32H200a32,32,0,0,0,32-32V80A32,32,0,0,0,200,48Zm16,144a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V80A16,16,0,0,1,56,64H200a16,16,0,0,1,16,16ZM104,128a12,12,0,1,1-12-12A12,12,0,0,1,104,128Zm72,0a12,12,0,1,1-12-12A12,12,0,0,1,176,128Z"/></svg>',
   wordpress:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24ZM43,98.65l32.05,87.78A88.16,88.16,0,0,1,43,98.65Zm87.59,89.34L102.34,109.78l27.07,1.21,21.6,59.4ZM89.62,97.32a44.86,44.86,0,0,1-7.62-1.36c12.18-1.62,24.07-2.64,32.93-3a51.12,51.12,0,0,1,9.43,2.07c.93,3.06,1.49,5.55,1.74,8.21Zm105.81-19a55.43,55.43,0,0,0-3.5,8.36c-1.4,4-3.27,9.43-3.27,16.83,0,3.7,1.42,9.7,4.66,17.7,7.66,18.93,12.91,32.05,12.91,52.79a86.86,86.86,0,0,1-3.27,23.92L181.42,127c8-12.13,12.6-23.45,12.6-32.41a64.55,64.55,0,0,0-1.91-15.27Zm-25.59,21.78c0,2.43.65,5,1.42,8.21H115.81L116,98.91c4.93-2.13,16.13-3.06,21.7-3.06a36.39,36.39,0,0,1,9,1.16Zm-65.55-39.4a87.84,87.84,0,0,1,93.07,11.93c-1.6.06-9.79.5-19,4.79-3.27,1.5-9.16,4.81-9.16,12.85,0,3,1.21,5.63,3.06,9.49a26.36,26.36,0,0,1,2.34,5.34A78.31,78.31,0,0,1,128,89.69c-19.81,0-37.6,2.16-39.62,2.41-1.55-3.69-1.66-5.5-1.66-7,0-7.43,5.34-9.84,11.61-12.43,3.74-1.55,8.18-2.66,8.18-2.66l-1.51-7.41,1-2A86.41,86.41,0,0,1,128,40,86.86,86.86,0,0,1,168.59,49.69ZM69.85,80.13c1.13-.16,5.79-3.83,11.78-3.83,9.65,0,17.32,7.16,17.32,16,0,9.13-9.07,15-19.13,17.16C66.79,113.49,57.34,123.05,57,123.36L52.55,107A89,89,0,0,1,69.85,80.13ZM128,216A87.85,87.85,0,0,1,77.34,200l54.94-79.81L153.5,193A88,88,0,0,1,128,216Z"/></svg>',
+  chrome:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M220.27,158.54a8,8,0,0,0-7.7-.46,20,20,0,1,1,0-36.16A8,8,0,0,0,224,114.69V72a16,16,0,0,0-16-16H171.78a35.36,35.36,0,0,0,.22-4,36.11,36.11,0,0,0-11.36-26.24,36,36,0,0,0-60.55,23.62,36.56,36.56,0,0,0,.14,6.62H64A16,16,0,0,0,48,72v32.22a35.36,35.36,0,0,0-4-.22,36.12,36.12,0,0,0-26.24,11.36,35.7,35.7,0,0,0-9.69,27,36.08,36.08,0,0,0,33.31,33.6,35.68,35.68,0,0,0,6.62-.14V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V165.31A8,8,0,0,0,220.27,158.54ZM208,208H64V165.31a8,8,0,0,0-11.43-7.23,20,20,0,1,1,0-36.16A8,8,0,0,0,64,114.69V72h46.69a8,8,0,0,0,7.23-11.43,20,20,0,1,1,36.16,0A8,8,0,0,0,161.31,72H208v32.23a35.68,35.68,0,0,0-6.62-.14A36,36,0,0,0,204,176a35.36,35.36,0,0,0,4-.22Z"/></svg>',
+  ios:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M223.3,169.59a8.07,8.07,0,0,0-2.8-3.4C203.53,154.53,200,134.64,200,120c0-17.67,13.47-33.06,21.5-40.67a8,8,0,0,0,0-11.62C208.82,55.74,187.82,48,168,48a72.2,72.2,0,0,0-40,12.13,71.56,71.56,0,0,0-90.71,9.09A74.63,74.63,0,0,0,16,123.4a127.06,127.06,0,0,0,40.14,89.73A39.8,39.8,0,0,0,83.59,224h87.68a39.84,39.84,0,0,0,29.12-12.57,125,125,0,0,0,17.82-24.6C225.23,174,224.33,172,223.3,169.59Zm-34.63,30.94a23.76,23.76,0,0,1-17.4,7.47H83.59a23.82,23.82,0,0,1-16.44-6.51A111.14,111.14,0,0,1,32,123,58.5,58.5,0,0,1,48.65,80.47,54.81,54.81,0,0,1,88,64h.78A55.45,55.45,0,0,1,123,76.28a8,8,0,0,0,10,0A55.44,55.44,0,0,1,168,64a70.64,70.64,0,0,1,36,10.35c-13,14.52-20,30.47-20,45.65,0,23.77,7.64,42.73,22.18,55.3A105.82,105.82,0,0,1,188.67,200.53ZM128.23,30A40,40,0,0,1,167,0h1a8,8,0,0,1,0,16h-1a24,24,0,0,0-23.24,18,8,8,0,1,1-15.5-4Z"/></svg>',
+  android:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M176,148a12,12,0,1,1-12-12A12,12,0,0,1,176,148ZM92,136a12,12,0,1,0,12,12A12,12,0,0,0,92,136Zm148,24v24a16,16,0,0,1-16,16H32a16,16,0,0,1-16-16V161.13A113.38,113.38,0,0,1,51.4,78.72L26.34,53.66A8,8,0,0,1,37.66,42.34L63.82,68.5a111.43,111.43,0,0,1,128.55-.19l26-26a8,8,0,0,1,11.32,11.32L204.82,78.5c.75.71,1.5,1.43,2.24,2.17A111.25,111.25,0,0,1,240,160Zm-16,0a96,96,0,0,0-96-96h-.34C74.91,64.18,32,107.75,32,161.13V184H224Z"/></svg>',
 };
+
+// Repositórios open source do Midvash (globais — não localizados). Ordem:
+// este projeto primeiro, depois os datasets/SDK e plugins.
+const GITHUB_ORG_URL = 'https://github.com/midvash';
+const OSS_REPOS: ReadonlyArray<{ name: string; url: string; current?: boolean }> = [
+  { name: 'bible-api', url: 'https://github.com/midvash/bible-api', current: true },
+  { name: 'bible-data', url: 'https://github.com/midvash/bible-data' },
+  { name: 'bible-data-js', url: 'https://github.com/midvash/bible-data-js' },
+  { name: 'bible-cross-references', url: 'https://github.com/midvash/bible-cross-references' },
+  { name: 'bible-by-midvash', url: 'https://github.com/midvash/bible-by-midvash' },
+  { name: 'emdash-plugin-bible', url: 'https://github.com/midvash/emdash-plugin-bible' },
+];
 
 const INSTAGRAM_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></svg>';
@@ -765,9 +786,14 @@ body {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .brand-mark svg { width: 100%; height: 100%; display: block; }
+.brand-id { display: flex; flex-direction: column; gap: 2px; }
 .brand-name {
-  font-family: var(--font-serif); font-weight: 700; font-size: 20px;
-  letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); line-height: 1;
+  font-family: var(--font-serif); font-weight: 700; font-size: 18px;
+  letter-spacing: 0.03em; text-transform: uppercase; color: var(--text); line-height: 1;
+}
+.brand-by {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted); line-height: 1;
 }
 .lang-switcher { position: relative; }
 .lang-trigger {
@@ -1174,48 +1200,60 @@ body {
 
 /* FOOTER */
 footer {
-  padding: 56px 0; border-top: 1px solid var(--border);
-  background: var(--bg-soft); text-align: center;
+  padding: 56px 0 40px; border-top: 1px solid var(--border);
+  background: var(--bg-soft); text-align: left;
 }
 footer p { color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; }
 footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
 footer a:hover { text-decoration: underline; }
-.footer-tagline { margin-top: 6px; font-size: 0.8125rem; }
-.footer-links { display: inline-flex; gap: 18px; margin-top: 12px; }
+/* Footer multi-coluna (marca + produtos + open source) */
+.footer-top { display: grid; grid-template-columns: 1fr; gap: 40px; }
+@media (min-width: 768px) {
+  .footer-top { grid-template-columns: minmax(190px, 240px) 1fr; gap: 56px; align-items: start; }
+}
+.footer-brand { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.footer-brand-mark { width: 38px; height: 38px; flex-shrink: 0; }
+.footer-brand-mark svg { width: 100%; height: 100%; display: block; }
+.footer-brand-id { display: flex; flex-direction: column; gap: 2px; }
+.footer-brand-name {
+  font-family: var(--font-serif); font-weight: 700; font-size: 18px;
+  letter-spacing: 0.03em; text-transform: uppercase; color: var(--text); line-height: 1;
+}
+.footer-brand-by {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-muted); line-height: 1;
+}
 
-.footer-ecosystem { margin: 0 auto 32px; max-width: 720px; }
-.footer-ecosystem-label {
+.footer-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 28px 40px; }
+.footer-col-title {
   font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.18em;
-  color: var(--text-muted); margin-bottom: 16px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--text-muted); margin-bottom: 12px;
 }
-.footer-ecosystem-list {
-  list-style: none; padding: 0; margin: 0;
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+.footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.footer-link {
+  display: inline-flex; align-items: center; gap: 9px; width: 100%;
+  padding: 6px 0; color: var(--text-soft) !important; font-weight: 500 !important;
+  font-size: 0.875rem; text-decoration: none !important; transition: color 0.14s ease;
 }
-.footer-ecosystem-link {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 16px 12px; border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  color: var(--text-soft) !important;
-  font-weight: 500 !important; font-size: 0.8125rem;
-  text-decoration: none !important; transition: all 0.15s ease;
+a.footer-link:hover { color: var(--primary) !important; text-decoration: none !important; }
+a.footer-link:hover .footer-link-icon { color: var(--primary); }
+.footer-link.is-current { color: var(--primary) !important; font-weight: 600 !important; }
+.footer-link.is-current .footer-link-icon { color: var(--primary); }
+.footer-link.is-soon { color: var(--text-muted) !important; cursor: default; }
+.footer-link-icon { width: 18px; height: 18px; flex-shrink: 0; display: inline-flex; opacity: 0.9; transition: color 0.14s ease; }
+.footer-link-icon svg { width: 100%; height: 100%; }
+.footer-link-text { line-height: 1.3; }
+.footer-repo-name { font-family: var(--font-mono); font-size: 0.82rem; }
+.footer-all-repos { color: var(--primary) !important; font-weight: 600 !important; font-size: 0.82rem; }
+.soon-badge {
+  margin-left: auto; font-size: 0.6rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px;
+  border-radius: 999px; background: var(--bg-card); color: var(--text-muted);
+  border: 1px solid var(--border); white-space: nowrap;
 }
-.footer-ecosystem-link:hover {
-  border-color: var(--primary); color: var(--primary) !important;
-  text-decoration: none !important; transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-.footer-ecosystem-link.is-current {
-  border-color: var(--primary); background: var(--primary-soft);
-  color: var(--primary) !important; font-weight: 600 !important;
-}
-.footer-ecosystem-icon { width: 24px; height: 24px; display: inline-flex; }
-.footer-ecosystem-icon svg { width: 100%; height: 100%; }
-.footer-ecosystem-text { line-height: 1.2; }
 
-.footer-social { margin-bottom: 16px; display: flex; justify-content: center; gap: 18px; }
+.footer-social { display: flex; gap: 16px; width: 100%; margin-top: 4px; }
 .footer-social-icon {
   display: inline-flex; width: 22px; height: 22px;
   color: var(--text-muted) !important; text-decoration: none !important;
@@ -1224,12 +1262,17 @@ footer a:hover { text-decoration: underline; }
 .footer-social-icon:hover { color: var(--primary) !important; text-decoration: none !important; }
 .footer-social-icon svg { width: 100%; height: 100%; }
 
-.footer-copyright { font-size: 0.75rem; opacity: 0.8; }
-.footer-credit { margin-top: 4px; font-size: 0.75rem; opacity: 0.8; }
+.footer-bottom {
+  margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--border);
+  text-align: center;
+}
+.footer-tagline { font-size: 0.8125rem; color: var(--text-soft); }
+.footer-copyright { margin-top: 6px; font-size: 0.75rem; opacity: 0.85; }
+.footer-credit { margin-top: 2px; font-size: 0.75rem; opacity: 0.85; }
 .footer-credit a { font-weight: 600; }
 
 @media (max-width: 640px) {
-  .footer-ecosystem-list { grid-template-columns: repeat(2, 1fr); }
+  .footer-cols { gap: 24px 28px; }
 }
 
 /* DOCS SECTIONS — format / errors / books / guides */
@@ -1354,8 +1397,8 @@ footer a:hover { text-decoration: underline; }
 ${JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'WebAPI',
-  name: 'Midvash Bible API',
-  alternateName: ALTERNATE_NAMES[locale] ?? 'Midvash Bible API',
+  name: 'Bible API by Midvash',
+  alternateName: ALTERNATE_NAMES[locale] ?? 'Bible API by Midvash',
   description: t.meta.description,
   url: `${SITE_URL}${pathForLocale(locale)}`,
   documentation: SITE_URL,
@@ -1391,9 +1434,12 @@ ${JSON.stringify({
 
 <header class="site-header">
   <div class="container header-inner">
-    <a href="${pathForLocale(locale)}" class="brand" aria-label="Midvash API">
+    <a href="${pathForLocale(locale)}" class="brand" aria-label="Bible API by Midvash">
       <span class="brand-mark">${midvashLogo()}</span>
-      <span class="brand-name">API</span>
+      <span class="brand-id">
+        <span class="brand-name">Bible API</span>
+        <span class="brand-by">by Midvash</span>
+      </span>
     </a>
     ${langSwitcherHtml}
   </div>
@@ -1484,29 +1530,54 @@ ${renderGuidesSection(docs)}
 
 <footer>
   <div class="container">
-    <nav class="footer-ecosystem" aria-label="${escapeHtml(t.footer.ecosystemLabel)}">
-      <h2 class="footer-ecosystem-label">${escapeHtml(t.footer.ecosystemLabel)}</h2>
-      <ul class="footer-ecosystem-list">
-        ${t.footer.ecosystem
-          .map(
-            (l) => `
-        <li>
-          <a href="${escapeHtml(l.href)}" class="footer-ecosystem-link${l.current ? ' is-current' : ''}"${l.current ? ' aria-current="page"' : ''}>
-            <span class="footer-ecosystem-icon" aria-hidden="true">${ECOSYSTEM_ICONS[l.iconKey]}</span>
-            <span class="footer-ecosystem-text">${escapeHtml(l.label)}</span>
-          </a>
-        </li>`,
-          )
-          .join('')}
-      </ul>
-    </nav>
-    <div class="footer-social" aria-label="${escapeHtml(t.footer.socialLabel)}">
-      <a href="https://instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
-      <a href="${REPO_URL}" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="footer-social-icon">${GITHUB_ICON}</a>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="footer-brand-mark">${midvashLogo()}</span>
+        <span class="footer-brand-id">
+          <span class="footer-brand-name">Bible API</span>
+          <span class="footer-brand-by">by Midvash</span>
+        </span>
+        <div class="footer-social" aria-label="${escapeHtml(t.footer.socialLabel)}">
+          <a href="https://instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
+          <a href="${GITHUB_ORG_URL}" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="footer-social-icon">${GITHUB_ICON}</a>
+        </div>
+      </div>
+      <nav class="footer-cols" aria-label="${escapeHtml(t.footer.ecosystemLabel)}">
+        <div class="footer-col">
+          <h2 class="footer-col-title">${escapeHtml(t.footer.productsLabel)}</h2>
+          <ul>
+            ${t.footer.ecosystem
+              .map((l) => {
+                const icon = `<span class="footer-link-icon" aria-hidden="true">${ECOSYSTEM_ICONS[l.iconKey]}</span>`;
+                const text = `<span class="footer-link-text">${escapeHtml(l.label)}</span>`;
+                if (l.soon) {
+                  return `<li><span class="footer-link is-soon">${icon}${text}<span class="soon-badge">${escapeHtml(t.footer.soonLabel)}</span></span></li>`;
+                }
+                const cur = l.current ? ' is-current' : '';
+                const aria = l.current ? ' aria-current="page"' : '';
+                return `<li><a class="footer-link${cur}" href="${escapeHtml(l.href ?? '#')}"${aria}>${icon}${text}</a></li>`;
+              })
+              .join('')}
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-col-title">${escapeHtml(t.footer.openSourceLabel)}</h2>
+          <ul>
+            ${OSS_REPOS.map((r) => {
+              const cur = r.current ? ' is-current' : '';
+              const aria = r.current ? ' aria-current="page"' : '';
+              return `<li><a class="footer-link footer-repo${cur}" href="${r.url}" target="_blank" rel="noopener"${aria}><span class="footer-repo-name">${escapeHtml(r.name)}</span></a></li>`;
+            }).join('')}
+            <li><a class="footer-link footer-all-repos" href="${GITHUB_ORG_URL}" target="_blank" rel="noopener">${escapeHtml(t.footer.allReposLabel)} →</a></li>
+          </ul>
+        </div>
+      </nav>
     </div>
-    <p class="footer-tagline">${escapeHtml(t.footer.tagline)}</p>
-    <p class="footer-copyright">${escapeHtml(t.footer.copyright)}</p>
-    <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://midvash.com" target="_blank" rel="noopener">Midvash</a></p>
+    <div class="footer-bottom">
+      <p class="footer-tagline">${escapeHtml(t.footer.tagline)}</p>
+      <p class="footer-copyright">${escapeHtml(t.footer.copyright)}</p>
+      <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://midvash.com" target="_blank" rel="noopener">Midvash</a></p>
+    </div>
   </div>
 </footer>
 

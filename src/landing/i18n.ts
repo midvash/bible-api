@@ -91,7 +91,17 @@ export interface Translations {
     builtBy: string;
     tagline: string;
     ecosystemLabel: string;
-    ecosystem: Array<{ label: string; href: string; iconKey: 'reader' | 'api' | 'mcp' | 'wordpress'; current?: boolean }>;
+    productsLabel: string;
+    openSourceLabel: string;
+    allReposLabel: string;
+    soonLabel: string;
+    ecosystem: Array<{
+      label: string;
+      href?: string;
+      iconKey: 'reader' | 'api' | 'mcp' | 'wordpress' | 'chrome' | 'ios' | 'android';
+      current?: boolean;
+      soon?: boolean;
+    }>;
     socialLabel: string;
     instagramLabel: string;
     copyright: string;
@@ -383,15 +393,15 @@ const COMMON_GROUPS = (lang: Locale): EndpointGroup[] => {
 const en: Translations = {
   htmlLang: 'en',
   meta: {
-    title: 'Midvash API — Free public Bible API in {versions} versions',
+    title: 'Bible API by Midvash — free & public, {versions} versions in {languages} languages',
     description:
       'Public, free, and edge-cached REST API for Bible content in {versions} versions and {languages} languages. Verses, chapters, books and version metadata.',
   },
   nav: { skipToContent: 'Skip to content' },
   hero: {
     eyebrow: 'Free · Public · Cached at edge',
-    title: 'The official',
-    titleAccent: 'Midvash API',
+    title: 'The Bible API',
+    titleAccent: 'by Midvash',
     subtitle:
       'Build with the Bible. {versions} versions, {languages} languages, free forever — JSON over HTTP, no signup, no API keys.',
     ctaPrimary: 'Browse endpoints',
@@ -452,7 +462,14 @@ const en: Translations = {
       { label: 'Bible API', href: 'https://api.midvash.com', iconKey: 'api', current: true },
       { label: 'Bible MCP', href: 'https://mcp.midvash.com', iconKey: 'mcp' },
       { label: 'WordPress plugin', href: 'https://wordpress.midvash.com', iconKey: 'wordpress' },
+      { label: 'Chrome extension', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'iOS app', iconKey: 'ios', soon: true },
+      { label: 'Android app', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Products',
+    openSourceLabel: 'Open source',
+    allReposLabel: 'All repositories',
+    soonLabel: 'Soon',
     socialLabel: 'Follow us',
     instagramLabel: 'Visit our Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. All rights reserved.`,
@@ -462,15 +479,15 @@ const en: Translations = {
 const es: Translations = {
   htmlLang: 'es',
   meta: {
-    title: 'Midvash API — API pública y gratuita de la Biblia',
+    title: 'API de la Biblia by Midvash — pública y gratuita, {versions} versiones',
     description:
       'API REST pública, gratuita y cacheada en el edge para contenido bíblico en {versions} versiones y {languages} idiomas. Versículos, capítulos, libros y metadatos de versiones.',
   },
   nav: { skipToContent: 'Saltar al contenido' },
   hero: {
     eyebrow: 'Gratis · Pública · Caché en el edge',
-    title: 'La API oficial de',
-    titleAccent: 'Midvash',
+    title: 'La API de la Biblia',
+    titleAccent: 'by Midvash',
     subtitle:
       'Construye con la Biblia. {versions} versiones, {languages} idiomas, gratis para siempre — JSON sobre HTTP, sin registro, sin claves.',
     ctaPrimary: 'Ver endpoints',
@@ -531,7 +548,14 @@ const es: Translations = {
       { label: 'API de la Biblia', href: 'https://api.midvash.com/es', iconKey: 'api', current: true },
       { label: 'MCP de la Biblia', href: 'https://mcp.midvash.com/es', iconKey: 'mcp' },
       { label: 'Plugin para WordPress', href: 'https://wordpress.midvash.com/es', iconKey: 'wordpress' },
+      { label: 'Extensión Chrome', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'App iOS', iconKey: 'ios', soon: true },
+      { label: 'App Android', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Productos',
+    openSourceLabel: 'Código abierto',
+    allReposLabel: 'Todos los repositorios',
+    soonLabel: 'Pronto',
     socialLabel: 'Síguenos',
     instagramLabel: 'Visite nuestro Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. Todos los derechos reservados.`,
@@ -541,15 +565,15 @@ const es: Translations = {
 const ptBr: Translations = {
   htmlLang: 'pt-BR',
   meta: {
-    title: 'Midvash API — API pública e gratuita da Bíblia',
+    title: 'API da Bíblia by Midvash — pública e gratuita, {versions} versões',
     description:
       'API REST pública, gratuita e cacheada no edge com conteúdo bíblico em {versions} versões e {languages} idiomas. Versículos, capítulos, livros e metadados de versões.',
   },
   nav: { skipToContent: 'Pular para o conteúdo' },
   hero: {
     eyebrow: 'Grátis · Pública · Cache no edge',
-    title: 'A API oficial do',
-    titleAccent: 'Midvash',
+    title: 'A API da Bíblia',
+    titleAccent: 'by Midvash',
     subtitle:
       'Construa com a Bíblia. {versions} versões, {languages} idiomas, grátis para sempre — JSON sobre HTTP, sem cadastro, sem chaves de API.',
     ctaPrimary: 'Ver endpoints',
@@ -610,7 +634,14 @@ const ptBr: Translations = {
       { label: 'API da Bíblia', href: 'https://api.midvash.com/pt-br', iconKey: 'api', current: true },
       { label: 'MCP da Bíblia', href: 'https://mcp.midvash.com/pt-br', iconKey: 'mcp' },
       { label: 'Plugin para WordPress', href: 'https://wordpress.midvash.com/pt-br', iconKey: 'wordpress' },
+      { label: 'Extensão Chrome', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'App iOS', iconKey: 'ios', soon: true },
+      { label: 'App Android', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Produtos',
+    openSourceLabel: 'Código aberto',
+    allReposLabel: 'Todos os repositórios',
+    soonLabel: 'Em breve',
     socialLabel: 'Siga a gente',
     instagramLabel: 'Visite nosso Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. Todos os direitos reservados.`,
@@ -704,15 +735,15 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
 const fr: Translations = {
   htmlLang: 'fr',
   meta: {
-    title: 'Midvash API — API publique gratuite de la Bible ({versions} versions)',
+    title: 'API de la Bible by Midvash — publique et gratuite, {versions} versions',
     description:
       "API REST publique, gratuite et mise en cache à l'edge avec le contenu de la Bible en {versions} versions et {languages} langues. Versets, chapitres, livres et métadonnées des versions.",
   },
   nav: { skipToContent: 'Aller au contenu' },
   hero: {
     eyebrow: 'Gratuite · Publique · Cache à l\'edge',
-    title: "L'API officielle de",
-    titleAccent: 'Midvash',
+    title: "L'API de la Bible",
+    titleAccent: 'by Midvash',
     subtitle:
       'Construisez avec la Bible. {versions} versions, {languages} langues, gratuite à vie — JSON via HTTP, sans inscription, sans clé d\'API.',
     ctaPrimary: 'Voir les endpoints',
@@ -762,7 +793,14 @@ const fr: Translations = {
       { label: 'API de la Bible', href: 'https://api.midvash.com/fr', iconKey: 'api', current: true },
       { label: 'MCP de la Bible', href: 'https://mcp.midvash.com/fr', iconKey: 'mcp' },
       { label: 'Plugin WordPress', href: 'https://wordpress.midvash.com/fr', iconKey: 'wordpress' },
+      { label: 'Extension Chrome', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'App iOS', iconKey: 'ios', soon: true },
+      { label: 'App Android', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Produits',
+    openSourceLabel: 'Open source',
+    allReposLabel: 'Tous les dépôts',
+    soonLabel: 'Bientôt',
     socialLabel: 'Suivez-nous',
     instagramLabel: 'Visitez notre Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. Tous droits réservés.`,
@@ -772,15 +810,15 @@ const fr: Translations = {
 const de: Translations = {
   htmlLang: 'de',
   meta: {
-    title: 'Midvash API — Kostenlose öffentliche Bibel-API ({versions} Übersetzungen)',
+    title: 'Bibel-API by Midvash — kostenlos & öffentlich, {versions} Übersetzungen',
     description:
       'Öffentliche, kostenlose und am Edge gecachte REST-API für Bibelinhalte in {versions} Übersetzungen und {languages} Sprachen. Verse, Kapitel, Bücher und Metadaten zu Übersetzungen.',
   },
   nav: { skipToContent: 'Zum Inhalt springen' },
   hero: {
     eyebrow: 'Kostenlos · Öffentlich · Edge-Cache',
-    title: 'Die offizielle',
-    titleAccent: 'Midvash API',
+    title: 'Die Bibel-API',
+    titleAccent: 'by Midvash',
     subtitle:
       'Entwickeln Sie mit der Bibel. {versions} Übersetzungen, {languages} Sprachen, für immer kostenlos — JSON über HTTP, keine Anmeldung, keine API-Keys.',
     ctaPrimary: 'Endpoints ansehen',
@@ -830,7 +868,14 @@ const de: Translations = {
       { label: 'Bibel-API', href: 'https://api.midvash.com/de', iconKey: 'api', current: true },
       { label: 'Bibel-MCP', href: 'https://mcp.midvash.com/de', iconKey: 'mcp' },
       { label: 'WordPress-Plugin', href: 'https://wordpress.midvash.com/de', iconKey: 'wordpress' },
+      { label: 'Chrome-Erweiterung', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'iOS-App', iconKey: 'ios', soon: true },
+      { label: 'Android-App', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Produkte',
+    openSourceLabel: 'Open Source',
+    allReposLabel: 'Alle Repositories',
+    soonLabel: 'Bald',
     socialLabel: 'Folgen Sie uns',
     instagramLabel: 'Besuchen Sie unser Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. Alle Rechte vorbehalten.`,
@@ -840,15 +885,15 @@ const de: Translations = {
 const it: Translations = {
   htmlLang: 'it',
   meta: {
-    title: 'Midvash API — API pubblica e gratuita della Bibbia ({versions} versioni)',
+    title: 'API della Bibbia by Midvash — pubblica e gratuita, {versions} versioni',
     description:
       'API REST pubblica, gratuita e con cache edge per i contenuti biblici in {versions} versioni e {languages} lingue. Versetti, capitoli, libri e metadati delle versioni.',
   },
   nav: { skipToContent: 'Vai al contenuto' },
   hero: {
     eyebrow: 'Gratuita · Pubblica · Cache edge',
-    title: "L'API ufficiale di",
-    titleAccent: 'Midvash',
+    title: "L'API della Bibbia",
+    titleAccent: 'by Midvash',
     subtitle:
       'Costruisci con la Bibbia. {versions} versioni, {languages} lingue, gratuita per sempre — JSON su HTTP, senza registrazione, senza chiavi API.',
     ctaPrimary: 'Vedi gli endpoint',
@@ -898,7 +943,14 @@ const it: Translations = {
       { label: 'API della Bibbia', href: 'https://api.midvash.com/it', iconKey: 'api', current: true },
       { label: 'MCP della Bibbia', href: 'https://mcp.midvash.com/it', iconKey: 'mcp' },
       { label: 'Plugin WordPress', href: 'https://wordpress.midvash.com/it', iconKey: 'wordpress' },
+      { label: 'Estensione Chrome', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'App iOS', iconKey: 'ios', soon: true },
+      { label: 'App Android', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Prodotti',
+    openSourceLabel: 'Open source',
+    allReposLabel: 'Tutti i repository',
+    soonLabel: 'Presto',
     socialLabel: 'Seguici',
     instagramLabel: 'Visita il nostro Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. Tutti i diritti riservati.`,
@@ -908,15 +960,15 @@ const it: Translations = {
 const zh: Translations = {
   htmlLang: 'zh',
   meta: {
-    title: 'Midvash API — 免费公共圣经 API（{versions} 版本）',
+    title: '圣经 API by Midvash — 免费公开，{versions} 个版本',
     description:
       '免费公开的 REST API，提供 {versions} 圣经版本与 {languages} 种语言的内容，支持边缘缓存。包含经文、章节、书卷及版本元数据。',
   },
   nav: { skipToContent: '跳到主要内容' },
   hero: {
     eyebrow: '免费 · 公开 · 边缘缓存',
-    title: '官方的',
-    titleAccent: 'Midvash API',
+    title: '圣经 API',
+    titleAccent: 'by Midvash',
     subtitle:
       '基于圣经构建应用。{versions} 版本，{languages} 种语言，永久免费 — 通过 HTTP 返回 JSON，无需注册，无需 API 密钥。',
     ctaPrimary: '查看接口',
@@ -966,7 +1018,14 @@ const zh: Translations = {
       { label: '圣经 API', href: 'https://api.midvash.com/zh', iconKey: 'api', current: true },
       { label: '圣经 MCP', href: 'https://mcp.midvash.com/zh', iconKey: 'mcp' },
       { label: 'WordPress 插件', href: 'https://wordpress.midvash.com/zh', iconKey: 'wordpress' },
+      { label: 'Chrome 扩展', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'iOS 应用', iconKey: 'ios', soon: true },
+      { label: 'Android 应用', iconKey: 'android', soon: true },
     ],
+    productsLabel: '产品',
+    openSourceLabel: '开源',
+    allReposLabel: '全部仓库',
+    soonLabel: '即将',
     socialLabel: '关注我们',
     instagramLabel: '访问我们的 Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash 保留所有权利。`,
@@ -976,15 +1035,15 @@ const zh: Translations = {
 const ru: Translations = {
   htmlLang: 'ru',
   meta: {
-    title: 'Midvash API — Бесплатный публичный API Библии ({versions} переводов)',
+    title: 'API Библии by Midvash — бесплатный и публичный, {versions} переводов',
     description:
       'Публичный, бесплатный и кэшируемый на edge REST API для текста Библии в {versions} переводах и {languages} языках. Стихи, главы, книги и метаданные переводов.',
   },
   nav: { skipToContent: 'Перейти к контенту' },
   hero: {
     eyebrow: 'Бесплатно · Публично · Edge-кэш',
-    title: 'Официальный API',
-    titleAccent: 'Midvash',
+    title: 'API Библии',
+    titleAccent: 'by Midvash',
     subtitle:
       'Создавайте с Библией. {versions} переводов, {languages} языков, бесплатно навсегда — JSON по HTTP, без регистрации и без API-ключей.',
     ctaPrimary: 'Смотреть эндпоинты',
@@ -1034,7 +1093,14 @@ const ru: Translations = {
       { label: 'API Библии', href: 'https://api.midvash.com/ru', iconKey: 'api', current: true },
       { label: 'MCP Библии', href: 'https://mcp.midvash.com/ru', iconKey: 'mcp' },
       { label: 'Плагин WordPress', href: 'https://wordpress.midvash.com/ru', iconKey: 'wordpress' },
+      { label: 'Расширение Chrome', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'Приложение iOS', iconKey: 'ios', soon: true },
+      { label: 'Приложение Android', iconKey: 'android', soon: true },
     ],
+    productsLabel: 'Продукты',
+    openSourceLabel: 'Open source',
+    allReposLabel: 'Все репозитории',
+    soonLabel: 'Скоро',
     socialLabel: 'Подписывайтесь',
     instagramLabel: 'Посетите наш Instagram',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. Все права защищены.`,
@@ -1044,15 +1110,15 @@ const ru: Translations = {
 const ko: Translations = {
   htmlLang: 'ko',
   meta: {
-    title: 'Midvash API — 무료 공개 성경 API ({versions} 번역본)',
+    title: '성경 API by Midvash — 무료 공개, {versions} 번역본',
     description:
       '엣지 캐시가 적용된 공개·무료 REST API. {versions}개 성경 번역본과 {languages}개 언어의 본문, 절·장·책 및 번역본 메타데이터를 제공합니다.',
   },
   nav: { skipToContent: '본문으로 건너뛰기' },
   hero: {
     eyebrow: '무료 · 공개 · 엣지 캐시',
-    title: '공식 API,',
-    titleAccent: 'Midvash',
+    title: '성경 API',
+    titleAccent: 'by Midvash',
     subtitle:
       '성경으로 만들어 보세요. {versions} 번역본, {languages}개 언어, 영구 무료 — HTTP 기반 JSON, 가입 불필요, API 키 불필요.',
     ctaPrimary: '엔드포인트 보기',
@@ -1102,7 +1168,14 @@ const ko: Translations = {
       { label: '성경 API', href: 'https://api.midvash.com/ko', iconKey: 'api', current: true },
       { label: '성경 MCP', href: 'https://mcp.midvash.com/ko', iconKey: 'mcp' },
       { label: 'WordPress 플러그인', href: 'https://wordpress.midvash.com/ko', iconKey: 'wordpress' },
+      { label: 'Chrome 확장 프로그램', href: 'https://midvash.app/chrome-extension/', iconKey: 'chrome' },
+      { label: 'iOS 앱', iconKey: 'ios', soon: true },
+      { label: 'Android 앱', iconKey: 'android', soon: true },
     ],
+    productsLabel: '제품',
+    openSourceLabel: '오픈 소스',
+    allReposLabel: '전체 저장소',
+    soonLabel: '곧',
     socialLabel: '팔로우',
     instagramLabel: '인스타그램 방문',
     copyright: `© 2025-${new Date().getFullYear()} Midvash. 모든 권리 보유.`,
