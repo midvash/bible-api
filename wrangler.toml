@@ -1,6 +1,6 @@
 name = "midvash-api"
 main = "src/index.ts"
-compatibility_date = "2026-02-19"
+compatibility_date = "2026-06-04"
 compatibility_flags = ["nodejs_compat"]
 
 # Routes
