@@ -121,7 +121,7 @@ interface GroupStrings {
 
 const GROUP_STRINGS: Record<Locale, GroupStrings> = {
   en: {
-    listVersions: 'List all available Bible versions (70+)',
+    listVersions: 'List all available Bible versions ({versions})',
     versionDetail: 'Get metadata for a specific version',
     listBooks: 'List the 66 Bible books',
     bookDetail: 'Get metadata for a single book (accepts slugs in any language)',
@@ -141,7 +141,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Version slug. Defaults to the canonical version of the chosen locale.',
   },
   'pt-br': {
-    listVersions: 'Lista todas as versões bíblicas (70+)',
+    listVersions: 'Lista todas as versões bíblicas ({versions})',
     versionDetail: 'Retorna metadados de uma versão específica',
     listBooks: 'Lista os 66 livros da Bíblia',
     bookDetail: 'Retorna metadados de um livro (aceita slug em qualquer idioma)',
@@ -161,7 +161,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Slug da versão. Default: versão canônica do locale escolhido.',
   },
   es: {
-    listVersions: 'Lista todas las versiones bíblicas (70+)',
+    listVersions: 'Lista todas las versiones bíblicas ({versions})',
     versionDetail: 'Devuelve los metadatos de una versión específica',
     listBooks: 'Lista los 66 libros de la Biblia',
     bookDetail: 'Devuelve los metadatos de un libro (acepta slug en cualquier idioma)',
@@ -181,7 +181,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Slug de la versión. Por defecto: versión canónica del locale elegido.',
   },
   fr: {
-    listVersions: 'Liste toutes les versions bibliques disponibles (70+)',
+    listVersions: 'Liste toutes les versions bibliques disponibles ({versions})',
     versionDetail: "Renvoie les métadonnées d'une version spécifique",
     listBooks: 'Liste les 66 livres de la Bible',
     bookDetail: "Renvoie les métadonnées d'un livre (slug accepté dans n'importe quelle langue)",
@@ -201,7 +201,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Slug de la version. Par défaut : version canonique du locale choisi.',
   },
   de: {
-    listVersions: 'Listet alle verfügbaren Bibelübersetzungen auf (70+)',
+    listVersions: 'Listet alle verfügbaren Bibelübersetzungen auf ({versions})',
     versionDetail: 'Liefert Metadaten zu einer bestimmten Übersetzung',
     listBooks: 'Listet die 66 Bücher der Bibel auf',
     bookDetail: 'Liefert Metadaten zu einem Buch (Slug in beliebiger Sprache)',
@@ -221,7 +221,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Übersetzungs-Slug. Standard: kanonische Übersetzung des gewählten Locales.',
   },
   it: {
-    listVersions: 'Elenca tutte le versioni bibliche disponibili (70+)',
+    listVersions: 'Elenca tutte le versioni bibliche disponibili ({versions})',
     versionDetail: 'Restituisce i metadati di una versione specifica',
     listBooks: 'Elenca i 66 libri della Bibbia',
     bookDetail: 'Restituisce i metadati di un libro (slug in qualsiasi lingua)',
@@ -241,7 +241,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Slug della versione. Predefinito: versione canonica del locale scelto.',
   },
   zh: {
-    listVersions: '列出全部圣经版本（70+ 个）',
+    listVersions: '列出全部圣经版本（{versions} 个）',
     versionDetail: '返回指定版本的元数据',
     listBooks: '列出圣经全部 66 卷书',
     bookDetail: '返回单卷书的元数据（支持任意语言的 slug）',
@@ -261,7 +261,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: '版本 slug，默认使用所选语言的官方版本。',
   },
   ru: {
-    listVersions: 'Список всех доступных переводов Библии (70+)',
+    listVersions: 'Список всех доступных переводов Библии ({versions})',
     versionDetail: 'Возвращает метаданные конкретного перевода',
     listBooks: 'Список 66 книг Библии',
     bookDetail: 'Возвращает метаданные книги (slug на любом языке)',
@@ -281,7 +281,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
     pVotdVersionQ: 'Slug перевода. По умолчанию — канонический перевод выбранной локали.',
   },
   ko: {
-    listVersions: '모든 성경 번역본을 나열합니다 (70개 이상)',
+    listVersions: '모든 성경 번역본을 나열합니다 ({versions}개)',
     versionDetail: '특정 번역본의 메타데이터를 반환합니다',
     listBooks: '성경 66권 목록을 반환합니다',
     bookDetail: '단일 책의 메타데이터 반환 (모든 언어의 slug 허용)',
@@ -383,9 +383,9 @@ const COMMON_GROUPS = (lang: Locale): EndpointGroup[] => {
 const en: Translations = {
   htmlLang: 'en',
   meta: {
-    title: 'Midvash API — Free public Bible API in 70+ versions',
+    title: 'Midvash API — Free public Bible API in {versions} versions',
     description:
-      'Public, free, and edge-cached REST API for Bible content in 70+ versions and 28 languages. Verses, chapters, books and version metadata.',
+      'Public, free, and edge-cached REST API for Bible content in {versions} versions and {languages} languages. Verses, chapters, books and version metadata.',
   },
   nav: { skipToContent: 'Skip to content' },
   hero: {
@@ -393,14 +393,14 @@ const en: Translations = {
     title: 'The official',
     titleAccent: 'Midvash API',
     subtitle:
-      'Build with the Bible. 70+ versions, 28 languages, free forever — JSON over HTTP, no signup, no API keys.',
+      'Build with the Bible. {versions} versions, {languages} languages, free forever — JSON over HTTP, no signup, no API keys.',
     ctaPrimary: 'Browse endpoints',
     ctaSecondary: 'Quick start',
   },
   features: {
     title: 'Why Midvash API',
     cards: [
-      { title: '70+ Bible versions', body: 'NIV, KJV, ESV, NVI, RVR1960 and 65+ more — across 28 languages.' },
+      { title: '{versions} Bible versions', body: 'NIV, KJV, ESV, NVI, RVR1960 and many more — across {languages} languages.' },
       { title: 'Edge cached', body: 'Sub-50ms responses worldwide via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Stable v1 schema with { data, meta } responses and structured errors.' },
       { title: 'Free forever', body: 'No signup, no API keys, no rate limits beyond fair use.' },
@@ -413,7 +413,7 @@ const en: Translations = {
   },
   versions: {
     title: 'Available Bible versions',
-    subtitle: 'All 70+ versions are served from the same endpoints. Click any to fetch its metadata.',
+    subtitle: 'All {versions} versions are served from the same endpoints. Click any to fetch its metadata.',
     countSingular: 'version',
     countPlural: 'versions',
     languageNames: {
@@ -426,6 +426,7 @@ const en: Translations = {
       tl: 'Tagalog', vi: 'Tiếng Việt', tr: 'Türkçe', id: 'Bahasa Indonesia',
       uk: 'Українська', sv: 'Svenska', da: 'Dansk', nb: 'Norsk',
       eo: 'Esperanto', sw: 'Kiswahili',
+      fi: 'Suomi', sr: 'Српски · Serbian',
     },
   },
   endpoints: {
@@ -463,7 +464,7 @@ const es: Translations = {
   meta: {
     title: 'Midvash API — API pública y gratuita de la Biblia',
     description:
-      'API REST pública, gratuita y cacheada en el edge para contenido bíblico en más de 70 versiones y 28 idiomas. Versículos, capítulos, libros y metadatos de versiones.',
+      'API REST pública, gratuita y cacheada en el edge para contenido bíblico en {versions} versiones y {languages} idiomas. Versículos, capítulos, libros y metadatos de versiones.',
   },
   nav: { skipToContent: 'Saltar al contenido' },
   hero: {
@@ -471,14 +472,14 @@ const es: Translations = {
     title: 'La API oficial de',
     titleAccent: 'Midvash',
     subtitle:
-      'Construye con la Biblia. Más de 70 versiones, 28 idiomas, gratis para siempre — JSON sobre HTTP, sin registro, sin claves.',
+      'Construye con la Biblia. {versions} versiones, {languages} idiomas, gratis para siempre — JSON sobre HTTP, sin registro, sin claves.',
     ctaPrimary: 'Ver endpoints',
     ctaSecondary: 'Comienzo rápido',
   },
   features: {
     title: 'Por qué Midvash API',
     cards: [
-      { title: '70+ versiones bíblicas', body: 'NVI, RVR1960, NTV, KJV, ESV y más de 65 — en 28 idiomas.' },
+      { title: '{versions} versiones bíblicas', body: 'NVI, RVR1960, NTV, KJV, ESV y muchas más — en {languages} idiomas.' },
       { title: 'Caché en el edge', body: 'Respuestas en menos de 50 ms gracias a Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Esquema v1 estable con respuestas { data, meta } y errores estructurados.' },
       { title: 'Gratis para siempre', body: 'Sin registro, sin claves, sin límites más allá del uso justo.' },
@@ -491,7 +492,7 @@ const es: Translations = {
   },
   versions: {
     title: 'Versiones bíblicas disponibles',
-    subtitle: 'Más de 70 versiones servidas por los mismos endpoints. Haz clic en cualquiera para ver sus metadatos.',
+    subtitle: '{versions} versiones servidas por los mismos endpoints. Haz clic en cualquiera para ver sus metadatos.',
     countSingular: 'versión',
     countPlural: 'versiones',
     languageNames: {
@@ -504,6 +505,7 @@ const es: Translations = {
       tl: 'Tagalo', vi: 'Vietnamita', tr: 'Turco', id: 'Indonesio',
       uk: 'Ucraniano', sv: 'Sueco', da: 'Danés', nb: 'Noruego',
       eo: 'Esperanto', sw: 'Suajili',
+      fi: 'Finés', sr: 'Српски · Serbio',
     },
   },
   endpoints: {
@@ -541,7 +543,7 @@ const ptBr: Translations = {
   meta: {
     title: 'Midvash API — API pública e gratuita da Bíblia',
     description:
-      'API REST pública, gratuita e cacheada no edge com conteúdo bíblico em mais de 70 versões e 28 idiomas. Versículos, capítulos, livros e metadados de versões.',
+      'API REST pública, gratuita e cacheada no edge com conteúdo bíblico em {versions} versões e {languages} idiomas. Versículos, capítulos, livros e metadados de versões.',
   },
   nav: { skipToContent: 'Pular para o conteúdo' },
   hero: {
@@ -549,14 +551,14 @@ const ptBr: Translations = {
     title: 'A API oficial do',
     titleAccent: 'Midvash',
     subtitle:
-      'Construa com a Bíblia. Mais de 70 versões, 28 idiomas, grátis para sempre — JSON sobre HTTP, sem cadastro, sem chaves de API.',
+      'Construa com a Bíblia. {versions} versões, {languages} idiomas, grátis para sempre — JSON sobre HTTP, sem cadastro, sem chaves de API.',
     ctaPrimary: 'Ver endpoints',
     ctaSecondary: 'Início rápido',
   },
   features: {
     title: 'Por que a Midvash API',
     cards: [
-      { title: '70+ versões da Bíblia', body: 'NVI, ARA, ACF, NAA, NTLH, KJV, NIV e mais 65 — em 28 idiomas.' },
+      { title: '{versions} versões da Bíblia', body: 'NVI, ARA, ACF, NAA, NTLH, KJV, NIV e muitas mais — em {languages} idiomas.' },
       { title: 'Cache no edge', body: 'Respostas abaixo de 50ms no mundo todo via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Schema v1 estável com respostas { data, meta } e erros estruturados.' },
       { title: 'Grátis para sempre', body: 'Sem cadastro, sem chaves, sem limites além do uso razoável.' },
@@ -569,7 +571,7 @@ const ptBr: Translations = {
   },
   versions: {
     title: 'Versões bíblicas disponíveis',
-    subtitle: 'Mais de 70 versões servidas pelos mesmos endpoints. Clique em qualquer uma para ver os metadados.',
+    subtitle: '{versions} versões servidas pelos mesmos endpoints. Clique em qualquer uma para ver os metadados.',
     countSingular: 'versão',
     countPlural: 'versões',
     languageNames: {
@@ -582,6 +584,7 @@ const ptBr: Translations = {
       tl: 'Tagalo', vi: 'Vietnamita', tr: 'Turco', id: 'Indonésio',
       uk: 'Ucraniano', sv: 'Sueco', da: 'Dinamarquês', nb: 'Norueguês',
       eo: 'Esperanto', sw: 'Suaíli',
+      fi: 'Finlandês', sr: 'Српски · Sérvio',
     },
   },
   endpoints: {
@@ -622,6 +625,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Polish', nl: 'Dutch', ro: 'Romanian', hu: 'Hungarian', cs: 'Czech', tl: 'Tagalog',
     vi: 'Vietnamese', tr: 'Turkish', id: 'Indonesian', uk: 'Ukrainian', sv: 'Swedish',
     da: 'Danish', nb: 'Norwegian', eo: 'Esperanto', sw: 'Swahili',
+    fi: 'Finnish', sr: 'Serbian',
   },
   'pt-br': {
     en: 'Inglês', 'pt-br': 'Português', 'pt-pt': 'Português (PT)',
@@ -630,6 +634,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Polonês', nl: 'Holandês', ro: 'Romeno', hu: 'Húngaro', cs: 'Tcheco', tl: 'Tagalo',
     vi: 'Vietnamita', tr: 'Turco', id: 'Indonésio', uk: 'Ucraniano', sv: 'Sueco',
     da: 'Dinamarquês', nb: 'Norueguês', eo: 'Esperanto', sw: 'Suaíli',
+    fi: 'Finlandês', sr: 'Sérvio',
   },
   es: {
     en: 'Inglés', 'pt-br': 'Portugués', 'pt-pt': 'Portugués (PT)',
@@ -638,6 +643,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Polaco', nl: 'Neerlandés', ro: 'Rumano', hu: 'Húngaro', cs: 'Checo', tl: 'Tagalo',
     vi: 'Vietnamita', tr: 'Turco', id: 'Indonesio', uk: 'Ucraniano', sv: 'Sueco',
     da: 'Danés', nb: 'Noruego', eo: 'Esperanto', sw: 'Suajili',
+    fi: 'Finés', sr: 'Serbio',
   },
   fr: {
     en: 'Anglais', 'pt-br': 'Portugais', 'pt-pt': 'Portugais (PT)',
@@ -646,6 +652,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Polonais', nl: 'Néerlandais', ro: 'Roumain', hu: 'Hongrois', cs: 'Tchèque', tl: 'Tagalog',
     vi: 'Vietnamien', tr: 'Turc', id: 'Indonésien', uk: 'Ukrainien', sv: 'Suédois',
     da: 'Danois', nb: 'Norvégien', eo: 'Espéranto', sw: 'Swahili',
+    fi: 'Finnois', sr: 'Serbe',
   },
   de: {
     en: 'Englisch', 'pt-br': 'Portugiesisch', 'pt-pt': 'Portugiesisch (PT)',
@@ -654,6 +661,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Polnisch', nl: 'Niederländisch', ro: 'Rumänisch', hu: 'Ungarisch', cs: 'Tschechisch', tl: 'Tagalog',
     vi: 'Vietnamesisch', tr: 'Türkisch', id: 'Indonesisch', uk: 'Ukrainisch', sv: 'Schwedisch',
     da: 'Dänisch', nb: 'Norwegisch', eo: 'Esperanto', sw: 'Swahili',
+    fi: 'Finnisch', sr: 'Serbisch',
   },
   it: {
     en: 'Inglese', 'pt-br': 'Portoghese', 'pt-pt': 'Portoghese (PT)',
@@ -662,6 +670,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Polacco', nl: 'Olandese', ro: 'Rumeno', hu: 'Ungherese', cs: 'Ceco', tl: 'Tagalog',
     vi: 'Vietnamita', tr: 'Turco', id: 'Indonesiano', uk: 'Ucraino', sv: 'Svedese',
     da: 'Danese', nb: 'Norvegese', eo: 'Esperanto', sw: 'Swahili',
+    fi: 'Finlandese', sr: 'Serbo',
   },
   zh: {
     en: '英语', 'pt-br': '葡萄牙语', 'pt-pt': '葡萄牙语（葡）',
@@ -670,6 +679,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: '波兰语', nl: '荷兰语', ro: '罗马尼亚语', hu: '匈牙利语', cs: '捷克语', tl: '他加禄语',
     vi: '越南语', tr: '土耳其语', id: '印尼语', uk: '乌克兰语', sv: '瑞典语',
     da: '丹麦语', nb: '挪威语', eo: '世界语', sw: '斯瓦希里语',
+    fi: '芬兰语', sr: '塞尔维亚语',
   },
   ru: {
     en: 'Английский', 'pt-br': 'Португальский', 'pt-pt': 'Португальский (PT)',
@@ -678,6 +688,7 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: 'Польский', nl: 'Нидерландский', ro: 'Румынский', hu: 'Венгерский', cs: 'Чешский', tl: 'Тагальский',
     vi: 'Вьетнамский', tr: 'Турецкий', id: 'Индонезийский', uk: 'Украинский', sv: 'Шведский',
     da: 'Датский', nb: 'Норвежский', eo: 'Эсперанто', sw: 'Суахили',
+    fi: 'Финский', sr: 'Сербский',
   },
   ko: {
     en: '영어', 'pt-br': '포르투갈어', 'pt-pt': '포르투갈어 (PT)',
@@ -686,15 +697,16 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
     pl: '폴란드어', nl: '네덜란드어', ro: '루마니아어', hu: '헝가리어', cs: '체코어', tl: '타갈로그어',
     vi: '베트남어', tr: '터키어', id: '인도네시아어', uk: '우크라이나어', sv: '스웨덴어',
     da: '덴마크어', nb: '노르웨이어', eo: '에스페란토어', sw: '스와힐리어',
+    fi: '핀란드어', sr: '세르비아어',
   },
 };
 
 const fr: Translations = {
   htmlLang: 'fr',
   meta: {
-    title: 'Midvash API — API publique gratuite de la Bible (70+ versions)',
+    title: 'Midvash API — API publique gratuite de la Bible ({versions} versions)',
     description:
-      "API REST publique, gratuite et mise en cache à l'edge avec le contenu de la Bible en plus de 70 versions et 28 langues. Versets, chapitres, livres et métadonnées des versions.",
+      "API REST publique, gratuite et mise en cache à l'edge avec le contenu de la Bible en {versions} versions et {languages} langues. Versets, chapitres, livres et métadonnées des versions.",
   },
   nav: { skipToContent: 'Aller au contenu' },
   hero: {
@@ -702,14 +714,14 @@ const fr: Translations = {
     title: "L'API officielle de",
     titleAccent: 'Midvash',
     subtitle:
-      'Construisez avec la Bible. Plus de 70 versions, 28 langues, gratuite à vie — JSON via HTTP, sans inscription, sans clé d\'API.',
+      'Construisez avec la Bible. {versions} versions, {languages} langues, gratuite à vie — JSON via HTTP, sans inscription, sans clé d\'API.',
     ctaPrimary: 'Voir les endpoints',
     ctaSecondary: 'Démarrage rapide',
   },
   features: {
     title: 'Pourquoi Midvash API',
     cards: [
-      { title: '70+ versions de la Bible', body: 'NIV, KJV, ESV, NVI, RVR1960 et plus de 65 autres — dans 28 langues.' },
+      { title: '{versions} versions de la Bible', body: 'NIV, KJV, ESV, NVI, RVR1960 et bien plus — dans {languages} langues.' },
       { title: 'Cache à l\'edge', body: 'Réponses sous 50 ms partout dans le monde via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Schéma v1 stable avec réponses { data, meta } et erreurs structurées.' },
       { title: 'Gratuite à vie', body: 'Pas d\'inscription, pas de clé, pas de limites au-delà de l\'usage raisonnable.' },
@@ -722,7 +734,7 @@ const fr: Translations = {
   },
   versions: {
     title: 'Versions bibliques disponibles',
-    subtitle: 'Plus de 70 versions servies par les mêmes endpoints. Cliquez pour voir les métadonnées.',
+    subtitle: '{versions} versions servies par les mêmes endpoints. Cliquez pour voir les métadonnées.',
     countSingular: 'version',
     countPlural: 'versions',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.fr,
@@ -760,9 +772,9 @@ const fr: Translations = {
 const de: Translations = {
   htmlLang: 'de',
   meta: {
-    title: 'Midvash API — Kostenlose öffentliche Bibel-API (70+ Übersetzungen)',
+    title: 'Midvash API — Kostenlose öffentliche Bibel-API ({versions} Übersetzungen)',
     description:
-      'Öffentliche, kostenlose und am Edge gecachte REST-API für Bibelinhalte in über 70 Übersetzungen und 28 Sprachen. Verse, Kapitel, Bücher und Metadaten zu Übersetzungen.',
+      'Öffentliche, kostenlose und am Edge gecachte REST-API für Bibelinhalte in {versions} Übersetzungen und {languages} Sprachen. Verse, Kapitel, Bücher und Metadaten zu Übersetzungen.',
   },
   nav: { skipToContent: 'Zum Inhalt springen' },
   hero: {
@@ -770,14 +782,14 @@ const de: Translations = {
     title: 'Die offizielle',
     titleAccent: 'Midvash API',
     subtitle:
-      'Entwickeln Sie mit der Bibel. Über 70 Übersetzungen, 28 Sprachen, für immer kostenlos — JSON über HTTP, keine Anmeldung, keine API-Keys.',
+      'Entwickeln Sie mit der Bibel. {versions} Übersetzungen, {languages} Sprachen, für immer kostenlos — JSON über HTTP, keine Anmeldung, keine API-Keys.',
     ctaPrimary: 'Endpoints ansehen',
     ctaSecondary: 'Schnellstart',
   },
   features: {
     title: 'Warum Midvash API',
     cards: [
-      { title: '70+ Bibelübersetzungen', body: 'NIV, KJV, ESV, NVI, RVR1960 und über 65 weitere — in 28 Sprachen.' },
+      { title: '{versions} Bibelübersetzungen', body: 'NIV, KJV, ESV, NVI, RVR1960 und viele weitere — in {languages} Sprachen.' },
       { title: 'Edge-Cache', body: 'Antworten unter 50 ms weltweit über Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Stabiles v1-Schema mit { data, meta }-Antworten und strukturierten Fehlern.' },
       { title: 'Für immer kostenlos', body: 'Keine Anmeldung, keine Keys, keine Limits abseits fairer Nutzung.' },
@@ -790,7 +802,7 @@ const de: Translations = {
   },
   versions: {
     title: 'Verfügbare Bibelübersetzungen',
-    subtitle: 'Über 70 Übersetzungen über dieselben Endpoints. Klicken Sie für Metadaten.',
+    subtitle: '{versions} Übersetzungen über dieselben Endpoints. Klicken Sie für Metadaten.',
     countSingular: 'Übersetzung',
     countPlural: 'Übersetzungen',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.de,
@@ -828,9 +840,9 @@ const de: Translations = {
 const it: Translations = {
   htmlLang: 'it',
   meta: {
-    title: 'Midvash API — API pubblica e gratuita della Bibbia (70+ versioni)',
+    title: 'Midvash API — API pubblica e gratuita della Bibbia ({versions} versioni)',
     description:
-      'API REST pubblica, gratuita e con cache edge per i contenuti biblici in oltre 70 versioni e 28 lingue. Versetti, capitoli, libri e metadati delle versioni.',
+      'API REST pubblica, gratuita e con cache edge per i contenuti biblici in {versions} versioni e {languages} lingue. Versetti, capitoli, libri e metadati delle versioni.',
   },
   nav: { skipToContent: 'Vai al contenuto' },
   hero: {
@@ -838,14 +850,14 @@ const it: Translations = {
     title: "L'API ufficiale di",
     titleAccent: 'Midvash',
     subtitle:
-      'Costruisci con la Bibbia. Oltre 70 versioni, 28 lingue, gratuita per sempre — JSON su HTTP, senza registrazione, senza chiavi API.',
+      'Costruisci con la Bibbia. {versions} versioni, {languages} lingue, gratuita per sempre — JSON su HTTP, senza registrazione, senza chiavi API.',
     ctaPrimary: 'Vedi gli endpoint',
     ctaSecondary: 'Avvio rapido',
   },
   features: {
     title: 'Perché Midvash API',
     cards: [
-      { title: '70+ versioni bibliche', body: 'NIV, KJV, ESV, NVI, RVR1960 e oltre 65 altre — in 28 lingue.' },
+      { title: '{versions} versioni bibliche', body: 'NIV, KJV, ESV, NVI, RVR1960 e molte altre — in {languages} lingue.' },
       { title: 'Cache edge', body: 'Risposte sotto i 50 ms in tutto il mondo via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Schema v1 stabile con risposte { data, meta } ed errori strutturati.' },
       { title: 'Gratuita per sempre', body: 'Niente registrazione, niente chiavi, niente limiti oltre l\'uso equo.' },
@@ -858,7 +870,7 @@ const it: Translations = {
   },
   versions: {
     title: 'Versioni bibliche disponibili',
-    subtitle: 'Oltre 70 versioni servite dagli stessi endpoint. Clicca per i metadati.',
+    subtitle: '{versions} versioni servite dagli stessi endpoint. Clicca per i metadati.',
     countSingular: 'versione',
     countPlural: 'versioni',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.it,
@@ -896,9 +908,9 @@ const it: Translations = {
 const zh: Translations = {
   htmlLang: 'zh',
   meta: {
-    title: 'Midvash API — 免费公共圣经 API（70+ 版本）',
+    title: 'Midvash API — 免费公共圣经 API（{versions} 版本）',
     description:
-      '免费公开的 REST API，提供 70+ 圣经版本与 28 种语言的内容，支持边缘缓存。包含经文、章节、书卷及版本元数据。',
+      '免费公开的 REST API，提供 {versions} 圣经版本与 {languages} 种语言的内容，支持边缘缓存。包含经文、章节、书卷及版本元数据。',
   },
   nav: { skipToContent: '跳到主要内容' },
   hero: {
@@ -906,14 +918,14 @@ const zh: Translations = {
     title: '官方的',
     titleAccent: 'Midvash API',
     subtitle:
-      '基于圣经构建应用。70+ 版本，28 种语言，永久免费 — 通过 HTTP 返回 JSON，无需注册，无需 API 密钥。',
+      '基于圣经构建应用。{versions} 版本，{languages} 种语言，永久免费 — 通过 HTTP 返回 JSON，无需注册，无需 API 密钥。',
     ctaPrimary: '查看接口',
     ctaSecondary: '快速开始',
   },
   features: {
     title: '为什么选择 Midvash API',
     cards: [
-      { title: '70+ 圣经版本', body: 'NIV、KJV、ESV、NVI、RVR1960 等 65 多个版本，覆盖 28 种语言。' },
+      { title: '{versions} 圣经版本', body: 'NIV、KJV、ESV、NVI、RVR1960 等众多版本，覆盖 {languages} 种语言。' },
       { title: '边缘缓存', body: '通过 Cloudflare R2 + Cache API 全球响应低于 50ms。' },
       { title: 'REST + JSON', body: '稳定的 v1 架构，统一返回 { data, meta } 与结构化错误。' },
       { title: '永久免费', body: '无需注册、无需密钥，仅遵守合理使用规则。' },
@@ -926,7 +938,7 @@ const zh: Translations = {
   },
   versions: {
     title: '可用的圣经版本',
-    subtitle: '所有 70+ 版本由相同接口提供，点击任意版本查看元数据。',
+    subtitle: '所有 {versions} 版本由相同接口提供，点击任意版本查看元数据。',
     countSingular: '个版本',
     countPlural: '个版本',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.zh,
@@ -964,9 +976,9 @@ const zh: Translations = {
 const ru: Translations = {
   htmlLang: 'ru',
   meta: {
-    title: 'Midvash API — Бесплатный публичный API Библии (70+ переводов)',
+    title: 'Midvash API — Бесплатный публичный API Библии ({versions} переводов)',
     description:
-      'Публичный, бесплатный и кэшируемый на edge REST API для текста Библии в более чем 70 переводах и 28 языках. Стихи, главы, книги и метаданные переводов.',
+      'Публичный, бесплатный и кэшируемый на edge REST API для текста Библии в {versions} переводах и {languages} языках. Стихи, главы, книги и метаданные переводов.',
   },
   nav: { skipToContent: 'Перейти к контенту' },
   hero: {
@@ -974,14 +986,14 @@ const ru: Translations = {
     title: 'Официальный API',
     titleAccent: 'Midvash',
     subtitle:
-      'Создавайте с Библией. Более 70 переводов, 28 языков, бесплатно навсегда — JSON по HTTP, без регистрации и без API-ключей.',
+      'Создавайте с Библией. {versions} переводов, {languages} языков, бесплатно навсегда — JSON по HTTP, без регистрации и без API-ключей.',
     ctaPrimary: 'Смотреть эндпоинты',
     ctaSecondary: 'Быстрый старт',
   },
   features: {
     title: 'Почему Midvash API',
     cards: [
-      { title: '70+ переводов Библии', body: 'NIV, KJV, ESV, NVI, RVR1960 и ещё 65+ — на 28 языках.' },
+      { title: '{versions} переводов Библии', body: 'NIV, KJV, ESV, NVI, RVR1960 и многие другие — на {languages} языках.' },
       { title: 'Edge-кэш', body: 'Ответы быстрее 50 мс по всему миру через Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Стабильная схема v1 с ответами { data, meta } и структурированными ошибками.' },
       { title: 'Бесплатно навсегда', body: 'Без регистрации, без ключей, без лимитов вне разумного использования.' },
@@ -994,7 +1006,7 @@ const ru: Translations = {
   },
   versions: {
     title: 'Доступные переводы Библии',
-    subtitle: 'Все 70+ переводов отдаются одними и теми же эндпоинтами. Нажмите для метаданных.',
+    subtitle: 'Все {versions} переводов отдаются одними и теми же эндпоинтами. Нажмите для метаданных.',
     countSingular: 'перевод',
     countPlural: 'переводов',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.ru,
@@ -1032,9 +1044,9 @@ const ru: Translations = {
 const ko: Translations = {
   htmlLang: 'ko',
   meta: {
-    title: 'Midvash API — 무료 공개 성경 API (70+ 번역본)',
+    title: 'Midvash API — 무료 공개 성경 API ({versions} 번역본)',
     description:
-      '엣지 캐시가 적용된 공개·무료 REST API. 70개 이상의 성경 번역본과 28개 언어의 본문, 절·장·책 및 번역본 메타데이터를 제공합니다.',
+      '엣지 캐시가 적용된 공개·무료 REST API. {versions}개 성경 번역본과 {languages}개 언어의 본문, 절·장·책 및 번역본 메타데이터를 제공합니다.',
   },
   nav: { skipToContent: '본문으로 건너뛰기' },
   hero: {
@@ -1042,14 +1054,14 @@ const ko: Translations = {
     title: '공식 API,',
     titleAccent: 'Midvash',
     subtitle:
-      '성경으로 만들어 보세요. 70+ 번역본, 28개 언어, 영구 무료 — HTTP 기반 JSON, 가입 불필요, API 키 불필요.',
+      '성경으로 만들어 보세요. {versions} 번역본, {languages}개 언어, 영구 무료 — HTTP 기반 JSON, 가입 불필요, API 키 불필요.',
     ctaPrimary: '엔드포인트 보기',
     ctaSecondary: '빠른 시작',
   },
   features: {
     title: 'Midvash API를 선택하는 이유',
     cards: [
-      { title: '70+ 성경 번역본', body: 'NIV, KJV, ESV, NVI, RVR1960 외 65여 종 — 28개 언어.' },
+      { title: '{versions} 성경 번역본', body: 'NIV, KJV, ESV, NVI, RVR1960 외 다수 — {languages}개 언어.' },
       { title: '엣지 캐시', body: 'Cloudflare R2 + Cache API로 전 세계 50ms 이하 응답.' },
       { title: 'REST + JSON', body: '안정적인 v1 스키마, { data, meta } 응답과 구조화된 오류.' },
       { title: '영구 무료', body: '가입 없음, 키 없음, 합리적 사용 범위 내 제한 없음.' },
@@ -1062,7 +1074,7 @@ const ko: Translations = {
   },
   versions: {
     title: '사용 가능한 성경 번역본',
-    subtitle: '70+ 번역본 모두 같은 엔드포인트로 제공됩니다. 클릭하여 메타데이터를 확인하세요.',
+    subtitle: '{versions} 번역본 모두 같은 엔드포인트로 제공됩니다. 클릭하여 메타데이터를 확인하세요.',
     countSingular: '번역본',
     countPlural: '번역본',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.ko,

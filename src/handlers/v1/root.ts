@@ -35,10 +35,16 @@ const ROOT_BODY = JSON.stringify({
         path: '/v1/{version}/{book}/{chapter}/{verse}',
         description: 'Get a single verse or range (e.g. 16 or 16-20)',
       },
+      {
+        method: 'GET',
+        path: '/v1/votd',
+        description: 'Verse of the day — same verse for everyone on a given UTC day',
+      },
     ],
   },
 });
-const ROOT_ETAG = etagFor(['v1', 'root']);
+// Bump ao mudar o corpo: ETag estável invalida 304s cacheados do discovery antigo.
+const ROOT_ETAG = etagFor(['v1', 'root', 'votd']);
 
 export async function handleV1Root(
   request: Request,

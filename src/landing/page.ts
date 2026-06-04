@@ -7,8 +7,11 @@ import {
   type Translations,
   type EndpointDoc,
 } from './i18n';
+import { DOCS_STRINGS, type DocsStrings } from './docs';
+import { BOOKS } from '../books';
 
 const SITE_URL = 'https://api.midvash.com';
+const REPO_URL = 'https://github.com/midvash/bible-api';
 
 const ALTERNATE_NAMES: Partial<Record<Locale, string>> = {
   en: 'Midvash Bible API',
@@ -161,6 +164,62 @@ const ECOSYSTEM_ICONS: Record<'reader' | 'api' | 'mcp' | 'wordpress', string> = 
 
 const INSTAGRAM_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></svg>';
+
+const GITHUB_ICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68Z"/></svg>';
+
+// JSON de exemplo (constante) das seções de formato/erros — escapados no render.
+const SUCCESS_ENVELOPE_JSON = `{
+  "data": {
+    "version": "kjv",
+    "book": "john",
+    "chapter": 3,
+    "verse": 16,
+    "text": "For God so loved the world…",
+    "verses": ["For God so loved the world…"]
+  },
+  "meta": { "reference": "John 3:16", "total": 1 }
+}`;
+
+const ERROR_ENVELOPE_JSON = `{
+  "error": {
+    "code": "VERSION_NOT_FOUND",
+    "message": "Version \\"xyz\\" not found."
+  }
+}`;
+
+// code → HTTP status, na ordem em que aparecem na tabela de erros.
+const ERROR_ROWS: ReadonlyArray<[keyof DocsStrings['errors']['when'], string]> = [
+  ['INVALID_PARAMS', '400'],
+  ['NOT_FOUND', '404'],
+  ['VERSION_NOT_FOUND', '404'],
+  ['BOOK_NOT_FOUND', '404'],
+  ['CHAPTER_NOT_FOUND', '404'],
+  ['VERSE_NOT_FOUND', '404'],
+  ['INTERNAL_ERROR', '500'],
+];
+
+// Snippets copia-e-cola (constantes). As legendas vêm do i18n (docs.guides).
+const GUIDE_EXAMPLES: ReadonlyArray<{ call: string; curl: string; js: string; py: string }> = [
+  {
+    call: '/v1/kjv/john/3/16',
+    curl: 'curl https://api.midvash.com/v1/kjv/john/3/16',
+    js: "const res = await fetch('https://api.midvash.com/v1/kjv/john/3/16');\nconst { data } = await res.json();\nconsole.log(data.text);",
+    py: "import requests\nr = requests.get('https://api.midvash.com/v1/kjv/john/3/16')\nprint(r.json()['data']['text'])",
+  },
+  {
+    call: '/v1/versions?language=pt-br',
+    curl: "curl 'https://api.midvash.com/v1/versions?language=pt-br'",
+    js: "const res = await fetch('https://api.midvash.com/v1/versions?language=pt-br');\nconst { data, meta } = await res.json();\nconsole.log(meta.total, data);",
+    py: "import requests\nr = requests.get('https://api.midvash.com/v1/versions', params={'language': 'pt-br'})\nprint(r.json()['meta']['total'])",
+  },
+  {
+    call: '/v1/votd?language=en',
+    curl: "curl 'https://api.midvash.com/v1/votd?language=en'",
+    js: "const res = await fetch('https://api.midvash.com/v1/votd?language=en');\nconst votd = await res.json(); // flat shape, no envelope\nconsole.log(votd.reference, votd.text);",
+    py: "import requests\nv = requests.get('https://api.midvash.com/v1/votd', params={'language': 'en'}).json()\nprint(v['reference'], v['text'])",
+  },
+];
 
 function renderEndpointCard(ep: EndpointDoc, t: Translations): string {
   const id = endpointId(ep);
@@ -333,6 +392,181 @@ function renderVersionsSection(
 }
 
 /**
+ * Substitui os tokens {versions} e {languages} em qualquer string da árvore de
+ * traduções pelos valores reais do catálogo (lidos do R2 em runtime). Isso
+ * mantém as contagens da landing sempre em sincronia — adicionar uma versão no
+ * R2 atualiza a página sem precisar editar copy nos 9 idiomas.
+ */
+function fillCounts<T>(value: T, vars: { versions: number; languages: number }): T {
+  if (typeof value === 'string') {
+    return value
+      .replace(/\{versions\}/g, String(vars.versions))
+      .replace(/\{languages\}/g, String(vars.languages)) as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => fillCounts(v, vars)) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = fillCounts(v, vars);
+    }
+    return out as unknown as T;
+  }
+  return value;
+}
+
+/**
+ * Browser dos 66 livros, agrupado por testamento (espelha o browser de versões).
+ * Nomes/slugs/abreviações no idioma da página; cada card linka pro /v1/books/{slug}.
+ */
+function renderBooksSection(docs: DocsStrings, locale: Locale): string {
+  const b = docs.books;
+
+  const renderGroup = (label: string, testament: 'old' | 'new'): string => {
+    const items = BOOKS.filter((bk) => bk.testament === testament);
+    const cards = items
+      .map((bk) => {
+        const name = bk.names[locale];
+        const slug = bk.slugs[locale];
+        return `
+          <a class="version-card" href="https://api.midvash.com/v1/books/${encodeURIComponent(slug)}" target="_blank" rel="noopener">
+            <span class="version-badge">${escapeHtml(bk.abbrev[locale])}</span>
+            <div class="version-info">
+              <strong>${escapeHtml(name)}</strong>
+              <div class="version-meta">
+                <code>${escapeHtml(slug)}</code>
+                <span class="version-scope">${bk.chapters} ${escapeHtml(b.chaptersAbbr)}</span>
+              </div>
+            </div>
+          </a>`;
+      })
+      .join('');
+    return `
+        <div class="books-group">
+          <div class="books-group-title">${escapeHtml(label)} <span class="books-count">${items.length}</span></div>
+          <div class="version-grid">${cards}</div>
+        </div>`;
+  };
+
+  return `
+    <section id="books" class="docs-section">
+      <div class="container">
+        <div class="section-head">
+          <h2>${escapeHtml(b.title)}</h2>
+          <p>${escapeHtml(b.subtitle)}</p>
+        </div>
+        ${renderGroup(b.oldTestament, 'old')}
+        ${renderGroup(b.newTestament, 'new')}
+      </div>
+    </section>`;
+}
+
+/** Formato de resposta (envelope { data, meta }) + semântica de cache/HTTP. */
+function renderFormatSection(docs: DocsStrings): string {
+  const f = docs.format;
+  const httpRows = f.httpRows
+    .map(
+      (r) =>
+        `<tr><td class="kv-key">${escapeHtml(r.k)}</td><td class="kv-val">${escapeHtml(r.v)}</td></tr>`,
+    )
+    .join('');
+
+  return `
+    <section id="format" class="docs-section">
+      <div class="container">
+        <div class="section-head">
+          <h2>${escapeHtml(f.title)}</h2>
+          <p>${escapeHtml(f.subtitle)}</p>
+        </div>
+        <div class="docs-block">
+          <h3 class="docs-sub-title">${escapeHtml(f.envelopeTitle)}</h3>
+          <p class="docs-p">${escapeHtml(f.envelopeDesc)}</p>
+          <pre class="docs-code"><code>${escapeHtml(SUCCESS_ENVELOPE_JSON)}</code></pre>
+        </div>
+        <div class="docs-block">
+          <h3 class="docs-sub-title">${escapeHtml(f.httpTitle)}</h3>
+          <table class="kv-table"><tbody>${httpRows}</tbody></table>
+          <div class="callout">
+            <span class="callout-mark" aria-hidden="true">!</span>
+            <div class="callout-body">
+              <strong>${escapeHtml(f.votdNoteTitle)}</strong>
+              <p>${escapeHtml(f.votdNote)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+/** Taxonomia de erros: envelope { error } + tabela code / status / quando. */
+function renderErrorsSection(docs: DocsStrings): string {
+  const e = docs.errors;
+  const rows = ERROR_ROWS.map(([code, status]) => {
+    const cls = status.startsWith('5') ? 's5' : 's4';
+    return `
+          <tr>
+            <td><code class="err-code">${code}</code></td>
+            <td><span class="err-status ${cls}">${status}</span></td>
+            <td>${escapeHtml(e.when[code])}</td>
+          </tr>`;
+  }).join('');
+
+  return `
+    <section id="errors" class="docs-section alt">
+      <div class="container">
+        <div class="section-head">
+          <h2>${escapeHtml(e.title)}</h2>
+          <p>${escapeHtml(e.subtitle)}</p>
+        </div>
+        <div class="docs-block">
+          <pre class="docs-code"><code>${escapeHtml(ERROR_ENVELOPE_JSON)}</code></pre>
+          <table class="err-table">
+            <thead><tr><th>${escapeHtml(e.colCode)}</th><th>${escapeHtml(e.colStatus)}</th><th>${escapeHtml(e.colWhen)}</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p class="docs-note">${escapeHtml(e.shapeNote)}</p>
+        </div>
+      </div>
+    </section>`;
+}
+
+/** Guias copia-e-cola — mesmo request em cURL / JavaScript / Python (code tabs). */
+function renderGuidesSection(docs: DocsStrings): string {
+  const g = docs.guides;
+  const captions = [g.ex1, g.ex2, g.ex3];
+  const guides = GUIDE_EXAMPLES.map((ex, i) => {
+    return `
+        <article class="guide">
+          <h3 class="guide-title">${escapeHtml(captions[i] ?? '')} <code class="guide-call">${escapeHtml(ex.call)}</code></h3>
+          <div class="code-tabs" data-code-tabs>
+            <div class="code-tabbar" role="tablist">
+              <button type="button" class="code-tab is-active" data-codelang="curl">cURL</button>
+              <button type="button" class="code-tab" data-codelang="js">JavaScript</button>
+              <button type="button" class="code-tab" data-codelang="py">Python</button>
+            </div>
+            <pre class="code-view is-active" data-codelang="curl"><code>${escapeHtml(ex.curl)}</code></pre>
+            <pre class="code-view" data-codelang="js" hidden><code>${escapeHtml(ex.js)}</code></pre>
+            <pre class="code-view" data-codelang="py" hidden><code>${escapeHtml(ex.py)}</code></pre>
+          </div>
+        </article>`;
+  }).join('');
+
+  return `
+    <section id="guides" class="docs-section">
+      <div class="container">
+        <div class="section-head">
+          <h2>${escapeHtml(g.title)}</h2>
+          <p>${escapeHtml(g.subtitle)}</p>
+        </div>
+        <div class="docs-block">
+          ${guides}
+        </div>
+      </div>
+    </section>`;
+}
+
+/**
  * HTML da landing memoizado por locale (lazy).
  *
  * Antes os 9 locales eram pré-renderizados no carregamento do módulo, porque o
@@ -354,7 +588,12 @@ export function getLandingHtml(locale: Locale, versions: readonly VersionDefinit
 }
 
 export function renderLandingPage(locale: Locale, versions: readonly VersionDefinition[]): string {
-  const t = TRANSLATIONS[locale];
+  // Contagens reais derivadas do catálogo (R2) — interpoladas nos tokens
+  // {versions}/{languages} das traduções. Mantém a copy sempre atual.
+  const versionCount = versions.length;
+  const languageCount = new Set(versions.map((v) => v.language)).size;
+  const t = fillCounts(TRANSLATIONS[locale], { versions: versionCount, languages: languageCount });
+  const docs = DOCS_STRINGS[locale];
 
   const alternates = SUPPORTED_LOCALES.map(
     (l) => `<link rel="alternate" hreflang="${l}" href="${SITE_URL}${pathForLocale(l)}">`,
@@ -993,9 +1232,111 @@ footer a:hover { text-decoration: underline; }
   .footer-ecosystem-list { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* DOCS SECTIONS — format / errors / books / guides */
+.docs-section { padding: 80px 0; border-top: 1px solid var(--border); }
+.docs-section.alt { background: var(--bg-soft); }
+.docs-block { max-width: 920px; margin: 0 auto; }
+.docs-block + .docs-block { margin-top: 36px; }
+.docs-sub-title {
+  font-family: var(--font-serif); font-size: 1.2rem; font-weight: 600;
+  color: var(--text); margin-bottom: 10px;
+}
+.docs-p { color: var(--text-soft); font-size: 0.95rem; margin-bottom: 16px; }
+.docs-note { font-size: 0.85rem; color: var(--text-muted); margin-top: 14px; }
+.docs-code {
+  background: var(--bg-code); color: var(--code-text);
+  padding: 20px; border-radius: var(--radius);
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;
+  overflow-x: auto; box-shadow: var(--shadow-sm); margin: 0;
+}
+
+/* KV / HTTP table */
+.kv-table {
+  width: 100%; border-collapse: collapse; font-size: 0.9rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.kv-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.kv-table tr:last-child td { border-bottom: none; }
+.kv-table .kv-key { white-space: nowrap; font-weight: 700; color: var(--primary); width: 1%; }
+.kv-table .kv-val { color: var(--text-soft); }
+
+/* Callout (votd flat-shape note) */
+.callout {
+  display: flex; gap: 14px; padding: 16px 18px; margin-top: 22px;
+  border-radius: var(--radius); background: var(--primary-soft);
+  border: 1px solid var(--border-strong);
+}
+.callout-mark {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: 0.85rem;
+}
+.callout-body strong { display: block; color: var(--text); margin-bottom: 4px; font-family: var(--font-mono); font-size: 0.9rem; }
+.callout-body p { color: var(--text-soft); font-size: 0.9rem; }
+
+/* Errors table */
+.err-table {
+  width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 20px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.err-table th {
+  text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); font-weight: 700; padding: 12px 16px;
+  background: var(--bg-soft); border-bottom: 1px solid var(--border);
+}
+.err-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-soft); }
+.err-table tr:last-child td { border-bottom: none; }
+.err-code { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--text); }
+.err-status {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; padding: 2px 8px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
+}
+.err-status.s4 { background: rgba(217, 119, 6, 0.12); color: var(--accent); }
+.err-status.s5 { background: rgba(192, 83, 59, 0.14); color: #C0533B; }
+
+/* Books groups (reuse .version-card / .version-grid) */
+.books-group { margin-top: 28px; }
+.books-group:first-child { margin-top: 0; }
+.books-group-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-muted); font-weight: 700; margin-bottom: 16px;
+}
+.books-group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.books-count { color: var(--primary); }
+
+/* Code tabs (guides) */
+.guide { margin-top: 28px; }
+.guide:first-child { margin-top: 0; }
+.guide-title {
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 600;
+  color: var(--text); margin-bottom: 10px;
+}
+.guide-call { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); font-weight: 400; }
+.code-tabs { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.code-tabbar { display: flex; gap: 4px; background: var(--bg-soft); border-bottom: 1px solid var(--border); padding: 6px 6px 0; }
+.code-tab {
+  background: transparent; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
+  color: var(--text-muted); padding: 8px 14px;
+  border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all 0.15s ease;
+}
+.code-tab:hover { color: var(--primary); }
+.code-tab.is-active { background: var(--bg-code); color: var(--code-text); border-bottom-color: var(--primary); }
+.code-view {
+  margin: 0; background: var(--bg-code); color: var(--code-text);
+  padding: 18px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;
+}
+.code-view[hidden] { display: none; }
+
 @media (max-width: 640px) {
   .hero { padding: 56px 0 40px; }
-  .features-section, .endpoints-section, .versions-section { padding: 56px 0; }
+  .features-section, .endpoints-section, .versions-section, .docs-section { padding: 56px 0; }
   .endpoint { padding: 20px; }
   .ep-path { font-size: 0.8rem; max-width: 100%; overflow-x: auto; }
   .header-inner { height: 64px; }
@@ -1005,6 +1346,8 @@ footer a:hover { text-decoration: underline; }
   .version-grid { grid-template-columns: 1fr; }
   .lang-tab { padding: 10px 12px; font-size: 0.8rem; }
   .lang-tab-name { display: none; }
+  .kv-table td, .err-table td, .err-table th { padding: 10px 12px; }
+  .docs-code, .code-view { font-size: 0.72rem; }
 }
 </style>
 <script type="application/ld+json">
@@ -1112,6 +1455,8 @@ ${JSON.stringify({
 
 ${renderVersionsSection(t, locale, versions)}
 
+${renderBooksSection(docs, locale)}
+
 <section id="endpoints" class="endpoints-section">
   <div class="container">
     <div class="section-head">
@@ -1128,6 +1473,12 @@ ${renderVersionsSection(t, locale, versions)}
     </div>
   </div>
 </section>
+
+${renderFormatSection(docs)}
+
+${renderErrorsSection(docs)}
+
+${renderGuidesSection(docs)}
 
 </main>
 
@@ -1151,8 +1502,11 @@ ${renderVersionsSection(t, locale, versions)}
     </nav>
     <div class="footer-social" aria-label="${escapeHtml(t.footer.socialLabel)}">
       <a href="https://instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
+      <a href="${REPO_URL}" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="footer-social-icon">${GITHUB_ICON}</a>
     </div>
+    <p class="footer-tagline">${escapeHtml(t.footer.tagline)}</p>
     <p class="footer-copyright">${escapeHtml(t.footer.copyright)}</p>
+    <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://midvash.com" target="_blank" rel="noopener">Midvash</a></p>
   </div>
 </footer>
 
@@ -1249,6 +1603,24 @@ document.querySelectorAll('.lang-tab').forEach(function (tab) {
       p.classList.toggle('is-active', isActive);
       if (isActive) p.removeAttribute('hidden');
       else p.setAttribute('hidden', '');
+    });
+  });
+});
+
+// Code tabs (cURL / JavaScript / Python) na seção de guias
+document.querySelectorAll('[data-code-tabs]').forEach(function (group) {
+  group.querySelectorAll('.code-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      const lang = tab.dataset.codelang;
+      group.querySelectorAll('.code-tab').forEach(function (t) {
+        t.classList.toggle('is-active', t.dataset.codelang === lang);
+      });
+      group.querySelectorAll('.code-view').forEach(function (v) {
+        const on = v.dataset.codelang === lang;
+        v.classList.toggle('is-active', on);
+        if (on) v.removeAttribute('hidden');
+        else v.setAttribute('hidden', '');
+      });
     });
   });
 });
