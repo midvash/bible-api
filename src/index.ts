@@ -104,6 +104,24 @@ const SITEMAP_HEADERS = {
 } as const;
 const SITEMAP_ETAG = etagFor(['sitemap']);
 
+// Versão de cache da landing derivada do HTML renderizado (FNV-1a). Muda sozinha
+// a cada alteração de conteúdo/CSS/i18n, então o deploy seguinte invalida o edge
+// cache automaticamente — sem purge manual e sem bump de constante. Memoizada por
+// locale (o HTML em si já é memoizado por isolate em getLandingHtml).
+const landingVersionCache = new Map<string, string>();
+function landingVersion(locale: string, html: string): string {
+  const memo = landingVersionCache.get(locale);
+  if (memo) return memo;
+  let h = 2166136261;
+  for (let i = 0; i < html.length; i++) {
+    h ^= html.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const v = (h >>> 0).toString(36);
+  landingVersionCache.set(locale, v);
+  return v;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -167,16 +185,21 @@ export default {
       const isLocalizedRoute = landingLocale !== 'en';
 
       if (wantsHtml || isLocalizedRoute) {
-        const cacheKey = buildCacheKey({ endpoint: 'landing', locale: landingLocale });
+        // Render (memoizado por isolate) antes do lookup pra derivar a versão
+        // de cache do conteúdo — chave/ETag mudam quando o HTML muda.
+        const { versions } = await getVersionCatalog(env);
+        const html = getLandingHtml(landingLocale, versions);
+        const version = landingVersion(landingLocale, html);
+
+        const cacheKey = buildCacheKey({ endpoint: 'landing', locale: landingLocale, v: version });
         const cached = await cacheGet(cacheKey);
         if (cached) return serveFromCache(request, cached);
 
-        const { versions } = await getVersionCatalog(env);
-        const response = new Response(getLandingHtml(landingLocale, versions), {
+        const response = new Response(html, {
           status: 200,
           headers: { ...HTML_HEADERS, 'Content-Language': landingLocale },
         });
-        const etag = etagFor(['landing', landingLocale]);
+        const etag = etagFor(['landing', landingLocale, version]);
         const tagged = withEtag(request, response, etag);
         cachePut(ctx, cacheKey, tagged, 'landing');
         return maybeHead(request, tagged);
