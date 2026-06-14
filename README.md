@@ -1,7 +1,7 @@
 # Bible API
 
 Free, no-key, read-only public Bible API. Verses, chapters, books and versions
-across **86 public-domain translations in 32 languages** — served from
+across **86 Bible translations in 32 languages** — served from
 Cloudflare's edge with aggressive caching. Powers
 [api.midvash.com](https://api.midvash.com).
 
