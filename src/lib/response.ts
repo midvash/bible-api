@@ -53,6 +53,29 @@ const HTTP_STATUS_FOR_CODE: Record<ApiErrorCode, number> = {
 };
 
 /**
+ * TTL de cache por código de erro (segundos).
+ *
+ * Erros determinísticos pela URL (livro inexistente, capítulo fora do
+ * range) nunca mudam de resposta — 60s de TTL só servia pra re-executar
+ * o worker a cada minuto quando um cliente entrava em loop de 404
+ * (issue midvash#1420). Ficam em 1 dia.
+ *
+ * VERSION_NOT_FOUND fica em 1h: versões novas são adicionadas de tempos
+ * em tempos e o TTL limita quanto tempo uma URL já consultada demora a
+ * enxergar o lançamento. CHAPTER_NOT_FOUND segue 60s: depende de dado no
+ * R2, e um re-upload de correção deve aparecer rápido.
+ */
+const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
+  NOT_FOUND: 3600,
+  INVALID_PARAMS: 86400,
+  INTERNAL_ERROR: 0,
+  VERSION_NOT_FOUND: 3600,
+  BOOK_NOT_FOUND: 86400,
+  CHAPTER_NOT_FOUND: 60,
+  VERSE_NOT_FOUND: 86400,
+};
+
+/**
  * Constrói uma Response de sucesso com formato { data, meta }.
  */
 export function okResponse<T>(data: T, meta?: ResponseMeta): Response {
@@ -73,7 +96,10 @@ export function errorResponse(
     error: details !== undefined ? { code, message, details } : { code, message },
   };
   const status = HTTP_STATUS_FOR_CODE[code];
-  const headers = status >= 500 ? ERROR_5XX_HEADERS : ERROR_4XX_HEADERS;
+  const headers =
+    status >= 500
+      ? ERROR_5XX_HEADERS
+      : { ...ERROR_4XX_HEADERS, 'Cache-Control': `public, max-age=${CACHE_TTL_FOR_CODE[code]}` };
   return new Response(JSON.stringify(body), { status, headers });
 }
 

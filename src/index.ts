@@ -54,9 +54,12 @@ const CORS_PREFLIGHT_HEADERS = {
   'X-Robots-Tag': 'noindex, nofollow',
 } as const;
 
+// max-age=3600: rota inexistente só passa a existir num deploy novo; 1h de
+// TTL corta o churn de scrapers/loops sem prender um endpoint recém-lançado
+// por mais que isso.
 const NOT_FOUND_HEADERS = {
   'Content-Type': 'application/json',
-  'Cache-Control': 'public, max-age=60',
+  'Cache-Control': 'public, max-age=3600',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
   'X-Robots-Tag': 'noindex, nofollow',

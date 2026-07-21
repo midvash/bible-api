@@ -40,13 +40,16 @@ function legacyError(
   cacheKey: Request,
   status: number,
   message: string,
+  // Erros determinísticos pela URL (livro inexistente) podem cachear mais —
+  // 60s só re-executa o worker quando um cliente entra em loop de 404.
+  ttlSeconds = 60,
 ): Response {
   const body = JSON.stringify({ error: message });
   const response = new Response(body, {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60',
+      'Cache-Control': `public, max-age=${ttlSeconds}`,
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
@@ -239,7 +242,7 @@ export async function handleVerse(
 
     const bookData = getBookBySlug(book);
     if (!bookData) {
-      return legacyError(request, ctx, cacheKey, 404, `Livro não encontrado: ${book}`);
+      return legacyError(request, ctx, cacheKey, 404, `Livro não encontrado: ${book}`, 86400);
     }
 
     const chapterNum = parseInt(chapter, 10);

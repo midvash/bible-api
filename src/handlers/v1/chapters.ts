@@ -17,6 +17,7 @@ import {
   extractVerses,
   formatReference,
 } from '../../lib/chapter';
+import { closestString, suggestBookSlug } from '../../lib/suggest';
 
 /**
  * GET /v1/{version}/{book}/{chapter}[/{verses}]
@@ -39,25 +40,34 @@ export async function handleV1Chapter(
 
   try {
     const versionSlug = version.toLowerCase();
-    const versionData = (await getVersionCatalog(env)).bySlug.get(versionSlug);
+    const catalog = await getVersionCatalog(env);
+    const versionData = catalog.bySlug.get(versionSlug);
     if (!versionData) {
+      const didYouMean = closestString(versionSlug, catalog.bySlug.keys());
       return cachedErrorResponse(
         request,
         ctx,
         cacheKey,
         'VERSION_NOT_FOUND',
-        `Version "${version}" not found.`,
+        didYouMean
+          ? `Version "${version}" not found. Did you mean "${didYouMean}"?`
+          : `Version "${version}" not found.`,
+        didYouMean ? { didYouMean } : undefined,
       );
     }
 
     const bookData = getBookBySlug(book);
     if (!bookData) {
+      const didYouMean = suggestBookSlug(book);
       return cachedErrorResponse(
         request,
         ctx,
         cacheKey,
         'BOOK_NOT_FOUND',
-        `Book "${book}" not found.`,
+        didYouMean
+          ? `Book "${book}" not found. Did you mean "${didYouMean}"?`
+          : `Book "${book}" not found.`,
+        didYouMean ? { didYouMean } : undefined,
       );
     }
 
