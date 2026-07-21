@@ -1,17 +1,20 @@
 /**
- * Formato de resposta padronizado para os endpoints /v1.
+ * Montagem de respostas JSON — o único lugar que conhece envelopes e
+ * política de status/TTL de erro.
  *
- * Sucesso:
- *   { data: T, meta?: { total?, locale?, pagination?, ... } }
+ * Dois envelopes convivem:
+ *   - v1:      sucesso `{ data, meta? }`, erro `{ error: { code, message, details? } }`
+ *   - legado:  erro `{ error: string, ...extras }` (rotas raiz e /votd)
  *
- * Erro:
- *   { error: { code, message, details? } }
+ * Ambos usam as MESMAS tabelas de status e TTL por código — a política é
+ * uma só, o shape é escolha do endpoint. Sucesso = `immutable, max-age=1y`.
+ * Erro 4xx = TTL por código. Erro 5xx = `no-store` (nunca cacheia).
  *
- * Sucesso = `immutable, max-age=1y`. Erro 4xx = `max-age=60`. Erro 5xx = `no-store`.
+ * Funções aqui são puras (Request → nada, retornam Response); o ciclo de
+ * cache é responsabilidade de `serveWithCache` (lib/cache).
  */
 
 import { CACHE_HEADERS, ERROR_4XX_HEADERS, ERROR_5XX_HEADERS } from '../env';
-import { cachePut, etagFor, maybeHead, withEtag } from './cache';
 
 export interface ResponseMeta {
   total?: number;
@@ -95,37 +98,28 @@ export function errorResponse(
   const body: ApiErrorBody = {
     error: details !== undefined ? { code, message, details } : { code, message },
   };
-  const status = HTTP_STATUS_FOR_CODE[code];
-  const headers =
-    status >= 500
-      ? ERROR_5XX_HEADERS
-      : { ...ERROR_4XX_HEADERS, 'Cache-Control': `public, max-age=${CACHE_TTL_FOR_CODE[code]}` };
-  return new Response(JSON.stringify(body), { status, headers });
+  return new Response(JSON.stringify(body), {
+    status: HTTP_STATUS_FOR_CODE[code],
+    headers: errorHeaders(code),
+  });
+}
+
+function errorHeaders(code: ApiErrorCode): HeadersInit {
+  return HTTP_STATUS_FOR_CODE[code] >= 500
+    ? ERROR_5XX_HEADERS
+    : { ...ERROR_4XX_HEADERS, 'Cache-Control': `public, max-age=${CACHE_TTL_FOR_CODE[code]}` };
 }
 
 /**
- * Constrói uma Response de erro 4xx e a registra no Cache API.
- *
- * Erros 4xx têm `max-age=60` — sem cachePut, um scraper batendo numa URL
- * inválida repetidamente re-executa todo o handler. Com cache, o miss
- * inicial absorve o trabalho e os 60s seguintes são servidos do edge.
- *
- * Errors 5xx não são cacheados (Cache-Control: no-store no body).
+ * Erro no envelope legado (`{ error: string, ...extras }`), com a mesma
+ * política de status/TTL por código do envelope v1. Usado pelas rotas
+ * raiz e /votd, que nasceram com esse shape.
  */
-export function cachedErrorResponse(
-  request: Request,
-  ctx: ExecutionContext,
-  cacheKey: Request,
+export function legacyErrorResponse(
   code: ApiErrorCode,
   message: string,
-  details?: unknown,
+  extras?: Record<string, unknown>,
 ): Response {
-  const response = errorResponse(code, message, details);
-  if (response.status < 500) {
-    const etag = etagFor(['error', code, request.url.toLowerCase()]);
-    const tagged = withEtag(request, response, etag);
-    cachePut(ctx, cacheKey, tagged, `error-${code}`);
-    return maybeHead(request, tagged);
-  }
-  return maybeHead(request, response);
+  const body = JSON.stringify({ error: message, ...extras });
+  return new Response(body, { status: HTTP_STATUS_FOR_CODE[code], headers: errorHeaders(code) });
 }

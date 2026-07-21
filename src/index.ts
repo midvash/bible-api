@@ -37,15 +37,7 @@ import { handleVotd } from './handlers/votd';
 import { getLandingHtml } from './landing/page';
 import { getVersionCatalog } from './versions';
 import { localeFromPath, SUPPORTED_LOCALES, pathForLocale } from './landing/i18n';
-import {
-  buildCacheKey,
-  cacheGet,
-  cachePut,
-  etagFor,
-  maybeHead,
-  serveFromCache,
-  withEtag,
-} from './lib/cache';
+import { buildCacheKey, etagFor, serveWithCache } from './lib/cache';
 
 const CORS_PREFLIGHT_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -145,25 +137,17 @@ export default {
 
     // ─── SEO: robots.txt + sitemap.xml ───────────────────────────────
     if (path === '/robots.txt') {
-      const cacheKey = buildCacheKey({ endpoint: 'robots' });
-      const cached = await cacheGet(cacheKey);
-      if (cached) return serveFromCache(request, cached);
-
-      const response = new Response(ROBOTS_BODY, { status: 200, headers: ROBOTS_HEADERS });
-      const tagged = withEtag(request, response, ROBOTS_ETAG);
-      cachePut(ctx, cacheKey, tagged, 'robots');
-      return maybeHead(request, tagged);
+      return serveWithCache(request, ctx, buildCacheKey({ endpoint: 'robots' }), 'robots', () => ({
+        response: new Response(ROBOTS_BODY, { status: 200, headers: ROBOTS_HEADERS }),
+        etag: ROBOTS_ETAG,
+      }));
     }
 
     if (path === '/sitemap.xml') {
-      const cacheKey = buildCacheKey({ endpoint: 'sitemap' });
-      const cached = await cacheGet(cacheKey);
-      if (cached) return serveFromCache(request, cached);
-
-      const response = new Response(SITEMAP_BODY, { status: 200, headers: SITEMAP_HEADERS });
-      const tagged = withEtag(request, response, SITEMAP_ETAG);
-      cachePut(ctx, cacheKey, tagged, 'sitemap');
-      return maybeHead(request, tagged);
+      return serveWithCache(request, ctx, buildCacheKey({ endpoint: 'sitemap' }), 'sitemap', () => ({
+        response: new Response(SITEMAP_BODY, { status: 200, headers: SITEMAP_HEADERS }),
+        etag: SITEMAP_ETAG,
+      }));
     }
 
     // ─── /v1/* (formato { data, meta } padronizado) ─────────────────
@@ -195,17 +179,13 @@ export default {
         const version = landingVersion(landingLocale, html);
 
         const cacheKey = buildCacheKey({ endpoint: 'landing', locale: landingLocale, v: version });
-        const cached = await cacheGet(cacheKey);
-        if (cached) return serveFromCache(request, cached);
-
-        const response = new Response(html, {
-          status: 200,
-          headers: { ...HTML_HEADERS, 'Content-Language': landingLocale },
-        });
-        const etag = etagFor(['landing', landingLocale, version]);
-        const tagged = withEtag(request, response, etag);
-        cachePut(ctx, cacheKey, tagged, 'landing');
-        return maybeHead(request, tagged);
+        return serveWithCache(request, ctx, cacheKey, 'landing', () => ({
+          response: new Response(html, {
+            status: 200,
+            headers: { ...HTML_HEADERS, 'Content-Language': landingLocale },
+          }),
+          etag: etagFor(['landing', landingLocale, version]),
+        }));
       }
       // Senão, cai no handler legado de /
     }
@@ -233,17 +213,11 @@ export default {
       return handleVerse(request, env, ctx, verseMatch);
     }
 
-    // 404 catch-all — cacheia por 60s (TTL curto, scrapers param de re-executar).
+    // 404 catch-all — TTL de 1h (ver NOT_FOUND_HEADERS).
     const notFoundKey = buildCacheKey({ endpoint: '404', path: path.toLowerCase() });
-    const cachedNotFound = await cacheGet(notFoundKey);
-    if (cachedNotFound) return serveFromCache(request, cachedNotFound);
-
-    const notFoundResponse = new Response(NOT_FOUND_BODY, {
-      status: 404,
-      headers: NOT_FOUND_HEADERS,
-    });
-    const taggedNotFound = withEtag(request, notFoundResponse, NOT_FOUND_ETAG);
-    cachePut(ctx, notFoundKey, taggedNotFound, '404');
-    return maybeHead(request, taggedNotFound);
+    return serveWithCache(request, ctx, notFoundKey, '404', () => ({
+      response: new Response(NOT_FOUND_BODY, { status: 404, headers: NOT_FOUND_HEADERS }),
+      etag: NOT_FOUND_ETAG,
+    }));
   },
 };

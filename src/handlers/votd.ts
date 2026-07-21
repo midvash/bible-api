@@ -18,50 +18,11 @@
 import { getVersionCatalog } from '../versions';
 import { ERROR_5XX_HEADERS, type Env } from '../env';
 import { normalizeLocale, type ApiLocale } from '../lib/locale';
-import {
-  buildCacheKey,
-  cacheGet,
-  cachePut,
-  etagFor,
-  maybeHead,
-  serveFromCache,
-  withEtag,
-} from '../lib/cache';
-import {
-  BOOKS_BY_ID,
-  extractVerses,
-  fetchChapterFromR2,
-  formatReference,
-} from '../lib/chapter';
+import { buildCacheKey, etagFor, serveWithCache } from '../lib/cache';
+import { legacyErrorResponse } from '../lib/response';
+import { BOOKS_BY_ID } from '../lib/book-lookup';
+import { extractVerses, fetchChapterFromR2, formatReference } from '../lib/chapter';
 import { pickVotdForDate } from '../lib/votd-pool';
-
-/**
- * Erro 4xx legado do votd (shape `{ error: string }`) cacheado por 60s.
- */
-function votdError(
-  request: Request,
-  ctx: ExecutionContext,
-  cacheKey: Request,
-  status: number,
-  message: string,
-): Response {
-  const body = JSON.stringify({ error: message });
-  const response = new Response(body, {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
-      'X-Robots-Tag': 'noindex, nofollow',
-    },
-  });
-  const etag = etagFor(['votd-error', status, request.url.toLowerCase()]);
-  const tagged = withEtag(request, response, etag);
-  cachePut(ctx, cacheKey, tagged, `votd-error-${status}`);
-  return maybeHead(request, tagged);
-}
 
 // Versão default por locale para o VOTD.
 // Diverge de packages/i18n/src/config.ts no caso do EN: o reader usa NLT,
@@ -92,11 +53,7 @@ function utcDateKey(date: Date): string {
   return date.toISOString().slice(0, 10); // YYYY-MM-DD UTC
 }
 
-export async function handleVotd(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext,
-): Promise<Response> {
+export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   const locale = normalizeLocale(url.searchParams.get('language'));
   const requestedVersion = (url.searchParams.get('version') ?? '').toLowerCase().trim();
@@ -111,93 +68,80 @@ export async function handleVotd(
     version: versionSlug,
     date: dateKey,
   });
-  const cached = await cacheGet(cacheKey);
-  if (cached) return serveFromCache(request, cached);
 
-  try {
-    const versionData = (await getVersionCatalog(env)).bySlug.get(versionSlug);
-    if (!versionData) {
-      return votdError(request, ctx, cacheKey, 404, `Versão não encontrada: ${versionSlug}`);
-    }
+  return serveWithCache(request, ctx, cacheKey, 'votd', async () => {
+    try {
+      const versionData = (await getVersionCatalog(env)).bySlug.get(versionSlug);
+      if (!versionData) {
+        return legacyErrorResponse('VERSION_NOT_FOUND', `Versão não encontrada: ${versionSlug}`);
+      }
 
-    const ref = pickVotdForDate(now);
-    const bookData = BOOKS_BY_ID.get(ref.bookId);
-    if (!bookData) {
-      // pool inválido — não deveria acontecer; 5xx não vai pro cache.
-      return maybeHead(
-        request,
-        new Response(JSON.stringify({ error: 'Pool VOTD inconsistente' }), {
+      const ref = pickVotdForDate(now);
+      const bookData = BOOKS_BY_ID.get(ref.bookId);
+      if (!bookData) {
+        // pool inválido — não deveria acontecer; 5xx não vai pro cache.
+        return new Response(JSON.stringify({ error: 'Pool VOTD inconsistente' }), {
           status: 500,
           headers: ERROR_5XX_HEADERS,
-        }),
-      );
-    }
+        });
+      }
 
-    const verses = await fetchChapterFromR2(env, versionSlug, bookData.id, ref.chapter);
-    if (!verses || verses.length === 0) {
-      return votdError(
-        request,
-        ctx,
-        cacheKey,
-        404,
-        `Capítulo não disponível em ${versionSlug}: ${bookData.names.en} ${ref.chapter}`,
-      );
-    }
+      const verses = await fetchChapterFromR2(env, versionSlug, bookData.id, ref.chapter);
+      if (!verses || verses.length === 0) {
+        return legacyErrorResponse(
+          'CHAPTER_NOT_FOUND',
+          `Capítulo não disponível em ${versionSlug}: ${bookData.names.en} ${ref.chapter}`,
+        );
+      }
 
-    const selected = extractVerses(verses, ref.verseStart, ref.verseEnd);
-    if (!selected) {
-      return votdError(
-        request,
-        ctx,
-        cacheKey,
-        404,
-        `Versículos fora do intervalo: ${bookData.names.en} ${ref.chapter}:${ref.verseStart}-${ref.verseEnd}`,
-      );
-    }
+      const selected = extractVerses(verses, ref.verseStart, ref.verseEnd);
+      if (!selected) {
+        // Depende de dado no R2 (capítulo mais curto que o pool espera) — TTL
+        // curto de CHAPTER_NOT_FOUND deixa um re-upload de correção aparecer rápido.
+        return legacyErrorResponse(
+          'CHAPTER_NOT_FOUND',
+          `Versículos fora do intervalo: ${bookData.names.en} ${ref.chapter}:${ref.verseStart}-${ref.verseEnd}`,
+        );
+      }
 
-    const text = selected.join(' ');
-    const reference = formatReference(bookData, ref.chapter, ref.verseStart, ref.verseEnd, locale);
-    const bookSlug = bookData.slugs[locale] || bookData.slugs.en;
+      const text = selected.join(' ');
+      const reference = formatReference(bookData, ref.chapter, ref.verseStart, ref.verseEnd, locale);
+      const bookSlug = bookData.slugs[locale] || bookData.slugs.en;
 
-    const versePath =
-      ref.verseStart === ref.verseEnd
-        ? `${ref.verseStart}`
-        : `${ref.verseStart}-${ref.verseEnd}`;
-    const fullUrl = `https://midvash.com/${locale}/${versionSlug}/${bookSlug}/${ref.chapter}/${versePath}`;
+      const versePath =
+        ref.verseStart === ref.verseEnd ? `${ref.verseStart}` : `${ref.verseStart}-${ref.verseEnd}`;
+      const fullUrl = `https://midvash.com/${locale}/${versionSlug}/${bookSlug}/${ref.chapter}/${versePath}`;
 
-    const body = JSON.stringify({
-      reference,
-      text,
-      version: versionSlug,
-      book_slug: bookSlug,
-      chapter: ref.chapter,
-      verse_start: ref.verseStart,
-      verse_end: ref.verseEnd,
-      url: fullUrl,
-    });
+      const body = JSON.stringify({
+        reference,
+        text,
+        version: versionSlug,
+        book_slug: bookSlug,
+        chapter: ref.chapter,
+        verse_start: ref.verseStart,
+        verse_end: ref.verseEnd,
+        url: fullUrl,
+      });
 
-    const response = new Response(body, { headers: VOTD_CACHE_HEADERS });
-    const etag = etagFor([
-      'votd',
-      dateKey,
-      locale,
-      versionSlug,
-      bookData.id,
-      ref.chapter,
-      ref.verseStart,
-      ref.verseEnd,
-    ]);
-    const tagged = withEtag(request, response, etag);
-    cachePut(ctx, cacheKey, tagged, 'votd');
-    return maybeHead(request, tagged);
-  } catch (err) {
-    console.error('[VOTD] Error:', err);
-    return maybeHead(
-      request,
-      new Response(JSON.stringify({ error: 'Erro interno do servidor' }), {
+      return {
+        response: new Response(body, { headers: VOTD_CACHE_HEADERS }),
+        etag: etagFor([
+          'votd',
+          dateKey,
+          locale,
+          versionSlug,
+          bookData.id,
+          ref.chapter,
+          ref.verseStart,
+          ref.verseEnd,
+        ]),
+      };
+    } catch (err) {
+      console.error('[VOTD] Error:', err);
+      return new Response(JSON.stringify({ error: 'Erro interno do servidor' }), {
         status: 500,
         headers: ERROR_5XX_HEADERS,
-      }),
-    );
-  }
+      });
+    }
+  });
 }

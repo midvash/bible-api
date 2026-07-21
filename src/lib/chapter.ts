@@ -1,4 +1,11 @@
-import { BOOKS, type BookDefinition, type Locale } from '../books';
+/**
+ * Conteúdo de capítulo: fetch no R2 (com cache de isolate) + parsing e
+ * formatação de referências. Lookup de livro por slug vive em
+ * `lib/book-lookup.ts`; a resolução completa de URL → capítulo vive em
+ * `lib/resolve-chapter.ts`.
+ */
+
+import type { BookDefinition } from '../books';
 import type { Env } from '../env';
 import type { ApiLocale } from './locale';
 
@@ -6,44 +13,6 @@ export interface VerseRange {
   start: number;
   end: number;
 }
-
-const BOOK_LOCALES: Locale[] = ['en', 'pt-br', 'es', 'fr', 'de', 'it', 'zh', 'ru', 'ko'];
-
-/**
- * Lookups O(1) construídos no module scope.
- *
- * Antes: getBookBySlug fazia BOOKS.find(b => BOOK_LOCALES.some(l =>
- * b.slugs[l] === slug)) — O(66 × 9) por chamada. Agora ambos os mapas
- * são consultados em O(1).
- */
-export const BOOKS_BY_ID: ReadonlyMap<number, BookDefinition> = new Map(
-  BOOKS.map((book) => [book.id, book]),
-);
-
-const BOOKS_BY_SLUG: ReadonlyMap<string, BookDefinition> = (() => {
-  const map = new Map<string, BookDefinition>();
-  // 1º passe: slugs canônicos (com hífen) têm prioridade sobre qualquer alias.
-  for (const book of BOOKS) {
-    for (const locale of BOOK_LOCALES) {
-      const slug = book.slugs[locale];
-      if (slug && !map.has(slug)) {
-        map.set(slug, book);
-      }
-    }
-  }
-  // 2º passe: aliases sem hífen (`2samuel`, `songofsolomon`). Clientes reais
-  // montam a URL sem o hífen e viram um loop de 404 (issue midvash#1420);
-  // aceitar o alias transforma esses misses em 200 imutável cacheado no edge.
-  for (const book of BOOKS) {
-    for (const locale of BOOK_LOCALES) {
-      const alias = book.slugs[locale]?.replace(/-/g, '');
-      if (alias && !map.has(alias)) {
-        map.set(alias, book);
-      }
-    }
-  }
-  return map;
-})();
 
 // Isolate cache (RAM) com LRU. Capítulo bíblico é imutável; 1h é seguro.
 // Cap em 500 entries pra limitar RAM em isolates de longa duração.
@@ -71,23 +40,6 @@ function isolateSet(key: string, value: string[]): void {
     if (oldest !== undefined) isolateChapterCache.delete(oldest);
   }
   isolateChapterCache.set(key, { value, expiresAt: Date.now() + ISOLATE_TTL_MS });
-}
-
-/**
- * Localiza um livro pelo slug em qualquer locale (9 idiomas suportados).
- * Lookup O(1) via BOOKS_BY_SLUG.
- */
-export function getBookBySlug(slug: string): BookDefinition | null {
-  // Slugs em escrita não-latina (ru/zh/ko) chegam URL-encoded do pathname;
-  // os slugs em BOOKS são decodificados, então normalizamos antes do lookup.
-  let decoded = slug;
-  try {
-    decoded = decodeURIComponent(slug);
-  } catch {
-    // pct-encoding malformado → cai pro slug bruto
-  }
-  const normalizedSlug = decoded.toLowerCase().trim();
-  return BOOKS_BY_SLUG.get(normalizedSlug) ?? null;
 }
 
 /**
