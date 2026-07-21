@@ -10,6 +10,7 @@ el edge de Cloudflare con caché agresivo. Impulsa
 - **Sin clave de API, sin autenticación, sin registro.** Solo `GET`.
 - **CORS habilitado** para uso directo en el navegador.
 - **Contenido inmutable**, cacheado por un año — rápido en todas partes.
+- **Errores amigables** — los typos reciben una sugerencia `didYouMean` con el slug más cercano.
 - Construido sobre Cloudflare Workers + R2.
 
 ## Endpoints
@@ -29,8 +30,9 @@ URL base: `https://api.midvash.com`
 | `GET` | `/v1/{version}/{book}/{chapter}/{start}-{end}` | Rango de versículos |
 | `GET` | `/v1/votd` | Versículo del día (`?language=&version=`) |
 
-Una API heredada plana (mismas rutas sin el prefijo `/v1`) se mantiene congelada para
-compatibilidad retroactiva.
+Una API heredada plana (mismas rutas sin el prefijo `/v1`) se mantiene para
+compatibilidad retroactiva — sus formatos de respuesta quedan estables, y recibe
+las mismas mejoras de resolución que v1 (sugerencias `didYouMean`, slugs multilingües).
 
 ### Ejemplos
 
@@ -41,7 +43,9 @@ curl "https://api.midvash.com/v1/kjv/john/3/16-18"
 curl "https://api.midvash.com/v1/votd?language=en&version=kjv"
 ```
 
-Los slugs de los libros están en inglés (`john`, `genesis`, `psalms`).
+Los slugs de los libros funcionan en cualquiera de los 9 idiomas (`john`, `joao`, `juan`),
+con o sin guion (`2-samuel` o `2samuel`). Si un slug no resuelve, el cuerpo del
+error sugiere el más cercano (`didYouMean`).
 
 ## Desarrollo
 
@@ -50,6 +54,7 @@ npm install
 npm run dev                # local
 npm run dev -- --remote    # against the real R2 bucket
 npm run typecheck
+npm test
 ```
 
 ## Arquitectura
@@ -57,6 +62,9 @@ npm run typecheck
 Un único Cloudflare Worker. Todo el contenido bíblico vive en un bucket R2; la Cache
 API + las cache rules de Cloudflare absorben el 99%+ de las solicitudes en el edge, así que R2 solo se
 lee en un cold miss.
+
+El pipeline de resolución de capítulos, la búsqueda de slugs y el ciclo de caché en el edge
+están cubiertos por una suite de vitest (`npm test`) que corre en CI antes de cada deploy.
 
 El catálogo de versiones (`catalog/versions.json`) es publicado en R2 por la
 plataforma [Midvash](https://midvash.com) — este repo lo lee en runtime y

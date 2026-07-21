@@ -204,8 +204,9 @@ const SUCCESS_ENVELOPE_JSON = `{
 
 const ERROR_ENVELOPE_JSON = `{
   "error": {
-    "code": "VERSION_NOT_FOUND",
-    "message": "Version \\"xyz\\" not found."
+    "code": "BOOK_NOT_FOUND",
+    "message": "Book \\"jhon\\" not found. Did you mean \\"john\\"?",
+    "details": { "didYouMean": "john" }
   }
 }`;
 
