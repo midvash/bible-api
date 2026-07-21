@@ -1,12 +1,17 @@
 /**
- * Cache API helpers (Cloudflare edge cache).
+ * Edge cache (Cloudflare Cache API) como módulo profundo.
  *
- * Padrão usado em todos os handlers:
- *   1. Construir cache key normalizada (lowercase, sem query irrelevante)
- *   2. Tentar match
- *   3. Em miss, processar a request
- *   4. Em sucesso, armazenar via ctx.waitUntil (fire-and-forget)
+ * Interface pública:
+ *   - `serveWithCache(request, ctx, cacheKey, label, produce)` — todo o ciclo
+ *     de cache de um handler: match → produce em miss → ETag/304 → put via
+ *     waitUntil → HEAD. Handlers só produzem o corpo.
+ *   - `normalizeCacheKey` / `buildCacheKey` — construção de chave.
+ *   - `etagFor` — ETag determinístico para conteúdo imutável.
+ *
+ * As demais funções são implementação interna.
  */
+
+import { normalizeLocale } from './locale';
 
 /**
  * Normaliza a URL da request para servir como cache key estável.
@@ -29,13 +34,9 @@ export function normalizeCacheKey(request: Request): Request {
     path === '/characters' || path === '/dictionary' || path === '/versions';
 
   if (isLegacyLocaleEndpoint) {
-    const localeParam = url.searchParams.get('locale');
-    let normalizedLocale = 'en';
-    if (localeParam === 'pt' || localeParam === 'pt-br') {
-      normalizedLocale = 'pt-br';
-    } else if (localeParam === 'es') {
-      normalizedLocale = 'es';
-    }
+    // Mesma regra de normalização do corpo (lib/locale) — se a chave e o corpo
+    // discordarem (ex.: pt-pt), o edge cache fragmenta em entradas duplicadas.
+    const normalizedLocale = normalizeLocale(url.searchParams.get('locale'));
     url.search = `?locale=${normalizedLocale}`;
     return new Request(url.toString(), { method: 'GET' });
   }
@@ -73,7 +74,7 @@ export function buildCacheKey(parts: Record<string, string | number | undefined>
 /**
  * Tenta recuperar uma resposta cacheada. Falhas são silenciosas.
  */
-export async function cacheGet(cacheKey: Request): Promise<Response | null> {
+async function cacheGet(cacheKey: Request): Promise<Response | null> {
   try {
     const cached = await caches.default.match(cacheKey);
     return cached ?? null;
@@ -86,7 +87,7 @@ export async function cacheGet(cacheKey: Request): Promise<Response | null> {
 /**
  * Armazena uma resposta no Cache API via waitUntil.
  */
-export function cachePut(
+function cachePut(
   ctx: ExecutionContext,
   cacheKey: Request,
   response: Response,
@@ -111,7 +112,7 @@ export function etagFor(parts: (string | number)[]): string {
  * Se o cliente mandou `If-None-Match` igual ao etag, retorna 304 sem corpo.
  * Caso contrário, retorna a response original (com header ETag adicionado).
  */
-export function withEtag(request: Request, response: Response, etag: string): Response {
+function withEtag(request: Request, response: Response, etag: string): Response {
   const ifNoneMatch = request.headers.get('If-None-Match');
   if (ifNoneMatch && ifNoneMatch === etag) {
     const headers = new Headers(response.headers);
@@ -131,7 +132,7 @@ export function withEtag(request: Request, response: Response, etag: string): Re
 /**
  * Trata HEAD como GET sem body. Aplicar antes de retornar uma response GET.
  */
-export function maybeHead(request: Request, response: Response): Response {
+function maybeHead(request: Request, response: Response): Response {
   if (request.method !== 'HEAD') return response;
   return new Response(null, {
     status: response.status,
@@ -152,11 +153,59 @@ export function maybeHead(request: Request, response: Response): Response {
  * Hot path: este caminho roda em ~99% das requests, então cada alloc
  * evitada se multiplica por toda a base de tráfego.
  */
-export function serveFromCache(request: Request, cached: Response): Response {
+function serveFromCache(request: Request, cached: Response): Response {
   const etag = cached.headers.get('ETag');
   const ifNoneMatch = request.headers.get('If-None-Match');
   if (etag && ifNoneMatch === etag) {
     return new Response(null, { status: 304, headers: cached.headers });
   }
   return maybeHead(request, cached);
+}
+
+/** Resultado de `produce`: a Response, opcionalmente com ETag semântico. */
+export interface Produced {
+  response: Response;
+  /**
+   * ETag estável derivado do conteúdo (ex.: `etagFor(['v1', version, ...])`).
+   * Se omitido, um ETag determinístico é derivado da própria cache key —
+   * suficiente para erros e corpos atrelados 1:1 à URL.
+   */
+  etag?: string;
+}
+
+/**
+ * Ciclo completo de cache de um handler — o único caminho para servir uma
+ * resposta cacheável:
+ *
+ *   1. match na cache key; em hit, serve direto (com 304/HEAD).
+ *   2. Em miss, chama `produce()` para gerar a Response.
+ *   3. 5xx e `Cache-Control: no-store` passam direto, sem put.
+ *   4. Demais respostas ganham ETag (304 em revalidate), vão para o edge
+ *      via `ctx.waitUntil` e respeitam HEAD.
+ *
+ * O TTL vem dos headers `Cache-Control` que `produce` colocou na Response —
+ * política de TTL é assunto de quem monta o corpo (env.ts / response.ts).
+ */
+export async function serveWithCache(
+  request: Request,
+  ctx: ExecutionContext,
+  cacheKey: Request,
+  label: string,
+  produce: () => Response | Produced | Promise<Response | Produced>,
+): Promise<Response> {
+  const cached = await cacheGet(cacheKey);
+  if (cached) return serveFromCache(request, cached);
+
+  const out = await produce();
+  const { response, etag } = out instanceof Response ? { response: out, etag: undefined } : out;
+
+  const cacheControl = response.headers.get('Cache-Control') ?? '';
+  if (response.status >= 500 || cacheControl.includes('no-store')) {
+    return maybeHead(request, response);
+  }
+
+  const finalEtag = etag ?? etagFor(['url', response.status, cacheKey.url]);
+  const tagged = withEtag(request, response, finalEtag);
+  cachePut(ctx, cacheKey, tagged, label);
+  return maybeHead(request, tagged);
 }

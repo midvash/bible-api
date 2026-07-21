@@ -1,17 +1,8 @@
 import { BOOKS, type BookDefinition } from '../../books';
 import { CACHE_HEADERS, type Env } from '../../env';
-import {
-  cacheGet,
-  cachePut,
-  etagFor,
-  maybeHead,
-  normalizeCacheKey,
-  serveFromCache,
-  withEtag,
-} from '../../lib/cache';
-import { cachedErrorResponse, okResponse } from '../../lib/response';
-import { getBookBySlug } from '../../lib/chapter';
-import { suggestBookSlug } from '../../lib/suggest';
+import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
+import { errorResponse, okResponse } from '../../lib/response';
+import { displaySlug, lookupBook } from '../../lib/book-lookup';
 
 function serializeBook(book: BookDefinition) {
   return {
@@ -48,71 +39,55 @@ const NEW_BOOKS_ETAG = etagFor(['v1', 'books', 'new']);
 /**
  * GET /v1/books[?testament=old|new]
  */
-export async function handleV1BooksList(
+export function handleV1BooksList(
   request: Request,
   _env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  const cacheKey = normalizeCacheKey(request);
-  const cached = await cacheGet(cacheKey);
-  if (cached) return serveFromCache(request, cached);
+  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-books-list', () => {
+    const testamentParam = new URL(request.url).searchParams.get('testament');
 
-  const url = new URL(request.url);
-  const testamentParam = url.searchParams.get('testament');
+    let body = ALL_BOOKS_BODY;
+    let etag = BOOKS_LIST_ETAG;
+    if (testamentParam === 'old') {
+      body = OLD_BOOKS_BODY;
+      etag = OLD_BOOKS_ETAG;
+    } else if (testamentParam === 'new') {
+      body = NEW_BOOKS_BODY;
+      etag = NEW_BOOKS_ETAG;
+    }
 
-  let body = ALL_BOOKS_BODY;
-  let etag = BOOKS_LIST_ETAG;
-  if (testamentParam === 'old') {
-    body = OLD_BOOKS_BODY;
-    etag = OLD_BOOKS_ETAG;
-  } else if (testamentParam === 'new') {
-    body = NEW_BOOKS_BODY;
-    etag = NEW_BOOKS_ETAG;
-  }
-
-  const response = new Response(body, { headers: CACHE_HEADERS });
-  const tagged = withEtag(request, response, etag);
-  cachePut(ctx, cacheKey, tagged, 'v1-books-list');
-  return maybeHead(request, tagged);
+    return { response: new Response(body, { headers: CACHE_HEADERS }), etag };
+  });
 }
 
 /**
  * GET /v1/books/{slug}
  *
- * Aceita slug em qualquer um dos 9 locales suportados.
+ * Aceita slug em qualquer um dos 9 locales suportados (com ou sem hífen).
  */
-export async function handleV1BookDetail(
+export function handleV1BookDetail(
   request: Request,
   _env: Env,
   ctx: ExecutionContext,
   slug: string,
 ): Promise<Response> {
-  const cacheKey = normalizeCacheKey(request);
-  const cached = await cacheGet(cacheKey);
-  if (cached) return serveFromCache(request, cached);
+  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-book-detail', () => {
+    const { book, didYouMean } = lookupBook(slug);
+    if (!book) {
+      const shown = displaySlug(slug);
+      return errorResponse(
+        'BOOK_NOT_FOUND',
+        didYouMean
+          ? `Book "${shown}" not found. Did you mean "${didYouMean}"?`
+          : `Book "${shown}" not found.`,
+        didYouMean ? { didYouMean } : undefined,
+      );
+    }
 
-  const book = getBookBySlug(slug);
-  if (!book) {
-    let displaySlug = slug;
-    try {
-      displaySlug = decodeURIComponent(slug);
-    } catch {}
-    const didYouMean = suggestBookSlug(slug);
-    return cachedErrorResponse(
-      request,
-      ctx,
-      cacheKey,
-      'BOOK_NOT_FOUND',
-      didYouMean
-        ? `Book "${displaySlug}" not found. Did you mean "${didYouMean}"?`
-        : `Book "${displaySlug}" not found.`,
-      didYouMean ? { didYouMean } : undefined,
-    );
-  }
-
-  const response = okResponse(serializeBook(book));
-  const etag = etagFor(['v1', 'book', book.id]);
-  const tagged = withEtag(request, response, etag);
-  cachePut(ctx, cacheKey, tagged, 'v1-book-detail');
-  return maybeHead(request, tagged);
+    return {
+      response: okResponse(serializeBook(book)),
+      etag: etagFor(['v1', 'book', book.id]),
+    };
+  });
 }

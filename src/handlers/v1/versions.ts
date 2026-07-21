@@ -4,16 +4,8 @@ import {
   type VersionDefinition,
 } from '../../versions';
 import { CACHE_HEADERS, type Env } from '../../env';
-import {
-  cacheGet,
-  cachePut,
-  etagFor,
-  maybeHead,
-  normalizeCacheKey,
-  serveFromCache,
-  withEtag,
-} from '../../lib/cache';
-import { cachedErrorResponse, okResponse } from '../../lib/response';
+import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
+import { errorResponse, okResponse } from '../../lib/response';
 
 function serializeVersion(v: VersionDefinition) {
   return {
@@ -69,64 +61,50 @@ function getPrebaked(catalog: VersionCatalog): PrebakedVersions {
 /**
  * GET /v1/versions[?language=pt-br|en|es|...]
  */
-export async function handleV1VersionsList(
+export function handleV1VersionsList(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  const cacheKey = normalizeCacheKey(request);
-  const cached = await cacheGet(cacheKey);
-  if (cached) return serveFromCache(request, cached);
+  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-versions-list', async () => {
+    const { allBody, byLanguage, listEtag } = getPrebaked(await getVersionCatalog(env));
 
-  const { allBody, byLanguage, listEtag } = getPrebaked(await getVersionCatalog(env));
+    const languageParam = new URL(request.url).searchParams.get('language');
+    if (!languageParam) {
+      return { response: new Response(allBody, { headers: CACHE_HEADERS }), etag: listEtag };
+    }
 
-  const url = new URL(request.url);
-  const languageParam = url.searchParams.get('language');
-
-  let body = allBody;
-  let etag = listEtag;
-  if (languageParam) {
     const lang = languageParam.toLowerCase().trim();
-    body = byLanguage[lang] ?? JSON.stringify({ data: [], meta: { total: 0, language: lang } });
-    etag = etagFor(['v1', 'versions', 'list', lang]);
-  }
-
-  const response = new Response(body, { headers: CACHE_HEADERS });
-  const tagged = withEtag(request, response, etag);
-  cachePut(ctx, cacheKey, tagged, 'v1-versions-list');
-  return maybeHead(request, tagged);
+    const body = byLanguage[lang] ?? JSON.stringify({ data: [], meta: { total: 0, language: lang } });
+    return {
+      response: new Response(body, { headers: CACHE_HEADERS }),
+      etag: etagFor(['v1', 'versions', 'list', lang]),
+    };
+  });
 }
 
 /**
  * GET /v1/versions/{slug}
  */
-export async function handleV1VersionDetail(
+export function handleV1VersionDetail(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
   slug: string,
 ): Promise<Response> {
-  const cacheKey = normalizeCacheKey(request);
-  const cached = await cacheGet(cacheKey);
-  if (cached) return serveFromCache(request, cached);
+  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-version-detail', async () => {
+    const catalog = await getVersionCatalog(env);
+    const versionSlug = slug.toLowerCase().trim();
+    const version = catalog.bySlug.get(versionSlug);
+    if (!version) {
+      return errorResponse('VERSION_NOT_FOUND', `Version "${slug}" not found.`, {
+        availableVersions: catalog.versions.length,
+      });
+    }
 
-  const catalog = await getVersionCatalog(env);
-  const versionSlug = slug.toLowerCase().trim();
-  const version = catalog.bySlug.get(versionSlug);
-  if (!version) {
-    return cachedErrorResponse(
-      request,
-      ctx,
-      cacheKey,
-      'VERSION_NOT_FOUND',
-      `Version "${slug}" not found.`,
-      { availableVersions: catalog.versions.length },
-    );
-  }
-
-  const response = okResponse(serializeVersion(version));
-  const etag = etagFor(['v1', 'version', versionSlug]);
-  const tagged = withEtag(request, response, etag);
-  cachePut(ctx, cacheKey, tagged, 'v1-version-detail');
-  return maybeHead(request, tagged);
+    return {
+      response: okResponse(serializeVersion(version)),
+      etag: etagFor(['v1', 'version', versionSlug]),
+    };
+  });
 }

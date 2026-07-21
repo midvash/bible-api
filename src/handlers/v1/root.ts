@@ -1,13 +1,5 @@
 import { CACHE_HEADERS, type Env } from '../../env';
-import {
-  cacheGet,
-  cachePut,
-  etagFor,
-  maybeHead,
-  normalizeCacheKey,
-  serveFromCache,
-  withEtag,
-} from '../../lib/cache';
+import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 
 /**
  * GET /v1
@@ -46,17 +38,9 @@ const ROOT_BODY = JSON.stringify({
 // Bump ao mudar o corpo: ETag estável invalida 304s cacheados do discovery antigo.
 const ROOT_ETAG = etagFor(['v1', 'root', 'votd']);
 
-export async function handleV1Root(
-  request: Request,
-  _env: Env,
-  ctx: ExecutionContext,
-): Promise<Response> {
-  const cacheKey = normalizeCacheKey(request);
-  const cached = await cacheGet(cacheKey);
-  if (cached) return serveFromCache(request, cached);
-
-  const response = new Response(ROOT_BODY, { headers: CACHE_HEADERS });
-  const tagged = withEtag(request, response, ROOT_ETAG);
-  cachePut(ctx, cacheKey, tagged, 'v1-root');
-  return maybeHead(request, tagged);
+export function handleV1Root(request: Request, _env: Env, ctx: ExecutionContext): Promise<Response> {
+  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-root', () => ({
+    response: new Response(ROOT_BODY, { headers: CACHE_HEADERS }),
+    etag: ROOT_ETAG,
+  }));
 }
