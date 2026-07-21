@@ -26,6 +26,9 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Testes
+        run: npm test
+
       - name: Deploy
         run: npx wrangler deploy
         env:
