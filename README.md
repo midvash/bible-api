@@ -10,6 +10,7 @@ Cloudflare's edge with aggressive caching. Powers
 - **No API key, no auth, no signup.** Just `GET`.
 - **CORS enabled** for direct browser use.
 - **Immutable content**, cached for a year — fast everywhere.
+- **Friendly errors** — typos get a `didYouMean` suggestion with the closest slug.
 - Built on Cloudflare Workers + R2.
 
 ## Endpoints
@@ -29,8 +30,9 @@ Base URL: `https://api.midvash.com`
 | `GET` | `/v1/{version}/{book}/{chapter}/{start}-{end}` | Verse range |
 | `GET` | `/v1/votd` | Verse of the day (`?language=&version=`) |
 
-A legacy flat API (same paths without the `/v1` prefix) is kept frozen for
-backward compatibility.
+A legacy flat API (same paths without the `/v1` prefix) is kept for backward
+compatibility — its response shapes stay stable, and it gets the same resolution
+improvements as v1 (`didYouMean` hints, multilingual slugs).
 
 ### Examples
 
@@ -41,7 +43,9 @@ curl "https://api.midvash.com/v1/kjv/john/3/16-18"
 curl "https://api.midvash.com/v1/votd?language=en&version=kjv"
 ```
 
-Book slugs are in English (`john`, `genesis`, `psalms`).
+Book slugs work in any of 9 languages (`john`, `joao`, `juan`), with or without
+hyphens (`2-samuel` or `2samuel`). If a slug doesn't resolve, the error body
+suggests the closest one (`didYouMean`).
 
 ## Development
 
@@ -50,6 +54,7 @@ npm install
 npm run dev                # local
 npm run dev -- --remote    # against the real R2 bucket
 npm run typecheck
+npm test
 ```
 
 ## Architecture
@@ -57,6 +62,9 @@ npm run typecheck
 A single Cloudflare Worker. All Bible content lives in an R2 bucket; the Cache
 API + Cloudflare cache rules absorb 99%+ of requests at the edge, so R2 is only
 read on a cold miss.
+
+The chapter-resolution pipeline, slug lookup and edge-cache cycle are covered
+by a vitest suite (`npm test`) that runs in CI before every deploy.
 
 The version catalog (`catalog/versions.json`) is published to R2 by the
 [Midvash](https://midvash.com) platform — this repo reads it at runtime and has
