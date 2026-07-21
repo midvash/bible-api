@@ -22,11 +22,23 @@ export const BOOKS_BY_ID: ReadonlyMap<number, BookDefinition> = new Map(
 
 const BOOKS_BY_SLUG: ReadonlyMap<string, BookDefinition> = (() => {
   const map = new Map<string, BookDefinition>();
+  // 1º passe: slugs canônicos (com hífen) têm prioridade sobre qualquer alias.
   for (const book of BOOKS) {
     for (const locale of BOOK_LOCALES) {
       const slug = book.slugs[locale];
       if (slug && !map.has(slug)) {
         map.set(slug, book);
+      }
+    }
+  }
+  // 2º passe: aliases sem hífen (`2samuel`, `songofsolomon`). Clientes reais
+  // montam a URL sem o hífen e viram um loop de 404 (issue midvash#1420);
+  // aceitar o alias transforma esses misses em 200 imutável cacheado no edge.
+  for (const book of BOOKS) {
+    for (const locale of BOOK_LOCALES) {
+      const alias = book.slugs[locale]?.replace(/-/g, '');
+      if (alias && !map.has(alias)) {
+        map.set(alias, book);
       }
     }
   }

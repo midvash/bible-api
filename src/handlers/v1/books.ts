@@ -11,6 +11,7 @@ import {
 } from '../../lib/cache';
 import { cachedErrorResponse, okResponse } from '../../lib/response';
 import { getBookBySlug } from '../../lib/chapter';
+import { suggestBookSlug } from '../../lib/suggest';
 
 function serializeBook(book: BookDefinition) {
   return {
@@ -96,12 +97,16 @@ export async function handleV1BookDetail(
     try {
       displaySlug = decodeURIComponent(slug);
     } catch {}
+    const didYouMean = suggestBookSlug(slug);
     return cachedErrorResponse(
       request,
       ctx,
       cacheKey,
       'BOOK_NOT_FOUND',
-      `Book "${displaySlug}" not found.`,
+      didYouMean
+        ? `Book "${displaySlug}" not found. Did you mean "${didYouMean}"?`
+        : `Book "${displaySlug}" not found.`,
+      didYouMean ? { didYouMean } : undefined,
     );
   }
 
