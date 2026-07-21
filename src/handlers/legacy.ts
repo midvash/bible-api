@@ -11,44 +11,72 @@
 
 import { getVersionCatalog, type VersionCatalog, type VersionDefinition } from '../versions';
 import { BOOKS } from '../books';
-import { CACHE_HEADERS, ERROR_5XX_HEADERS, type Env } from '../env';
+import { CACHE_HEADERS, METADATA_HEADERS, ERROR_5XX_HEADERS, type Env } from '../env';
 import { normalizeLocale } from '../lib/locale';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../lib/cache';
 import { legacyErrorResponse } from '../lib/response';
 import { resolveChapter } from '../lib/resolve-chapter';
 
-// ─── Pre-baked bodies (input é constante) ──────────────────────────────────
-const ROOT_BODY = JSON.stringify(
-  {
-    name: 'Midvash API Pública',
-    version: '1.0.0',
-    description: 'API pública para acesso a versículos e versões da Bíblia',
-    endpoints: {
-      'GET /': { description: 'Documentação da API (este endpoint)', example: 'https://api.midvash.com/' },
-      'GET /versions': { description: 'Lista todas as versões bíblicas disponíveis', example: 'https://api.midvash.com/versions' },
-      'GET /books': { description: 'Lista todos os livros da Bíblia', example: 'https://api.midvash.com/books' },
-      'GET /{version}/{book}/{chapter}': { description: 'Retorna um capítulo completo', example: 'https://api.midvash.com/nvi/john/3' },
-      'GET /{version}/{book}/{chapter}/{verse}': { description: 'Retorna um versículo específico', example: 'https://api.midvash.com/nvi/john/3/16' },
-      'GET /{version}/{book}/{chapter}/{verse-start}-{verse-end}': { description: 'Retorna um intervalo de versículos', example: 'https://api.midvash.com/nvi/john/3/16-20' },
+// ─── Pre-baked bodies ──────────────────────────────────────────────────────
+/**
+ * Root doc derivado lazy do catálogo (contagens reais de versões/idiomas em
+ * vez de texto fixo que envelhece). Mesmo shape de resposta de sempre —
+ * `endpoints` ganhou o /votd, que existia mas não estava documentado.
+ * Memoizado por isolate apenas quando o catálogo veio com dados.
+ */
+interface PrebakedRoot {
+  body: string;
+  etag: string;
+}
+let prebakedRoot: PrebakedRoot | null = null;
+
+function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
+  if (prebakedRoot) return prebakedRoot;
+
+  const versionCount = catalog.versions.length;
+  const languageCount = new Set(catalog.versions.map((v) => v.language)).size;
+  const versionsLabel = versionCount > 0 ? `${versionCount}` : 'Dezenas de';
+  const languagesLabel = languageCount > 0 ? `${languageCount}` : 'vários';
+
+  const body = JSON.stringify(
+    {
+      name: 'Midvash API Pública',
+      version: '1.0.0',
+      description: 'API pública para acesso a versículos e versões da Bíblia',
+      endpoints: {
+        'GET /': { description: 'Documentação da API (este endpoint)', example: 'https://api.midvash.com/' },
+        'GET /versions': { description: 'Lista todas as versões bíblicas disponíveis', example: 'https://api.midvash.com/versions' },
+        'GET /books': { description: 'Lista todos os livros da Bíblia', example: 'https://api.midvash.com/books' },
+        'GET /votd': { description: 'Versículo do dia (query: language, version)', example: 'https://api.midvash.com/votd?language=pt-br&version=nvt' },
+        'GET /{version}/{book}/{chapter}': { description: 'Retorna um capítulo completo', example: 'https://api.midvash.com/nvi/john/3' },
+        'GET /{version}/{book}/{chapter}/{verse}': { description: 'Retorna um versículo específico', example: 'https://api.midvash.com/nvi/john/3/16' },
+        'GET /{version}/{book}/{chapter}/{verse-start}-{verse-end}': { description: 'Retorna um intervalo de versículos', example: 'https://api.midvash.com/nvi/john/3/16-20' },
+      },
+      features: [
+        'Cache máximo para dados imutáveis (TTL: 1 ano)',
+        'CORS habilitado para acesso público',
+        `Suporte a ${languagesLabel} idiomas`,
+        `${versionsLabel} versões bíblicas disponíveis`,
+        'Acesso rápido via Cloudflare Edge Network',
+      ],
+      notes: [
+        'Todos os dados são imutáveis e estão em cache por 1 ano',
+        'Use slugs em inglês para os livros (ex: john, genesis, psalms)',
+        'A API aceita slugs de livros em diferentes idiomas',
+        'Para listar versões disponíveis, acesse /versions',
+      ],
     },
-    features: [
-      'Cache máximo para dados imutáveis (TTL: 1 ano)',
-      'CORS habilitado para acesso público',
-      'Suporte a múltiplos idiomas (pt-br, en, es)',
-      '70+ versões bíblicas disponíveis',
-      'Acesso rápido via Cloudflare Edge Network',
-    ],
-    notes: [
-      'Todos os dados são imutáveis e estão em cache por 1 ano',
-      'Use slugs em inglês para os livros (ex: john, genesis, psalms)',
-      'A API aceita slugs de livros em diferentes idiomas',
-      'Para listar versões disponíveis, acesse /versions',
-    ],
-  },
-  null,
-  2,
-);
-const ROOT_ETAG = etagFor(['legacy', 'root']);
+    null,
+    2,
+  );
+
+  const result: PrebakedRoot = {
+    body,
+    etag: etagFor(['legacy', 'root', versionCount, languageCount]),
+  };
+  if (versionCount > 0) prebakedRoot = result;
+  return result;
+}
 
 function serializeVersionLegacy(v: VersionDefinition) {
   return {
@@ -112,11 +140,11 @@ const BOOKS_BODY = JSON.stringify({
 const BOOKS_ETAG = etagFor(['legacy', 'books', BOOKS.length]);
 
 // ─── GET / ────────────────────────────────────────────────────────────────
-export function handleRoot(request: Request, _env: Env, ctx: ExecutionContext): Promise<Response> {
-  return serveWithCache(request, ctx, normalizeCacheKey(request), 'root', () => ({
-    response: new Response(ROOT_BODY, { headers: CACHE_HEADERS }),
-    etag: ROOT_ETAG,
-  }));
+export function handleRoot(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  return serveWithCache(request, ctx, normalizeCacheKey(request), 'root', async () => {
+    const root = getPrebakedRoot(await getVersionCatalog(env));
+    return { response: new Response(root.body, { headers: METADATA_HEADERS }), etag: root.etag };
+  });
 }
 
 // ─── GET /versions ────────────────────────────────────────────────────────

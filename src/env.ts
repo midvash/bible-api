@@ -27,6 +27,20 @@ export const CACHE_HEADERS = {
 } as const;
 
 /**
+ * Headers para metadados que evoluem com o catálogo (ex.: doc do root).
+ * TTL de 1 dia: mudanças de catálogo aparecem em até 24h em todos os colos,
+ * sem depender de purge manual — diferente do conteúdo bíblico (imutável, 1 ano).
+ */
+export const METADATA_HEADERS = {
+  'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
+  'Content-Type': 'application/json',
+  'X-Robots-Tag': 'noindex, nofollow',
+} as const;
+
+/**
  * Headers para erros 4xx — TTL curto (60s) pra evitar prender 404 transitório
  * por 1 ano no edge.
  */
