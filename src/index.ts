@@ -17,9 +17,13 @@
  *     GET /v1                                → descoberta de endpoints
  *     GET /v1/versions[/{slug}]              → versões + lookup
  *     GET /v1/books[/{slug}]                 → livros + lookup
- *     GET /v1/passages?refs=&version=        → batch de referências (≤20)
+ *     GET /v1/passages?refs=&version=        → batch de referências (≤50)
  *     GET /v1/parse?q=                       → parse de referência (oráculo)
- *     GET /v1/{version}/{book}/{chapter}[/{verses}]
+ *     GET /v1/{version}/{book}/{chapter}[/{verses}][?preview=N]
+ *
+ *   Contrato (máquinas):
+ *     GET /openapi.json (alias /v1/openapi.json) → spec OpenAPI 3.1
+ *     GET /docs                              → referência interativa (Scalar)
  *
  *   Landing (api.midvash.com/, /es, /pt-br):
  *     GET / com Accept: text/html            → landing HTML
@@ -36,6 +40,7 @@ import {
 } from './handlers/legacy';
 import { handleV1 } from './handlers/v1';
 import { handleVotd } from './handlers/votd';
+import { handleOpenApiJson, handleDocs } from './handlers/openapi';
 import { getLandingHtml } from './landing/page';
 import { getVersionCatalog } from './versions';
 import { localeFromPath, SUPPORTED_LOCALES, pathForLocale } from './landing/i18n';
@@ -150,6 +155,14 @@ export default {
         response: new Response(SITEMAP_BODY, { status: 200, headers: SITEMAP_HEADERS }),
         etag: SITEMAP_ETAG,
       }));
+    }
+
+    // ─── OpenAPI + docs ──────────────────────────────────────────────
+    if (path === '/openapi.json' || path === '/v1/openapi.json') {
+      return handleOpenApiJson(request, env, ctx);
+    }
+    if (path === '/docs' || path === '/docs/') {
+      return handleDocs(request, env, ctx);
     }
 
     // ─── /v1/* (formato { data, meta } padronizado) ─────────────────

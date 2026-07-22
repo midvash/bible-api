@@ -7,7 +7,8 @@
  *
  *   /v1/passages?refs=john 3:16,genesis 1:1-3,psalms 23&version=kjv
  *
- * - Até 20 refs por request (400 acima disso).
+ * - Até 50 refs por request (400 acima disso) — dimensionado pro middleware
+ *   SSR do plugin EmDash, que pré-aquece 10–30 referências por página.
  * - `version` é comum ao batch: versão inválida → 404 no batch inteiro.
  * - Cada ref é resolvida independente: uma ref ruim vira `{ ref, error }` no
  *   seu lugar do array, sem derrubar o batch. A ordem do array espelha o input.
@@ -24,7 +25,7 @@ import { getVersionCatalog } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { parseReference, verseParamFrom } from '../../lib/reference';
 
-const MAX_REFS = 20;
+const MAX_REFS = 50;
 
 /**
  * TTL para batches que contêm ao menos um erro. Erros de livro/capítulo/range
@@ -43,9 +44,9 @@ interface PassageOk {
   book: string;
   bookName: string;
   chapter: number;
-  verse?: number;
-  verseEnd?: number;
-  text?: string;
+  verse: number;
+  verseEnd: number;
+  text: string;
   verses: string[];
   reference: string;
 }
@@ -129,7 +130,9 @@ export function handleV1Passages(
       const headers = failed === 0 ? CACHE_HEADERS : PARTIAL_HEADERS;
       return {
         response: new Response(body, { headers }),
-        etag: etagFor(['v1', 'passages', versionParam, failed, normalizedRefs.join('|')]),
+        // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro
+        // ETag antigo não servir 304 do shape anterior.
+        etag: etagFor(['v1', 'passages', 'p2', versionParam, failed, normalizedRefs.join('|')]),
       };
     } catch (error) {
       console.error('[v1/passages] Error:', error);
@@ -181,7 +184,8 @@ async function resolveOne(env: Env, version: string, ref: string): Promise<Passa
       };
   }
 
-  // kind === 'ok'
+  // kind === 'ok' — capítulo inteiro espelha o shape de versículo (text/
+  // verse/verseEnd sempre presentes), igual ao endpoint /v1 de capítulo.
   if (!r.selection) {
     return {
       ref,
@@ -189,6 +193,9 @@ async function resolveOne(env: Env, version: string, ref: string): Promise<Passa
       book: r.book.slugs.en,
       bookName: r.book.names.en,
       chapter: r.chapterNum,
+      verse: 1,
+      verseEnd: r.verses.length,
+      text: r.verses.join(' '),
       verses: r.verses,
       reference: `${r.book.names.en} ${r.chapterNum}`,
     };

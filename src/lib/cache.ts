@@ -12,6 +12,7 @@
  */
 
 import { normalizeLocale } from './locale';
+import { parsePreviewParam } from './chapter';
 
 /**
  * Normaliza a URL da request para servir como cache key estável.
@@ -52,6 +53,15 @@ export function normalizeCacheKey(request: Request): Request {
   if (path === '/v1/books') {
     const testament = url.searchParams.get('testament');
     url.search = testament === 'old' || testament === 'new' ? `?testament=${testament}` : '';
+    return new Request(url.toString(), { method: 'GET' });
+  }
+
+  // /v1/{version}/{book}/{chapter}[?preview=N] — capítulo inteiro (sem
+  // segmento de versículo) preserva o preview CANÔNICO (clampado). O clamp
+  // é o mesmo do handler; se divergissem, variantes colidiriam no edge.
+  if (/^\/v1\/[^/]+\/[^/]+\/\d+$/.test(path)) {
+    const preview = parsePreviewParam(url.searchParams.get('preview'));
+    url.search = preview ? `?preview=${preview}` : '';
     return new Request(url.toString(), { method: 'GET' });
   }
 
