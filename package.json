@@ -15,7 +15,8 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:coverage": "node scripts/check-coverage.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260604.1",
