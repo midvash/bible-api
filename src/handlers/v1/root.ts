@@ -32,11 +32,22 @@ const ROOT_BODY = JSON.stringify({
         path: '/v1/votd',
         description: 'Verse of the day — same verse for everyone on a given UTC day',
       },
+      {
+        method: 'GET',
+        path: '/v1/passages',
+        description:
+          'Batch: resolve up to 20 references in one call (?refs=john 3:16,psalms 23&version=kjv)',
+      },
+      {
+        method: 'GET',
+        path: '/v1/parse',
+        description: 'Parse a free-text reference into its parts (?q=John 3:16-18)',
+      },
     ],
   },
 });
 // Bump ao mudar o corpo: ETag estável invalida 304s cacheados do discovery antigo.
-const ROOT_ETAG = etagFor(['v1', 'root', 'votd']);
+const ROOT_ETAG = etagFor(['v1', 'root', 'passages', 'parse']);
 
 export function handleV1Root(request: Request, _env: Env, ctx: ExecutionContext): Promise<Response> {
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-root', () => ({

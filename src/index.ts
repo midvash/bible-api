@@ -17,6 +17,8 @@
  *     GET /v1                                → descoberta de endpoints
  *     GET /v1/versions[/{slug}]              → versões + lookup
  *     GET /v1/books[/{slug}]                 → livros + lookup
+ *     GET /v1/passages?refs=&version=        → batch de referências (≤20)
+ *     GET /v1/parse?q=                       → parse de referência (oráculo)
  *     GET /v1/{version}/{book}/{chapter}[/{verses}]
  *
  *   Landing (api.midvash.com/, /es, /pt-br):
