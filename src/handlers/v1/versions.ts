@@ -17,6 +17,9 @@ function serializeVersion(v: VersionDefinition) {
     hasNewTestament: v.hasNewTestament,
     totalBooks: v.totalBooks,
     totalChapters: v.totalChapters,
+    // Aditivos — só saem quando o catálogo do R2 os traz (monorepo enriquecido).
+    ...(v.localizedNames ? { localizedNames: v.localizedNames } : {}),
+    ...(v.copyright ? { copyright: v.copyright } : {}),
   };
 }
 
@@ -52,7 +55,10 @@ function getPrebaked(catalog: VersionCatalog): PrebakedVersions {
   const result: PrebakedVersions = {
     allBody,
     byLanguage,
-    listEtag: etagFor(['v1', 'versions', 'list', catalog.versions.length]),
+    // 'enriched' no seed: o shape ganhou localizedNames/copyright, então o ETag
+    // precisa mudar mesmo com a mesma contagem de versões (senão clientes com o
+    // ETag antigo levariam 304 e não veriam os campos novos).
+    listEtag: etagFor(['v1', 'versions', 'list', 'enriched', catalog.versions.length]),
   };
   if (catalog.versions.length > 0) prebaked = result;
   return result;
@@ -78,7 +84,7 @@ export function handleV1VersionsList(
     const body = byLanguage[lang] ?? JSON.stringify({ data: [], meta: { total: 0, language: lang } });
     return {
       response: new Response(body, { headers: CACHE_HEADERS }),
-      etag: etagFor(['v1', 'versions', 'list', lang]),
+      etag: etagFor(['v1', 'versions', 'list', 'enriched', lang]),
     };
   });
 }
@@ -104,7 +110,7 @@ export function handleV1VersionDetail(
 
     return {
       response: okResponse(serializeVersion(version)),
-      etag: etagFor(['v1', 'version', versionSlug]),
+      etag: etagFor(['v1', 'version', 'enriched', versionSlug]),
     };
   });
 }
