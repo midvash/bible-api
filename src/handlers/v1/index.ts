@@ -4,6 +4,8 @@ import { handleV1Root } from './root';
 import { handleV1VersionsList, handleV1VersionDetail } from './versions';
 import { handleV1BooksList, handleV1BookDetail } from './books';
 import { handleV1Chapter } from './chapters';
+import { handleV1Passages } from './passages';
+import { handleV1Parse } from './parse';
 import { handleVotd } from '../votd';
 
 /**
@@ -37,6 +39,16 @@ export async function handleV1(
   // /v1/votd — alias do /votd raiz pra catálogo v1 e LP
   if (path === '/votd') {
     return handleVotd(request, env, ctx);
+  }
+
+  // /v1/passages?refs=...&version=... — batch de referências
+  if (path === '/passages') {
+    return handleV1Passages(request, env, ctx);
+  }
+
+  // /v1/parse?q=... — resolve referência em texto livre (oráculo, sem R2)
+  if (path === '/parse') {
+    return handleV1Parse(request, env, ctx);
   }
 
   // /v1/books, /v1/books/{slug}
