@@ -24,11 +24,24 @@ import { BOOKS_BY_ID } from '../lib/book-lookup';
 import { extractVerses, fetchChapterFromR2, formatReference } from '../lib/chapter';
 import { pickVotdForDate } from '../lib/votd-pool';
 
-// Versão default por locale para o VOTD.
-// Diverge de packages/i18n/src/config.ts no caso do EN: o reader usa NLT,
-// mas a API pública não distribui NLT (copyright restrito). KJV é a versão
-// livre canônica em inglês servida no R2.
-const DEFAULT_VERSION_BY_LOCALE: Record<ApiLocale, string> = {
+// Versão default do VOTD por idioma do catálogo (não só os 9 locales de UI).
+// Cada default é uma versão que cobre a Bíblia INTEIRA (o pool do VOTD tem
+// referências de AT e NT) — versões parciais fariam o VOTD dar 404 em metade
+// dos dias. Preferência por domínio público.
+//
+// Os 9 locales de UI mantêm exatamente o mapeamento histórico (en=kjv — o
+// reader usa NLT, mas a API pública não distribui NLT por copyright; kjv é a
+// canônica livre no R2). `pt`/`pt-pt` colapsam via normalizeLocale.
+//
+// EXCEÇÕES que caem para `kjv` — o VOTD sai em inglês, mas nunca em erro
+// (preferível a um 404):
+//   - `gr` (só NT/LXX no idioma) e `sw` (só NT): sem Bíblia completa.
+//   - `sr`: a única versão (skd) está no catálogo mas SEM conteúdo no R2
+//     (verificado 2026-07; caso classe-BBE). Voltar para `skd` quando o
+//     conteúdo for publicado e a checagem de cobertura passar.
+// Todos os outros idiomas têm versão completa própria com conteúdo no R2.
+const DEFAULT_VERSION_BY_LANGUAGE: Record<string, string> = {
+  // 9 locales de UI (mapeamento histórico preservado)
   en: 'kjv',
   'pt-br': 'nvt',
   es: 'ntv',
@@ -38,7 +51,48 @@ const DEFAULT_VERSION_BY_LOCALE: Record<ApiLocale, string> = {
   zh: 'cuvs',
   ru: 'synodal',
   ko: 'kor',
+  // Demais idiomas do catálogo
+  ar: 'svd',
+  cs: 'bkr',
+  da: 'dansk1931',
+  eo: 'lsb',
+  fi: 'pr1933',
+  gr: 'kjv', // só NT/LXX no idioma — fallback en
+  he: 'mh', // Modern Hebrew (AT+NT); aleppo/wlc/osmh são só AT
+  hu: 'kar',
+  id: 'indonesian',
+  ja: 'kgy',
+  la: 'vulg',
+  nb: 'nb1930',
+  nl: 'dutch1917',
+  pl: 'bg',
+  'pt-pt': 'bpt',
+  ro: 'vdc',
+  sr: 'kjv', // skd sem conteúdo no R2 — fallback en (ver nota acima)
+  sv: 'sv1917',
+  sw: 'kjv', // só NT no idioma — fallback en
+  tl: 'bnb',
+  tr: 'ycv',
+  uk: 'kp',
+  vi: 'vi1934',
 };
+
+// Fallback final quando o idioma pedido não tem default mapeado (idioma novo no
+// catálogo antes de ganhar entrada aqui). kjv cobre a Bíblia inteira.
+const VOTD_FALLBACK_VERSION = 'kjv';
+
+/**
+ * Escolhe a versão default do VOTD para o idioma pedido. Tenta o token cru
+ * (`ja`, `he`, `pt-pt`…), depois o locale de UI normalizado (`pt`→`pt-br`),
+ * e por fim o fallback global.
+ */
+export function defaultVotdVersion(rawLanguage: string, locale: ApiLocale): string {
+  return (
+    DEFAULT_VERSION_BY_LANGUAGE[rawLanguage] ??
+    DEFAULT_VERSION_BY_LANGUAGE[locale] ??
+    VOTD_FALLBACK_VERSION
+  );
+}
 
 const VOTD_BASE_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -66,9 +120,10 @@ function utcDateKey(date: Date): string {
 
 export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
-  const locale = normalizeLocale(url.searchParams.get('language'));
+  const rawLanguage = (url.searchParams.get('language') ?? '').toLowerCase().trim();
+  const locale = normalizeLocale(rawLanguage);
   const requestedVersion = (url.searchParams.get('version') ?? '').toLowerCase().trim();
-  const versionSlug = requestedVersion || DEFAULT_VERSION_BY_LOCALE[locale];
+  const versionSlug = requestedVersion || defaultVotdVersion(rawLanguage, locale);
 
   const now = new Date();
   const dateKey = utcDateKey(now);
