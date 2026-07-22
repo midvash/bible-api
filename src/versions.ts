@@ -24,6 +24,21 @@ export interface VersionDefinition {
   hasNewTestament: boolean;
   totalBooks: number;
   totalChapters: number;
+  /**
+   * Nome de exibição por locale de UI (só as entradas que DIFEREM do `name`
+   * nativo — nomes próprios como Almeida/Reina-Valera caem no `name`). Campo
+   * opcional e aditivo; ausente até o monorepo republicar o catálogo.
+   *
+   * MANTENHA EM SINCRONIA com `CatalogVersion` em
+   * `scripts/publish-bible-catalog.ts` do monorepo — campo novo aqui só é
+   * visível se o publish script também o incluir.
+   */
+  localizedNames?: Record<string, string>;
+  /**
+   * Texto de direitos autorais/atribuição da versão (pode ter várias linhas).
+   * Opcional e aditivo. Ver nota de sincronia acima.
+   */
+  copyright?: string;
 }
 
 export interface VersionCatalog {
