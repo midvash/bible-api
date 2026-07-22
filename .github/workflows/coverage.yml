@@ -1,0 +1,33 @@
+name: Checagem de cobertura
+
+# Confere que toda versão anunciada no catálogo tem conteúdo de verdade no R2
+# (amostra primeiro/último capítulo de livros âncora via API pública). Pega a
+# classe de bug da BBE/skd: catálogo anuncia versão sem conteúdo.
+#
+# Dispara: semanalmente (cron), manualmente, e via repository_dispatch quando o
+# monorepo republica o catálogo (event-type: catalog-published).
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # toda segunda, 06:00 UTC
+  workflow_dispatch:
+  repository_dispatch:
+    types: [catalog-published]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    name: Amostra catálogo × conteúdo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Checa cobertura
+        run: node scripts/check-coverage.mjs
+        env:
+          API_BASE: https://api.midvash.com
