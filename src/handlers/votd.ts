@@ -34,12 +34,14 @@ import { pickVotdForDate } from '../lib/votd-pool';
 // canônica livre no R2). `pt`/`pt-pt` colapsam via normalizeLocale.
 //
 // EXCEÇÕES que caem para `kjv` — o VOTD sai em inglês, mas nunca em erro
-// (preferível a um 404):
-//   - `gr` (só NT/LXX no idioma) e `sw` (só NT): sem Bíblia completa.
-//   - `sr`: a única versão (skd) está no catálogo mas SEM conteúdo no R2
-//     (verificado 2026-07; caso classe-BBE). Voltar para `skd` quando o
-//     conteúdo for publicado e a checagem de cobertura passar.
-// Todos os outros idiomas têm versão completa própria com conteúdo no R2.
+// (preferível a um 404). Todas verificadas contra os capítulos exatos do pool
+// do VOTD (não só flags de AT/NT) em 2026-07:
+//   - `gr` (só NT/LXX) e `sw` (só NT): sem Bíblia completa no idioma.
+//   - `sr`: a única versão (skd) está no catálogo mas 100% SEM conteúdo no R2.
+//   - `ja` (kgy): faltam capítulos do pool (Mateus 27-28, Salmos 139, Romanos 10).
+//   - `id` (indonesian): falta TODO o livro de Salmos, muito usado no pool.
+// Voltar para a versão nativa quando o conteúdo for publicado e a checagem de
+// cobertura passar. Todos os outros idiomas cobrem o pool inteiro no R2.
 const DEFAULT_VERSION_BY_LANGUAGE: Record<string, string> = {
   // 9 locales de UI (mapeamento histórico preservado)
   en: 'kjv',
@@ -60,8 +62,8 @@ const DEFAULT_VERSION_BY_LANGUAGE: Record<string, string> = {
   gr: 'kjv', // só NT/LXX no idioma — fallback en
   he: 'mh', // Modern Hebrew (AT+NT); aleppo/wlc/osmh são só AT
   hu: 'kar',
-  id: 'indonesian',
-  ja: 'kgy',
+  id: 'kjv', // indonesian sem Salmos no R2 — fallback en (ver nota acima)
+  ja: 'kjv', // kgy com buracos no pool no R2 — fallback en (ver nota acima)
   la: 'vulg',
   nb: 'nb1930',
   nl: 'dutch1917',

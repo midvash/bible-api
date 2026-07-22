@@ -26,19 +26,21 @@ describe('defaultVotdVersion', () => {
     expect(resolve('pt-pt')).toBe('bpt'); // token cru vence antes de normalizar
   });
 
-  it('resolve idiomas novos para versões completas próprias', () => {
-    expect(resolve('ja')).toBe('kgy');
+  it('resolve idiomas novos para versões que cobrem o pool no R2', () => {
     expect(resolve('he')).toBe('mh');
     expect(resolve('la')).toBe('vulg');
     expect(resolve('ar')).toBe('svd');
     expect(resolve('nl')).toBe('dutch1917');
     expect(resolve('uk')).toBe('kp');
+    expect(resolve('pt-pt')).toBe('bpt'); // cobre o pool (falta só Apoc 1, fora do pool)
   });
 
-  it('idiomas sem conteúdo completo/publicado caem em kjv', () => {
+  it('idiomas sem conteúdo que cubra o pool caem em kjv', () => {
     expect(resolve('gr')).toBe('kjv'); // só NT/LXX no idioma
     expect(resolve('sw')).toBe('kjv'); // só NT no idioma
-    expect(resolve('sr')).toBe('kjv'); // skd sem conteúdo no R2
+    expect(resolve('sr')).toBe('kjv'); // skd 100% sem conteúdo no R2
+    expect(resolve('ja')).toBe('kjv'); // kgy com buracos no pool
+    expect(resolve('id')).toBe('kjv'); // indonesian sem Salmos
   });
 
   it('idioma desconhecido cai no fallback global', () => {
