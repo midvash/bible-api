@@ -8,6 +8,14 @@ routes = [
   { pattern = "api.midvash.com/*", zone_name = "midvash.com" }
 ]
 
+# Workers Cache — cache NA FRENTE do worker (lançado em jul/2026): em hit,
+# o worker nem executa (CPU cobrado = zero). Em miss, roda uma vez e o edge
+# serve as repetições. TTLs vêm do Cache-Control que cada response já carrega,
+# então os 4xx com TTL por código também param de re-executar o worker.
+# Cache key = URL+query por versão do worker (deploy novo = cache novo).
+[cache]
+enabled = true
+
 # R2 Bucket Binding — única origem para conteúdo bíblico.
 # Cache API + Cloudflare Cache Rules absorvem 99%+ das requests no edge;
 # R2 só é tocado em cold miss (datacenter novo / após purge).

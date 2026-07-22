@@ -143,7 +143,11 @@ const BOOKS_ETAG = etagFor(['legacy', 'books', BOOKS.length]);
 export function handleRoot(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'root', async () => {
     const root = getPrebakedRoot(await getVersionCatalog(env));
-    return { response: new Response(root.body, { headers: METADATA_HEADERS }), etag: root.etag };
+    // Vary: Accept — `/` também serve a landing HTML; ver comentário no index.
+    return {
+      response: new Response(root.body, { headers: { ...METADATA_HEADERS, Vary: 'Accept' } }),
+      etag: root.etag,
+    };
   });
 }
 
