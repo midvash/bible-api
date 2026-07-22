@@ -1,14 +1,21 @@
 /**
- * GET /v1/{version}/{book}/{chapter}[/{verses}]
+ * GET /v1/{version}/{book}/{chapter}[/{verses}][?preview=N]
  *
  * Serializador fino no envelope { data, meta } sobre `resolveChapter`.
  * Conteúdo imutável: max-age=1y + ETag estável + 304 em revalidate.
+ *
+ * Capítulo inteiro espelha o shape de versículo (`text`, `verse`, `verseEnd`
+ * junto de `verses[]`) — consumidores leem `data.text` sem se importar se a
+ * referência tinha versículo. `?preview=N` (só capítulo inteiro) trunca o
+ * `text` em ~N chars no fim de versículo e omite `verses[]` — payload de
+ * tooltip em vez de Salmos 119 inteiro.
  */
 
 import type { Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
 import { resolveChapter } from '../../lib/resolve-chapter';
+import { parsePreviewParam, previewOfChapter } from '../../lib/chapter';
 
 export function handleV1Chapter(
   request: Request,
@@ -65,6 +72,28 @@ export function handleV1Chapter(
       }
 
       if (!r.selection) {
+        const reference = `${r.book.names.en} ${r.chapterNum}`;
+        const preview = parsePreviewParam(new URL(request.url).searchParams.get('preview'));
+
+        if (preview) {
+          const p = previewOfChapter(r.verses, preview);
+          return {
+            response: okResponse(
+              {
+                version: r.versionSlug,
+                book: r.book.slugs.en,
+                bookName: r.book.names.en,
+                chapter: r.chapterNum,
+                verse: 1,
+                verseEnd: p.verseEnd,
+                text: p.text,
+              },
+              { total: r.verses.length, reference, truncated: p.truncated },
+            ),
+            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview]),
+          };
+        }
+
         return {
           response: okResponse(
             {
@@ -72,11 +101,16 @@ export function handleV1Chapter(
               book: r.book.slugs.en,
               bookName: r.book.names.en,
               chapter: r.chapterNum,
+              verse: 1,
+              verseEnd: r.verses.length,
+              text: r.verses.join(' '),
               verses: r.verses,
             },
-            { total: r.verses.length, reference: `${r.book.names.en} ${r.chapterNum}` },
+            { total: r.verses.length, reference },
           ),
-          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum]),
+          // 'c2': o shape ganhou text/verse/verseEnd — com o ETag antigo,
+          // clientes revalidando levariam 304 e nunca veriam os campos novos.
+          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2']),
         };
       }
 

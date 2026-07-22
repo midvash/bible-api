@@ -25,10 +25,15 @@ Base URL: `https://api.midvash.com`
 | `GET` | `/v1/versions/{slug}` | Version metadata |
 | `GET` | `/v1/books` | List all books (`?testament=old\|new`) |
 | `GET` | `/v1/books/{slug}` | Book metadata |
-| `GET` | `/v1/{version}/{book}/{chapter}` | Full chapter |
+| `GET` | `/v1/{version}/{book}/{chapter}` | Full chapter (`?preview=N` truncates `text` for tooltips) |
 | `GET` | `/v1/{version}/{book}/{chapter}/{verse}` | Single verse |
 | `GET` | `/v1/{version}/{book}/{chapter}/{start}-{end}` | Verse range |
+| `GET` | `/v1/passages` | Batch: up to 50 references in one call (`?refs=john 3:16,psalms 23&version=kjv`) |
+| `GET` | `/v1/parse` | Parse a free-text reference (`?q=John 3:16-18`) |
 | `GET` | `/v1/votd` | Verse of the day (`?language=&version=`) |
+
+Machine-readable contract: [`/openapi.json`](https://api.midvash.com/openapi.json)
+(OpenAPI 3.1), interactive reference at [`/docs`](https://api.midvash.com/docs).
 
 A legacy flat API (same paths without the `/v1` prefix) is kept for backward
 compatibility — its response shapes stay stable, and it gets the same resolution

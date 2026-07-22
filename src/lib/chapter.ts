@@ -137,6 +137,45 @@ export function extractVerses(
   return verses.slice(verseStart - 1, verseEnd);
 }
 
+// Clamp do `?preview=` — piso evita previews inúteis (menores que 1 verso
+// curto), teto limita o custo de uma URL variável no edge cache.
+export const PREVIEW_MIN_CHARS = 40;
+export const PREVIEW_MAX_CHARS = 2000;
+
+/**
+ * Parseia (e canoniza) o query param `?preview=N` de capítulo.
+ *
+ * Retorna o N clampado em [PREVIEW_MIN_CHARS, PREVIEW_MAX_CHARS], ou `null`
+ * para ausente/inválido (inválido = ignorado, serve o capítulo completo).
+ * Usado tanto pelo handler quanto pela cache key — os dois PRECISAM
+ * concordar, senão o edge cache fragmenta ou colide variantes.
+ */
+export function parsePreviewParam(raw: string | null): number | null {
+  if (!raw || !/^\d+$/.test(raw)) return null;
+  const n = parseInt(raw, 10);
+  if (n < 1) return null;
+  return Math.min(Math.max(n, PREVIEW_MIN_CHARS), PREVIEW_MAX_CHARS);
+}
+
+/**
+ * Trunca um capítulo em ~maxChars, sempre terminando em fim de versículo.
+ * O primeiro versículo entra sempre (o preview nunca é vazio), mesmo que
+ * ultrapasse maxChars.
+ */
+export function previewOfChapter(
+  verses: string[],
+  maxChars: number,
+): { text: string; verseEnd: number; truncated: boolean } {
+  let text = verses[0] ?? '';
+  let verseEnd = 1;
+  for (let i = 1; i < verses.length; i++) {
+    if (text.length + 1 + verses[i].length > maxChars) break;
+    text += ' ' + verses[i];
+    verseEnd = i + 1;
+  }
+  return { text, verseEnd, truncated: verseEnd < verses.length };
+}
+
 /**
  * Formata uma referência bíblica humana ("John 3:16" ou "John 3:16-18").
  */

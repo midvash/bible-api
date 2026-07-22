@@ -25,10 +25,15 @@ URL base: `https://api.midvash.com`
 | `GET` | `/v1/versions/{slug}` | Metadatos de la versión |
 | `GET` | `/v1/books` | Lista todos los libros (`?testament=old\|new`) |
 | `GET` | `/v1/books/{slug}` | Metadatos del libro |
-| `GET` | `/v1/{version}/{book}/{chapter}` | Capítulo completo |
+| `GET` | `/v1/{version}/{book}/{chapter}` | Capítulo completo (`?preview=N` trunca el `text` para tooltips) |
 | `GET` | `/v1/{version}/{book}/{chapter}/{verse}` | Versículo único |
 | `GET` | `/v1/{version}/{book}/{chapter}/{start}-{end}` | Rango de versículos |
+| `GET` | `/v1/passages` | Batch: hasta 50 referencias en una llamada (`?refs=john 3:16,psalms 23&version=kjv`) |
+| `GET` | `/v1/parse` | Parsea una referencia en texto libre (`?q=John 3:16-18`) |
 | `GET` | `/v1/votd` | Versículo del día (`?language=&version=`) |
+
+Contrato legible por máquinas: [`/openapi.json`](https://api.midvash.com/openapi.json)
+(OpenAPI 3.1), referencia interactiva en [`/docs`](https://api.midvash.com/docs).
 
 Una API heredada plana (mismas rutas sin el prefijo `/v1`) se mantiene para
 compatibilidad retroactiva — sus formatos de respuesta quedan estables, y recibe

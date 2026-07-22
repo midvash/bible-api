@@ -1,16 +1,23 @@
-import { CACHE_HEADERS, type Env } from '../../env';
+import { METADATA_HEADERS, type Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 
 /**
  * GET /v1
  *
  * Endpoint de descoberta. Body pre-baked (constante).
+ *
+ * METADATA_HEADERS (1 dia), não CACHE_HEADERS (1 ano immutable): o discovery
+ * muda a cada endpoint novo, e com TTL de 1 ano cada colo servia a versão de
+ * quando foi aquecido — consumidores enxergavam catálogos de endpoints
+ * diferentes por até um ano (foi assim que o plugin EmDash "não viu" o
+ * /v1/passages já lançado).
  */
 const ROOT_BODY = JSON.stringify({
   data: {
     name: 'Midvash API',
     version: 'v1',
-    documentation: 'https://api.midvash.com/',
+    documentation: 'https://api.midvash.com/docs',
+    openapi: 'https://api.midvash.com/openapi.json',
     endpoints: [
       { method: 'GET', path: '/v1', description: 'Endpoint discovery (this response)' },
       { method: 'GET', path: '/v1/versions', description: 'List Bible versions' },
@@ -20,7 +27,8 @@ const ROOT_BODY = JSON.stringify({
       {
         method: 'GET',
         path: '/v1/{version}/{book}/{chapter}',
-        description: 'Get a full chapter',
+        description:
+          'Get a full chapter (same shape as a verse + verses[]; ?preview=N truncates text for tooltips)',
       },
       {
         method: 'GET',
@@ -36,7 +44,7 @@ const ROOT_BODY = JSON.stringify({
         method: 'GET',
         path: '/v1/passages',
         description:
-          'Batch: resolve up to 20 references in one call (?refs=john 3:16,psalms 23&version=kjv)',
+          'Batch: resolve up to 50 references in one call (?refs=john 3:16,psalms 23&version=kjv)',
       },
       {
         method: 'GET',
@@ -52,11 +60,11 @@ const ROOT_BODY = JSON.stringify({
   },
 });
 // Bump ao mudar o corpo: ETag estável invalida 304s cacheados do discovery antigo.
-const ROOT_ETAG = etagFor(['v1', 'root', 'passages', 'parse', 'ratelimit']);
+const ROOT_ETAG = etagFor(['v1', 'root', 'passages50', 'parse', 'ratelimit', 'openapi', 'preview']);
 
 export function handleV1Root(request: Request, _env: Env, ctx: ExecutionContext): Promise<Response> {
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-root', () => ({
-    response: new Response(ROOT_BODY, { headers: CACHE_HEADERS }),
+    response: new Response(ROOT_BODY, { headers: METADATA_HEADERS }),
     etag: ROOT_ETAG,
   }));
 }

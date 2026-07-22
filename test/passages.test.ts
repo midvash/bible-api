@@ -71,8 +71,15 @@ describe('GET /v1/passages', () => {
     expect(body.data[0]).toMatchObject({ ref: 'john 3:16', chapter: 3, verse: 16, text: 'For God so loved the world…' });
     expect(body.data[1]).toMatchObject({ chapter: 1, verse: 1, verseEnd: 3 });
     expect(body.data[1].verses).toHaveLength(3);
-    expect(body.data[2]).toMatchObject({ chapter: 23, reference: 'Psalms 23' });
-    expect(body.data[2].verse).toBeUndefined(); // capítulo inteiro
+    // Capítulo inteiro espelha o shape de versículo (aditivo: text/verse/verseEnd).
+    expect(body.data[2]).toMatchObject({
+      chapter: 23,
+      reference: 'Psalms 23',
+      verse: 1,
+      verseEnd: 1,
+      text: 'The LORD is my shepherd…',
+    });
+    expect(body.data[2].verses).toHaveLength(1);
   });
 
   it('uma ref ruim não derruba o batch', async () => {
@@ -93,8 +100,8 @@ describe('GET /v1/passages', () => {
     expect(res.status).toBe(404);
   });
 
-  it('mais de 20 refs → 400', async () => {
-    const refs = Array.from({ length: 21 }, () => 'john 3:16').join(',');
+  it('mais de 50 refs → 400', async () => {
+    const refs = Array.from({ length: 51 }, () => 'john 3:16').join(',');
     const res = await handleV1Passages(
       new Request('https://api.midvash.com/v1/passages?version=kjv&refs=' + encodeURIComponent(refs)),
       env,
