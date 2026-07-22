@@ -40,14 +40,25 @@ const DEFAULT_VERSION_BY_LOCALE: Record<ApiLocale, string> = {
   ko: 'kor',
 };
 
-const VOTD_CACHE_HEADERS = {
-  'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+const VOTD_BASE_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
   'Content-Type': 'application/json',
   'X-Robots-Tag': 'noindex, nofollow',
 } as const;
+
+/**
+ * Segundos até a próxima meia-noite UTC (mínimo 60).
+ *
+ * O TTL do VOTD precisa expirar na virada do dia, não "24h depois": o
+ * Workers Cache (na frente do worker) usa só URL+query como chave — sem a
+ * data, um votd cacheado 23h50 UTC seria servido até o dia seguinte.
+ */
+export function secondsUntilNextUtcDay(now: Date): number {
+  const nextMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  return Math.max(60, Math.ceil((nextMidnight - now.getTime()) / 1000));
+}
 
 function utcDateKey(date: Date): string {
   return date.toISOString().slice(0, 10); // YYYY-MM-DD UTC
@@ -123,8 +134,11 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
         url: fullUrl,
       });
 
+      const ttl = secondsUntilNextUtcDay(now);
       return {
-        response: new Response(body, { headers: VOTD_CACHE_HEADERS }),
+        response: new Response(body, {
+          headers: { ...VOTD_BASE_HEADERS, 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` },
+        }),
         etag: etagFor([
           'votd',
           dateKey,

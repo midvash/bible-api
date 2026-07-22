@@ -182,7 +182,12 @@ export default {
         return serveWithCache(request, ctx, cacheKey, 'landing', () => ({
           response: new Response(html, {
             status: 200,
-            headers: { ...HTML_HEADERS, 'Content-Language': landingLocale },
+            // Vary: Accept na raiz — o Workers Cache não inclui headers na
+            // cache key; sem isso, o HTML de `/` seria servido a clientes JSON.
+            headers:
+              landingLocale === 'en'
+                ? { ...HTML_HEADERS, 'Content-Language': landingLocale, Vary: 'Accept' }
+                : { ...HTML_HEADERS, 'Content-Language': landingLocale },
           }),
           etag: etagFor(['landing', landingLocale, version]),
         }));
