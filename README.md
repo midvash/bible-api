@@ -47,6 +47,20 @@ Book slugs work in any of 9 languages (`john`, `joao`, `juan`), with or without
 hyphens (`2-samuel` or `2samuel`). If a slug doesn't resolve, the error body
 suggests the closest one (`didYouMean`).
 
+## Rate limiting
+
+**There is no rate limit.** This is a free, public, edge-cached API: over 99% of
+requests are served straight from the Cloudflare edge and never reach the
+origin, so we don't emit `429` or `X-RateLimit-*` headers. Clients don't need
+defensive 429 handling.
+
+Please be a good citizen anyway: honor `ETag`/`If-None-Match` (revalidations
+return an empty `304`), and batch multiple references into a single
+`GET /v1/passages?refs=...&version=...` call instead of one request per
+reference. If direct-from-browser traffic ever forces our hand, any throttling
+would be applied as edge WAF rules with standard headers — this section will be
+updated first.
+
 ## Development
 
 ```bash

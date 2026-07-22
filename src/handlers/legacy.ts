@@ -64,6 +64,7 @@ function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
         'Use slugs em inglês para os livros (ex: john, genesis, psalms)',
         'A API aceita slugs de livros em diferentes idiomas',
         'Para listar versões disponíveis, acesse /versions',
+        'Sem rate limit: a API é pública e cacheada no edge. Não emitimos 429 nem headers X-RateLimit-*. Respeite os ETags (304) e use /v1/passages para agrupar referências.',
       ],
     },
     null,
@@ -72,7 +73,9 @@ function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
 
   const result: PrebakedRoot = {
     body,
-    etag: etagFor(['legacy', 'root', versionCount, languageCount]),
+    // 'ratelimit' no seed: a lista de notes mudou sem mudar as contagens, então
+    // o ETag precisa mudar para clientes não ficarem presos num 304 antigo.
+    etag: etagFor(['legacy', 'root', 'ratelimit', versionCount, languageCount]),
   };
   if (versionCount > 0) prebakedRoot = result;
   return result;
