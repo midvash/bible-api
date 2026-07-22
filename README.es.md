@@ -47,6 +47,20 @@ Los slugs de los libros funcionan en cualquiera de los 9 idiomas (`john`, `joao`
 con o sin guion (`2-samuel` o `2samuel`). Si un slug no resuelve, el cuerpo del
 error sugiere el más cercano (`didYouMean`).
 
+## Límite de tasa
+
+**No hay límite de tasa.** Esta es una API pública, gratuita y cacheada en el
+edge: más del 99% de las solicitudes se sirven directamente desde el edge de
+Cloudflare y nunca llegan al origen, así que no emitimos `429` ni cabeceras
+`X-RateLimit-*`. Los clientes no necesitan manejo defensivo de 429.
+
+Aun así, sé buen ciudadano: respeta `ETag`/`If-None-Match` (las revalidaciones
+devuelven un `304` vacío) y agrupa varias referencias en una sola llamada
+`GET /v1/passages?refs=...&version=...` en vez de una solicitud por referencia.
+Si el tráfico directo desde el navegador algún día lo exige, cualquier throttling
+se aplicaría como reglas WAF en el edge con cabeceras estándar — esta sección se
+actualizaría primero.
+
 ## Desarrollo
 
 ```bash

@@ -47,6 +47,19 @@ Os slugs dos livros funcionam em qualquer um dos 9 idiomas (`john`, `joao`, `jua
 com ou sem hífen (`2-samuel` ou `2samuel`). Se um slug não resolver, o corpo do
 erro sugere o mais próximo (`didYouMean`).
 
+## Rate limit
+
+**Não há rate limit.** Esta é uma API pública, gratuita e cacheada no edge: mais
+de 99% das requisições são servidas direto do edge da Cloudflare e nunca chegam
+à origem, então não emitimos `429` nem headers `X-RateLimit-*`. Os clientes não
+precisam de código defensivo para 429.
+
+Ainda assim, seja um bom cidadão: respeite `ETag`/`If-None-Match` (revalidações
+retornam um `304` vazio) e agrupe várias referências numa única chamada
+`GET /v1/passages?refs=...&version=...` em vez de uma requisição por referência.
+Se o tráfego direto de browser um dia exigir, qualquer throttling seria aplicado
+como regra de WAF no edge com headers padrão — esta seção seria atualizada primeiro.
+
 ## Desenvolvimento
 
 ```bash

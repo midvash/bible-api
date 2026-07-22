@@ -44,10 +44,15 @@ const ROOT_BODY = JSON.stringify({
         description: 'Parse a free-text reference into its parts (?q=John 3:16-18)',
       },
     ],
+    rateLimit: {
+      enforced: false,
+      description:
+        'No rate limit. This is a free, public, edge-cached API — we do not emit 429 or X-RateLimit-* headers. Please honor ETags (304) and batch references via /v1/passages.',
+    },
   },
 });
 // Bump ao mudar o corpo: ETag estável invalida 304s cacheados do discovery antigo.
-const ROOT_ETAG = etagFor(['v1', 'root', 'passages', 'parse']);
+const ROOT_ETAG = etagFor(['v1', 'root', 'passages', 'parse', 'ratelimit']);
 
 export function handleV1Root(request: Request, _env: Env, ctx: ExecutionContext): Promise<Response> {
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-root', () => ({
