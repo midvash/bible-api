@@ -83,3 +83,12 @@ describe('parseReference', () => {
     expect(verseParamFrom(parseReference('genesis 1:1-3')!)).toBe('1-3');
   });
 });
+
+describe('abreviação de texto livre', () => {
+  it('"Jo" é João, "Jó" segue Jó', () => {
+    expect(parseReference('jo 3:16')?.bookQuery).toBe('joao');
+    expect(parseReference('Jo. 3:16')?.bookQuery).toBe('joao');
+    expect(parseReference('Jó 1:1')?.bookQuery).toBe('jo');
+  });
+});
+

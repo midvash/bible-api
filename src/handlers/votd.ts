@@ -148,6 +148,9 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
         return legacyErrorResponse('VERSION_NOT_FOUND', `Versão não encontrada: ${versionSlug}`);
       }
       const { slug, version: versionData } = found;
+      // Sem `language`, o idioma da resposta é o da versão: ?version=onbv sai
+      // em português (referência, slug do livro e link), não em inglês.
+      const outLocale = rawLanguage ? locale : normalizeLocale(versionData.language);
 
       const ref = pickVotdForDate(now);
       const bookData = BOOKS_BY_ID.get(ref.bookId);
@@ -178,12 +181,14 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
       }
 
       const text = selected.join(' ');
-      const reference = formatReference(bookData, ref.chapter, ref.verseStart, ref.verseEnd, locale);
-      const bookSlug = bookData.slugs[locale] || bookData.slugs.en;
+      const reference = formatReference(bookData, ref.chapter, ref.verseStart, ref.verseEnd, outLocale);
+      const bookSlug = bookData.slugs[outLocale] || bookData.slugs.en;
 
       const versePath =
         ref.verseStart === ref.verseEnd ? `${ref.verseStart}` : `${ref.verseStart}-${ref.verseEnd}`;
-      const fullUrl = `https://midvash.com/${locale}/${slug}/${bookSlug}/${ref.chapter}/${versePath}`;
+      // Inglês é o idioma padrão do site, sem prefixo (/en/... dá 404).
+      const prefix = outLocale === 'en' ? '' : `/${outLocale}`;
+      const fullUrl = `https://midvash.com${prefix}/${slug}/${bookSlug}/${ref.chapter}/${versePath}`;
 
       const body = JSON.stringify({
         reference,
