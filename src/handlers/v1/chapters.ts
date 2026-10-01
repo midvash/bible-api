@@ -88,9 +88,9 @@ export function handleV1Chapter(
                 verseEnd: p.verseEnd,
                 text: p.text,
               },
-              { total: r.verses.length, reference, truncated: p.truncated },
+              { total: r.verses.length, reference, truncated: p.truncated, copyright: r.version.copyright },
             ),
-            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview]),
+            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr']),
           };
         }
 
@@ -106,11 +106,11 @@ export function handleV1Chapter(
               text: r.verses.join(' '),
               verses: r.verses,
             },
-            { total: r.verses.length, reference },
+            { total: r.verses.length, reference, copyright: r.version.copyright },
           ),
           // 'c2': o shape ganhou text/verse/verseEnd — com o ETag antigo,
           // clientes revalidando levariam 304 e nunca veriam os campos novos.
-          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2']),
+          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2', 'cr']),
         };
       }
 
@@ -126,7 +126,11 @@ export function handleV1Chapter(
             text: r.selection.text,
             verses: r.selection.verses,
           },
-          { reference: r.selection.reference, total: r.selection.verses.length },
+          {
+            reference: r.selection.reference,
+            total: r.selection.verses.length,
+            copyright: r.version.copyright,
+          },
         ),
         etag: etagFor([
           'v1',
@@ -135,6 +139,8 @@ export function handleV1Chapter(
           r.chapterNum,
           r.selection.range.start,
           r.selection.range.end,
+          // 'cr': meta ganhou copyright; sem bump o 304 esconderia o campo.
+          'cr',
         ]),
       };
     } catch (error) {

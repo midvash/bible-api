@@ -107,7 +107,8 @@ export function handleV1Passages(
   return serveWithCache(request, ctx, cacheKey, 'v1-passages', async () => {
     try {
       const catalog = await getVersionCatalog(env);
-      if (!catalog.bySlug.has(versionParam)) {
+      const version = catalog.bySlug.get(versionParam);
+      if (!version) {
         return errorResponse('VERSION_NOT_FOUND', `Version "${versionParam}" not found.`, {
           availableVersions: catalog.versions.length,
         });
@@ -123,7 +124,13 @@ export function handleV1Passages(
 
       const body = JSON.stringify({
         data: items,
-        meta: { total: items.length, version: versionParam, resolved, failed },
+        meta: {
+          total: items.length,
+          version: versionParam,
+          resolved,
+          failed,
+          copyright: version.copyright,
+        },
       });
 
       // Batch imutável só quando tudo resolveu; senão TTL curto (ver PARTIAL_HEADERS).
@@ -132,7 +139,7 @@ export function handleV1Passages(
         response: new Response(body, { headers }),
         // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro
         // ETag antigo não servir 304 do shape anterior.
-        etag: etagFor(['v1', 'passages', 'p2', versionParam, failed, normalizedRefs.join('|')]),
+        etag: etagFor(['v1', 'passages', 'p2', 'cr', versionParam, failed, normalizedRefs.join('|')]),
       };
     } catch (error) {
       console.error('[v1/passages] Error:', error);

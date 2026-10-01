@@ -20,6 +20,7 @@ const CATALOG = [
     hasNewTestament: true,
     totalBooks: 66,
     totalChapters: 1189,
+    copyright: 'King James Version (KJV)\nPublic Domain.',
   },
 ];
 
@@ -151,5 +152,26 @@ describe('normalizeCacheKey — preview de capítulo', () => {
   it('rota de versículo não ganha preview (segue sem query)', () => {
     const key = normalizeCacheKey(new Request('https://api.midvash.com/v1/kjv/john/3/16?preview=100'));
     expect(key.url).toBe('https://api.midvash.com/v1/kjv/john/3/16');
+  });
+});
+
+describe('atribuição da versão junto do texto', () => {
+  it('capítulo inteiro, trecho e prévia levam meta.copyright do catálogo', async () => {
+    const whole = await json(await callChapter());
+    const preview = await json(await callChapter('?preview=50'));
+    const range = await json(
+      await handleV1Chapter(
+        new Request('https://api.midvash.com/v1/kjv/psalms/23/1-2'),
+        env,
+        ctx,
+        'kjv',
+        'psalms',
+        '23',
+        '1-2',
+      ),
+    );
+    for (const body of [whole, preview, range]) {
+      expect(body.meta.copyright).toBe('King James Version (KJV)\nPublic Domain.');
+    }
   });
 });
