@@ -66,13 +66,16 @@ const VERSION_SCHEMA = {
     slug: { type: 'string', examples: ['kjv', 'almeida-livre', 'rvr1909'] },
     name: { type: 'string' },
     shortName: { type: 'string' },
-    language: { type: 'string', examples: ['pt', 'en', 'es'] },
+    language: { type: 'string', examples: ['pt-br', 'en', 'es'] },
     hasOldTestament: { type: 'boolean' },
     hasNewTestament: { type: 'boolean' },
     totalBooks: { type: 'integer' },
     totalChapters: { type: 'integer' },
     localizedNames: { ...LOCALIZED_STRINGS_SCHEMA },
-    copyright: { type: 'string' },
+    copyright: {
+      type: 'string',
+      description: 'Direitos e atribuição da versão (texto multilinha). Mostre junto do texto bíblico.',
+    },
   },
 } as const;
 
@@ -157,8 +160,13 @@ const OPENAPI_SPEC = {
     version: '1.0.0',
     summary: 'Free, no-key public Bible API',
     description:
-      'Versículos, capítulos, versões e livros em 80+ traduções de domínio público. ' +
+      'Versículos, capítulos, versões e livros em versões bíblicas livres (domínio público ou ' +
+      'licença aberta, como CC BY/CC BY-SA); a lista viva está em `/v1/versions`. ' +
       'Sem autenticação, sem rate limit, CORS aberto, edge-cached (honre ETag/304). ' +
+      'Toda resposta com texto bíblico traz o crédito da versão (`meta.copyright`; `copyright` no ' +
+      '`/v1/votd`): mostre junto do texto. Versões com direitos reservados (NIV, ESV, NVI, ARA, NVT…) ' +
+      'não são servidas: nas rotas de conteúdo, pedir uma delas devolve uma versão livre do mesmo ' +
+      'idioma (alias) e `data.version` diz qual veio; `/v1/versions/{slug}` responde 404 pra elas. ' +
       'Sucesso usa envelope `{ data, meta? }`; erro usa `{ error: { code, message, details? } }`. ' +
       'Respostas de conteúdo bíblico são imutáveis (`Cache-Control: public, max-age=31536000, immutable`) ' +
       'e trazem `ETag` estável — envie `If-None-Match` para receber 304 sem corpo.',
@@ -185,7 +193,7 @@ const OPENAPI_SPEC = {
             name: 'language',
             in: 'query',
             schema: { type: 'string' },
-            description: 'Filtra por código de idioma (ex.: pt, en, es).',
+            description: 'Filtra por código de idioma do catálogo (ex.: pt-br, en, es).',
           },
         ],
         responses: jsonOk(
@@ -204,7 +212,9 @@ const OPENAPI_SPEC = {
         parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
           ...jsonOk('Versão encontrada.', envelope({ $ref: '#/components/schemas/Version' })),
-          ...errorResponses({ '404': 'VERSION_NOT_FOUND (com didYouMean quando há sugestão).' }),
+          ...errorResponses({
+            '404': 'VERSION_NOT_FOUND (com didYouMean quando há sugestão). Também para slugs que saíram da API (sem alias aqui).',
+          }),
         },
       },
     },
@@ -248,7 +258,7 @@ const OPENAPI_SPEC = {
           'inteiro), mais `verses[]`. Com `?preview=N` o `text` é truncado em ~N caracteres ' +
           '(terminando em fim de versículo), `verses[]` é omitido e `meta.truncated` indica corte.',
         parameters: [
-          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre' },
+          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma; confira `data.version`.' },
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'psalms' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 23 },
           {
@@ -278,7 +288,7 @@ const OPENAPI_SPEC = {
         operationId: 'getVerse',
         summary: 'Versículo único ("16") ou intervalo ("16-20")',
         parameters: [
-          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre' },
+          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma; confira `data.version`.' },
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'john' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 3 },
           { name: 'verse', in: 'path', required: true, schema: { type: 'string' }, example: '16-18' },
@@ -313,7 +323,7 @@ const OPENAPI_SPEC = {
             example: 'john 3:16,genesis 1:1-3,psalms 23',
             description: 'Referências em texto livre, separadas por vírgula (máx. 50).',
           },
-          { name: 'version', in: 'query', required: true, schema: { type: 'string' }, example: 'kjv' },
+          { name: 'version', in: 'query', required: true, schema: { type: 'string' }, example: 'kjv', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma; confira `data.version`.' },
         ],
         responses: {
           ...jsonOk(
@@ -386,10 +396,21 @@ const OPENAPI_SPEC = {
         operationId: 'getVerseOfTheDay',
         summary: 'Versículo do dia (mesmo versículo para todos num dia UTC)',
         parameters: [
-          { name: 'locale', in: 'query', schema: { type: 'string' }, example: 'pt-br' },
-          { name: 'version', in: 'query', schema: { type: 'string' } },
+          {
+            name: 'language',
+            in: 'query',
+            schema: { type: 'string' },
+            example: 'pt-br',
+            description: 'Idioma (en, pt-br, es, fr, de, it, zh, ru, ko…). Default: en.',
+          },
+          {
+            name: 'version',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Slug da versão. Default: versão padrão do idioma. Slug que saiu cai numa versão livre (alias).',
+          },
         ],
-        responses: jsonOk('Versículo do dia (envelope legado, sem { data }).', {
+        responses: jsonOk('Versículo do dia (objeto plano, sem { data }). Traz `copyright`: mostre junto do texto.', {
           type: 'object',
           required: ['reference', 'text', 'version', 'book_slug', 'chapter', 'verse_start', 'verse_end', 'url'],
           properties: {
@@ -401,6 +422,10 @@ const OPENAPI_SPEC = {
             verse_start: { type: 'integer' },
             verse_end: { type: 'integer' },
             url: { type: 'string' },
+            copyright: {
+              type: 'string',
+              description: 'Direitos e atribuição da versão servida. Mostre junto do texto.',
+            },
           },
         }),
       },

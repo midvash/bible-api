@@ -64,7 +64,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Response format & caching",
       subtitle: "Every v1 endpoint speaks the same JSON envelope and the same HTTP cache rules.",
       envelopeTitle: "Success envelope",
-      envelopeDesc: "Successful responses wrap the payload in a top-level data field. List and content endpoints add an optional meta object — totals, the resolved reference, and so on.",
+      envelopeDesc: "Successful responses wrap the payload in a top-level data field. List and content endpoints add an optional meta object with totals, the resolved reference and, whenever Bible text is returned, the version's copyright.",
       httpTitle: "HTTP & caching",
       httpRows: [
         { k: "Caching", v: "Content is immutable — cached for one year (max-age=31536000, immutable). New content ships under a new URL, never a changed body." },
@@ -73,7 +73,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Methods", v: "GET, HEAD and OPTIONS. HEAD returns headers only; OPTIONS handles the CORS preflight." },
       ],
       votdNoteTitle: "One exception — /v1/votd",
-      votdNote: "The verse of the day returns a flat object (reference, text, version, book_slug, chapter, verse_start, verse_end, url) instead of the data/meta envelope, and is cached for 24 hours.",
+      votdNote: "The verse of the day returns a flat object (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) instead of the data/meta envelope, and is cached for 24 hours.",
     },
     errors: {
       title: "Errors",
@@ -113,7 +113,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Formato de resposta e cache",
       subtitle: "Todo endpoint v1 fala o mesmo envelope JSON e as mesmas regras de cache HTTP.",
       envelopeTitle: "Envelope de sucesso",
-      envelopeDesc: "Respostas de sucesso envolvem o payload num campo data no topo. Endpoints de listagem e de conteúdo adicionam um objeto meta opcional — totais, a referência resolvida e afins.",
+      envelopeDesc: "Respostas de sucesso envolvem o payload num campo data no topo. Endpoints de listagem e de conteúdo adicionam um objeto meta opcional com totais, a referência resolvida e, sempre que há texto bíblico, o copyright da versão.",
       httpTitle: "HTTP e cache",
       httpRows: [
         { k: "Cache", v: "O conteúdo é imutável — cacheado por um ano (max-age=31536000, immutable). Conteúdo novo entra numa URL nova, nunca num corpo alterado." },
@@ -122,7 +122,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Métodos", v: "GET, HEAD e OPTIONS. HEAD retorna só os headers; OPTIONS trata o preflight de CORS." },
       ],
       votdNoteTitle: "Uma exceção — /v1/votd",
-      votdNote: "O versículo do dia retorna um objeto flat (reference, text, version, book_slug, chapter, verse_start, verse_end, url) em vez do envelope data/meta, e é cacheado por 24 horas.",
+      votdNote: "O versículo do dia retorna um objeto flat (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) em vez do envelope data/meta, e é cacheado por 24 horas.",
     },
     errors: {
       title: "Erros",
@@ -162,7 +162,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Formato de respuesta y caché",
       subtitle: "Cada endpoint v1 habla el mismo envoltorio JSON y las mismas reglas de caché HTTP.",
       envelopeTitle: "Envoltorio de éxito",
-      envelopeDesc: "Las respuestas correctas envuelven el payload en un campo data de nivel superior. Los endpoints de listas y de contenido añaden un objeto meta opcional — totales, la referencia resuelta, etc.",
+      envelopeDesc: "Las respuestas correctas envuelven el payload en un campo data de nivel superior. Los endpoints de listas y de contenido añaden un objeto meta opcional con totales, la referencia resuelta y, siempre que hay texto bíblico, el copyright de la versión.",
       httpTitle: "HTTP y caché",
       httpRows: [
         { k: "Caché", v: "El contenido es inmutable — en caché un año (max-age=31536000, immutable). El contenido nuevo llega en una URL nueva, nunca en un cuerpo modificado." },
@@ -171,7 +171,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Métodos", v: "GET, HEAD y OPTIONS. HEAD devuelve solo las cabeceras; OPTIONS gestiona el preflight de CORS." },
       ],
       votdNoteTitle: "Una excepción — /v1/votd",
-      votdNote: "El versículo del día devuelve un objeto plano (reference, text, version, book_slug, chapter, verse_start, verse_end, url) en lugar del envoltorio data/meta, y se cachea 24 horas.",
+      votdNote: "El versículo del día devuelve un objeto plano (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) en lugar del envoltorio data/meta, y se cachea 24 horas.",
     },
     errors: {
       title: "Errores",
@@ -211,7 +211,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Format de réponse et cache",
       subtitle: "Chaque endpoint v1 parle le même enveloppe JSON et les mêmes règles de cache HTTP.",
       envelopeTitle: "Enveloppe de succès",
-      envelopeDesc: "Les réponses réussies encapsulent la charge utile dans un champ data de premier niveau. Les endpoints de listes et de contenu ajoutent un objet meta optionnel — totaux, référence résolue, etc.",
+      envelopeDesc: "Les réponses réussies encapsulent la charge utile dans un champ data de premier niveau. Les endpoints de listes et de contenu ajoutent un objet meta optionnel avec les totaux, la référence résolue et, dès qu'il y a du texte biblique, le copyright de la version.",
       httpTitle: "HTTP et cache",
       httpRows: [
         { k: "Cache", v: "Le contenu est immuable — mis en cache un an (max-age=31536000, immutable). Le nouveau contenu arrive sous une nouvelle URL, jamais dans un corps modifié." },
@@ -220,7 +220,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Méthodes", v: "GET, HEAD et OPTIONS. HEAD ne renvoie que les en-têtes ; OPTIONS gère le preflight CORS." },
       ],
       votdNoteTitle: "Une exception — /v1/votd",
-      votdNote: "Le verset du jour renvoie un objet plat (reference, text, version, book_slug, chapter, verse_start, verse_end, url) au lieu de l enveloppe data/meta, et est mis en cache 24 heures.",
+      votdNote: "Le verset du jour renvoie un objet plat (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) au lieu de l'enveloppe data/meta, et est mis en cache 24 heures.",
     },
     errors: {
       title: "Erreurs",
@@ -260,7 +260,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Antwortformat & Caching",
       subtitle: "Jeder v1-Endpoint spricht dasselbe JSON-Envelope und dieselben HTTP-Cache-Regeln.",
       envelopeTitle: "Erfolgs-Envelope",
-      envelopeDesc: "Erfolgreiche Antworten verpacken die Nutzlast in ein data-Feld auf oberster Ebene. Listen- und Inhalts-Endpoints ergänzen ein optionales meta-Objekt — Summen, die aufgelöste Referenz und so weiter.",
+      envelopeDesc: "Erfolgreiche Antworten verpacken die Nutzlast in ein data-Feld auf oberster Ebene. Listen- und Inhalts-Endpoints ergänzen ein optionales meta-Objekt mit Summen, der aufgelösten Referenz und, sobald Bibeltext geliefert wird, dem Copyright der Übersetzung.",
       httpTitle: "HTTP & Caching",
       httpRows: [
         { k: "Caching", v: "Inhalte sind unveränderlich — ein Jahr gecacht (max-age=31536000, immutable). Neue Inhalte kommen unter einer neuen URL, nie in einem geänderten Body." },
@@ -269,7 +269,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Methoden", v: "GET, HEAD und OPTIONS. HEAD liefert nur die Header; OPTIONS behandelt den CORS-Preflight." },
       ],
       votdNoteTitle: "Eine Ausnahme — /v1/votd",
-      votdNote: "Der Vers des Tages liefert ein flaches Objekt (reference, text, version, book_slug, chapter, verse_start, verse_end, url) statt des data/meta-Envelopes und wird 24 Stunden gecacht.",
+      votdNote: "Der Vers des Tages liefert ein flaches Objekt (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) statt des data/meta-Envelopes und wird 24 Stunden gecacht.",
     },
     errors: {
       title: "Fehler",
@@ -309,7 +309,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Formato di risposta e cache",
       subtitle: "Ogni endpoint v1 parla lo stesso involucro JSON e le stesse regole di cache HTTP.",
       envelopeTitle: "Involucro di successo",
-      envelopeDesc: "Le risposte riuscite avvolgono il payload in un campo data di primo livello. Gli endpoint di elenco e contenuto aggiungono un oggetto meta opzionale — totali, il riferimento risolto e così via.",
+      envelopeDesc: "Le risposte riuscite avvolgono il payload in un campo data di primo livello. Gli endpoint di elenco e contenuto aggiungono un oggetto meta opzionale con totali, il riferimento risolto e, quando c'è testo biblico, il copyright della versione.",
       httpTitle: "HTTP e cache",
       httpRows: [
         { k: "Cache", v: "Il contenuto è immutabile — in cache per un anno (max-age=31536000, immutable). I nuovi contenuti arrivano con un nuovo URL, mai con un corpo modificato." },
@@ -318,7 +318,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Metodi", v: "GET, HEAD e OPTIONS. HEAD restituisce solo gli header; OPTIONS gestisce il preflight CORS." },
       ],
       votdNoteTitle: "Un eccezione — /v1/votd",
-      votdNote: "Il versetto del giorno restituisce un oggetto piatto (reference, text, version, book_slug, chapter, verse_start, verse_end, url) invece dell involucro data/meta, ed è in cache per 24 ore.",
+      votdNote: "Il versetto del giorno restituisce un oggetto piatto (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) invece dell'involucro data/meta, ed è in cache per 24 ore.",
     },
     errors: {
       title: "Errori",
@@ -358,7 +358,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "响应格式与缓存",
       subtitle: "每个 v1 接口都使用相同的 JSON 外壳和相同的 HTTP 缓存规则。",
       envelopeTitle: "成功外壳",
-      envelopeDesc: "成功响应将载荷包装在顶层的 data 字段中。列表和内容接口会附加一个可选的 meta 对象 —— 总数、解析后的引用等。",
+      envelopeDesc: "成功响应将载荷包装在顶层的 data 字段中。列表和内容接口会附加可选的 meta 对象，包含总数、解析后的引用，以及返回经文时该版本的版权说明（copyright）。",
       httpTitle: "HTTP 与缓存",
       httpRows: [
         { k: "缓存", v: "内容不可变 —— 缓存一年（max-age=31536000, immutable）。新内容使用新的 URL，绝不修改响应体。" },
@@ -367,7 +367,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "方法", v: "GET、HEAD 和 OPTIONS。HEAD 仅返回响应头；OPTIONS 处理 CORS 预检。" },
       ],
       votdNoteTitle: "一个例外 —— /v1/votd",
-      votdNote: "每日经文返回一个扁平对象（reference, text, version, book_slug, chapter, verse_start, verse_end, url），而非 data/meta 外壳，并缓存 24 小时。",
+      votdNote: "每日经文返回一个扁平对象（reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright），而非 data/meta 外壳，并缓存 24 小时。",
     },
     errors: {
       title: "错误",
@@ -407,7 +407,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "Формат ответа и кэширование",
       subtitle: "Каждый эндпоинт v1 говорит на одном JSON-конверте и по одним правилам HTTP-кэша.",
       envelopeTitle: "Конверт успеха",
-      envelopeDesc: "Успешные ответы оборачивают полезную нагрузку в поле data верхнего уровня. Эндпоинты списков и контента добавляют необязательный объект meta — итоги, разрешённая ссылка и т. д.",
+      envelopeDesc: "Успешные ответы оборачивают полезную нагрузку в поле data верхнего уровня. Эндпоинты списков и контента добавляют необязательный объект meta: итоги, разрешённую ссылку и, если в ответе есть текст Библии, copyright перевода.",
       httpTitle: "HTTP и кэш",
       httpRows: [
         { k: "Кэширование", v: "Контент неизменяемый — кэшируется на год (max-age=31536000, immutable). Новый контент приходит по новому URL, а не в изменённом теле." },
@@ -416,7 +416,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "Методы", v: "GET, HEAD и OPTIONS. HEAD возвращает только заголовки; OPTIONS обрабатывает CORS preflight." },
       ],
       votdNoteTitle: "Одно исключение — /v1/votd",
-      votdNote: "Стих дня возвращает плоский объект (reference, text, version, book_slug, chapter, verse_start, verse_end, url) вместо конверта data/meta и кэшируется на 24 часа.",
+      votdNote: "Стих дня возвращает плоский объект (reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright) вместо конверта data/meta и кэшируется на 24 часа.",
     },
     errors: {
       title: "Ошибки",
@@ -456,7 +456,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
       title: "응답 형식과 캐싱",
       subtitle: "모든 v1 엔드포인트는 같은 JSON 봉투와 같은 HTTP 캐시 규칙을 사용합니다.",
       envelopeTitle: "성공 봉투",
-      envelopeDesc: "성공 응답은 페이로드를 최상위 data 필드로 감쌉니다. 목록과 본문 엔드포인트는 선택적 meta 객체 — 총계, 해석된 참조 등 — 를 추가합니다.",
+      envelopeDesc: "성공 응답은 페이로드를 최상위 data 필드로 감쌉니다. 목록과 본문 엔드포인트는 선택적 meta 객체를 추가하며, 여기에는 총계, 해석된 참조, 그리고 성경 본문이 있을 때 번역본의 copyright가 들어 있습니다.",
       httpTitle: "HTTP와 캐싱",
       httpRows: [
         { k: "캐싱", v: "콘텐츠는 불변입니다 — 1년 동안 캐시됩니다(max-age=31536000, immutable). 새 콘텐츠는 본문을 바꾸지 않고 새 URL로 제공됩니다." },
@@ -465,7 +465,7 @@ export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
         { k: "메서드", v: "GET, HEAD, OPTIONS. HEAD는 헤더만 반환하고 OPTIONS는 CORS 프리플라이트를 처리합니다." },
       ],
       votdNoteTitle: "예외 하나 — /v1/votd",
-      votdNote: "오늘의 말씀은 data/meta 봉투 대신 평면 객체(reference, text, version, book_slug, chapter, verse_start, verse_end, url)를 반환하며 24시간 캐시됩니다.",
+      votdNote: "오늘의 말씀은 data/meta 봉투 대신 평면 객체(reference, text, version, book_slug, chapter, verse_start, verse_end, url, copyright)를 반환하며 24시간 캐시됩니다.",
     },
     errors: {
       title: "오류",
