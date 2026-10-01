@@ -47,10 +47,10 @@ function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
         'GET /': { description: 'Documentação da API (este endpoint)', example: 'https://api.midvash.com/' },
         'GET /versions': { description: 'Lista todas as versões bíblicas disponíveis', example: 'https://api.midvash.com/versions' },
         'GET /books': { description: 'Lista todos os livros da Bíblia', example: 'https://api.midvash.com/books' },
-        'GET /votd': { description: 'Versículo do dia (query: language, version)', example: 'https://api.midvash.com/votd?language=pt-br&version=nvt' },
-        'GET /{version}/{book}/{chapter}': { description: 'Retorna um capítulo completo', example: 'https://api.midvash.com/nvi/john/3' },
-        'GET /{version}/{book}/{chapter}/{verse}': { description: 'Retorna um versículo específico', example: 'https://api.midvash.com/nvi/john/3/16' },
-        'GET /{version}/{book}/{chapter}/{verse-start}-{verse-end}': { description: 'Retorna um intervalo de versículos', example: 'https://api.midvash.com/nvi/john/3/16-20' },
+        'GET /votd': { description: 'Versículo do dia (query: language, version)', example: 'https://api.midvash.com/votd?language=pt-br&version=almeida-livre' },
+        'GET /{version}/{book}/{chapter}': { description: 'Retorna um capítulo completo', example: 'https://api.midvash.com/almeida-livre/john/3' },
+        'GET /{version}/{book}/{chapter}/{verse}': { description: 'Retorna um versículo específico', example: 'https://api.midvash.com/almeida-livre/john/3/16' },
+        'GET /{version}/{book}/{chapter}/{verse-start}-{verse-end}': { description: 'Retorna um intervalo de versículos', example: 'https://api.midvash.com/almeida-livre/john/3/16-20' },
       },
       features: [
         'Cache máximo para dados imutáveis (TTL: 1 ano)',
@@ -249,10 +249,11 @@ export function handleVerse(
               bookName,
               chapter: r.chapterNum,
               verses: r.verses,
+              copyright: r.version.copyright,
             }),
             { headers: CACHE_HEADERS },
           ),
-          etag: etagFor(['legacy', r.versionSlug, r.book.id, r.chapterNum]),
+          etag: etagFor(['legacy', r.versionSlug, r.book.id, r.chapterNum, 'cr']),
         };
       }
 
@@ -267,6 +268,7 @@ export function handleVerse(
             verseEnd: r.selection.range.end,
             text: r.selection.text,
             reference: r.selection.reference,
+            copyright: r.version.copyright,
           }),
           { headers: CACHE_HEADERS },
         ),
@@ -277,6 +279,7 @@ export function handleVerse(
           r.chapterNum,
           r.selection.range.start,
           r.selection.range.end,
+          'cr',
         ]),
       };
     } catch (error) {

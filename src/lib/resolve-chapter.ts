@@ -13,7 +13,7 @@
 
 import type { Env } from '../env';
 import type { BookDefinition } from '../books';
-import { getVersionCatalog, type VersionDefinition } from '../versions';
+import { getVersionCatalog, lookupVersion, type VersionDefinition } from '../versions';
 import { lookupBook } from './book-lookup';
 import { closestString } from './suggest';
 import {
@@ -61,16 +61,17 @@ export async function resolveChapter(
   chapterParam: string,
   verseParam: string | undefined,
 ): Promise<ChapterResolution> {
-  const versionSlug = versionParam.toLowerCase();
   const catalog = await getVersionCatalog(env);
-  const version = catalog.bySlug.get(versionSlug);
-  if (!version) {
+  const found = lookupVersion(catalog, versionParam.toLowerCase());
+  if (!found) {
     return {
       kind: 'version_not_found',
       versionParam,
-      didYouMean: closestString(versionSlug, catalog.bySlug.keys()),
+      didYouMean: closestString(versionParam.toLowerCase(), catalog.bySlug.keys()),
     };
   }
+  // Slug efetivo: versão que saiu da API chega aqui já trocada pela livre.
+  const { slug: versionSlug, version } = found;
 
   const { book, didYouMean } = lookupBook(bookParam);
   if (!book) {

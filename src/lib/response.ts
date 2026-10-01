@@ -20,6 +20,11 @@ export interface ResponseMeta {
   total?: number;
   locale?: string;
   reference?: string;
+  /**
+   * Direitos/atribuição da versão (CC BY e CC BY-SA exigem que o crédito vá
+   * junto do texto). Ausente se o catálogo não trouxer.
+   */
+  copyright?: string;
   [key: string]: unknown;
 }
 

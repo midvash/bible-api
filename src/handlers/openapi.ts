@@ -63,7 +63,7 @@ const VERSION_SCHEMA = {
     'totalChapters',
   ],
   properties: {
-    slug: { type: 'string', examples: ['naa', 'kjv', 'nvies'] },
+    slug: { type: 'string', examples: ['kjv', 'almeida-livre', 'rvr1909'] },
     name: { type: 'string' },
     shortName: { type: 'string' },
     language: { type: 'string', examples: ['pt', 'en', 'es'] },
@@ -119,6 +119,10 @@ const PASSAGE_META_SCHEMA = {
     truncated: {
       type: 'boolean',
       description: 'Presente só com `?preview=`: true se o texto foi truncado.',
+    },
+    copyright: {
+      type: 'string',
+      description: 'Direitos e atribuição da versão. Mostre junto do texto (licenças CC BY/CC BY-SA exigem).',
     },
   },
 } as const;
@@ -244,7 +248,7 @@ const OPENAPI_SPEC = {
           'inteiro), mais `verses[]`. Com `?preview=N` o `text` é truncado em ~N caracteres ' +
           '(terminando em fim de versículo), `verses[]` é omitido e `meta.truncated` indica corte.',
         parameters: [
-          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'naa' },
+          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre' },
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'psalms' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 23 },
           {
@@ -274,7 +278,7 @@ const OPENAPI_SPEC = {
         operationId: 'getVerse',
         summary: 'Versículo único ("16") ou intervalo ("16-20")',
         parameters: [
-          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'naa' },
+          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre' },
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'john' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 3 },
           { name: 'verse', in: 'path', required: true, schema: { type: 'string' }, example: '16-18' },
@@ -323,6 +327,7 @@ const OPENAPI_SPEC = {
                   version: { type: 'string' },
                   resolved: { type: 'integer' },
                   failed: { type: 'integer' },
+                  copyright: { type: 'string' },
                 },
               },
             ),

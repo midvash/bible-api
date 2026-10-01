@@ -1474,13 +1474,13 @@ ${JSON.stringify({
       <div>
         <h2>${escapeHtml(t.quickStart.title)}</h2>
         <p>${escapeHtml(t.quickStart.subtitle)}</p>
-        <button class="btn btn-primary run-btn" data-call="/v1/nvi/john/3/16" data-target="resp-quickstart">
+        <button class="btn btn-primary run-btn" data-call="/v1/kjv/john/3/16" data-target="resp-quickstart">
           <span class="run-icon">▶</span>
           <span class="run-label">${escapeHtml(t.quickStart.runIt)}</span>
         </button>
       </div>
       <div>
-        <pre class="code-block"><span class="keyword">fetch</span>(<span class="string">'https://api.midvash.com/v1/nvi/john/3/16'</span>)
+        <pre class="code-block"><span class="keyword">fetch</span>(<span class="string">'https://api.midvash.com/v1/kjv/john/3/16'</span>)
   .then(r =&gt; r.<span class="keyword">json</span>())
   .then(data =&gt; <span class="keyword">console</span>.log(data.text))</pre>
       </div>

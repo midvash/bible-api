@@ -9,10 +9,10 @@ function resolve(language: string): string {
 }
 
 describe('defaultVotdVersion', () => {
-  it('mantém os defaults históricos dos 9 locales de UI', () => {
+  it('9 locales de UI só usam versão livre', () => {
     expect(resolve('en')).toBe('kjv');
-    expect(resolve('pt-br')).toBe('nvt');
-    expect(resolve('es')).toBe('ntv');
+    expect(resolve('pt-br')).toBe('almeida-livre');
+    expect(resolve('es')).toBe('rvr1909');
     expect(resolve('fr')).toBe('lsg');
     expect(resolve('de')).toBe('luth1912');
     expect(resolve('it')).toBe('nri');
@@ -22,21 +22,20 @@ describe('defaultVotdVersion', () => {
   });
 
   it('colapsa variantes de português', () => {
-    expect(resolve('pt')).toBe('nvt'); // pt → pt-br
-    expect(resolve('pt-pt')).toBe('bpt'); // token cru vence antes de normalizar
+    expect(resolve('pt')).toBe('almeida-livre'); // pt → pt-br
+    expect(resolve('pt-pt')).toBe('almeida-livre');
   });
 
   it('resolve idiomas novos para versões que cobrem o pool no R2', () => {
-    expect(resolve('he')).toBe('mh');
     expect(resolve('la')).toBe('vulg');
     expect(resolve('ar')).toBe('svd');
     expect(resolve('nl')).toBe('dutch1917');
     expect(resolve('uk')).toBe('kp');
-    expect(resolve('pt-pt')).toBe('bpt'); // cobre o pool (falta só Apoc 1, fora do pool)
   });
 
   it('idiomas sem conteúdo que cubra o pool caem em kjv', () => {
     expect(resolve('gr')).toBe('kjv'); // só NT/LXX no idioma
+    expect(resolve('he')).toBe('kjv'); // livres em hebraico são só AT
     expect(resolve('sw')).toBe('kjv'); // só NT no idioma
     expect(resolve('sr')).toBe('kjv'); // skd 100% sem conteúdo no R2
     expect(resolve('ja')).toBe('kjv'); // kgy com buracos no pool

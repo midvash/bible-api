@@ -20,6 +20,7 @@ const CATALOG = [
     hasNewTestament: true,
     totalBooks: 66,
     totalChapters: 1189,
+    copyright: 'King James Version (KJV)\nPublic Domain.',
   },
 ];
 
@@ -27,6 +28,11 @@ const env = {
   R2_BUCKET: {
     async get(key: string) {
       if (key === 'catalog/versions.json') return { json: async () => CATALOG };
+      // nvt saiu da API (sem licença) e aponta pra kjv; `fora` aponta pra
+      // slug inexistente e tem que ser descartado.
+      if (key === 'catalog/version-aliases.json') {
+        return { json: async () => ({ nvt: 'kjv', fora: 'nao-existe' }) };
+      }
       if (key === `kjv/${PS}/23.json`) return { text: async () => JSON.stringify(PSALM23) };
       return null;
     },
@@ -151,5 +157,57 @@ describe('normalizeCacheKey — preview de capítulo', () => {
   it('rota de versículo não ganha preview (segue sem query)', () => {
     const key = normalizeCacheKey(new Request('https://api.midvash.com/v1/kjv/john/3/16?preview=100'));
     expect(key.url).toBe('https://api.midvash.com/v1/kjv/john/3/16');
+  });
+});
+
+describe('atribuição da versão junto do texto', () => {
+  it('capítulo inteiro, trecho e prévia levam meta.copyright do catálogo', async () => {
+    const whole = await json(await callChapter());
+    const preview = await json(await callChapter('?preview=50'));
+    const range = await json(
+      await handleV1Chapter(
+        new Request('https://api.midvash.com/v1/kjv/psalms/23/1-2'),
+        env,
+        ctx,
+        'kjv',
+        'psalms',
+        '23',
+        '1-2',
+      ),
+    );
+    for (const body of [whole, preview, range]) {
+      expect(body.meta.copyright).toBe('King James Version (KJV)\nPublic Domain.');
+    }
+  });
+});
+
+describe('versão que saiu da API', () => {
+  it('serve a versão livre no lugar e diz qual veio', async () => {
+    const res = await handleV1Chapter(
+      new Request('https://api.midvash.com/v1/nvt/psalms/23'),
+      env,
+      ctx,
+      'nvt',
+      'psalms',
+      '23',
+      undefined,
+    );
+    const body = await json(res);
+    expect(res.status).toBe(200);
+    expect(body.data.version).toBe('kjv');
+    expect(body.data.verses).toEqual(PSALM23);
+  });
+
+  it('alias pra slug inexistente vira 404', async () => {
+    const res = await handleV1Chapter(
+      new Request('https://api.midvash.com/v1/fora/psalms/23'),
+      env,
+      ctx,
+      'fora',
+      'psalms',
+      '23',
+      undefined,
+    );
+    expect(res.status).toBe(404);
   });
 });

@@ -15,7 +15,7 @@
  * Cache: 24h (max-age=86400). Cache API key embute language+version+date UTC.
  */
 
-import { getVersionCatalog } from '../versions';
+import { getVersionCatalog, lookupVersion } from '../versions';
 import { ERROR_5XX_HEADERS, type Env } from '../env';
 import { normalizeLocale, type ApiLocale } from '../lib/locale';
 import { buildCacheKey, etagFor, serveWithCache } from '../lib/cache';
@@ -29,24 +29,27 @@ import { pickVotdForDate } from '../lib/votd-pool';
 // referências de AT e NT) — versões parciais fariam o VOTD dar 404 em metade
 // dos dias. Preferência por domínio público.
 //
-// Os 9 locales de UI mantêm exatamente o mapeamento histórico (en=kjv — o
-// reader usa NLT, mas a API pública não distribui NLT por copyright; kjv é a
-// canônica livre no R2). `pt`/`pt-pt` colapsam via normalizeLocale.
+// Só versão que a API pública pode distribuir: domínio público ou licença
+// aberta. Em out/2026 saíram do catálogo as de direitos reservados (NVT, NTV,
+// BPT, MH…): pt-br e pt-pt foram pra almeida-livre, es pra rvr1909 e he cai
+// em kjv (wlc/aleppo/osmh são só AT). Todas conferidas contra o pool inteiro.
+// `pt`/`pt-pt` colapsam via normalizeLocale.
 //
 // EXCEÇÕES que caem para `kjv` — o VOTD sai em inglês, mas nunca em erro
 // (preferível a um 404). Todas verificadas contra os capítulos exatos do pool
 // do VOTD (não só flags de AT/NT) em 2026-07:
 //   - `gr` (só NT/LXX) e `sw` (só NT): sem Bíblia completa no idioma.
+//   - `he`: as livres (wlc, aleppo, osmh) são só AT.
 //   - `sr`: a única versão (skd) está no catálogo mas 100% SEM conteúdo no R2.
 //   - `ja` (kgy): faltam capítulos do pool (Mateus 27-28, Salmos 139, Romanos 10).
 //   - `id` (indonesian): falta TODO o livro de Salmos, muito usado no pool.
 // Voltar para a versão nativa quando o conteúdo for publicado e a checagem de
 // cobertura passar. Todos os outros idiomas cobrem o pool inteiro no R2.
 const DEFAULT_VERSION_BY_LANGUAGE: Record<string, string> = {
-  // 9 locales de UI (mapeamento histórico preservado)
+  // 9 locales de UI
   en: 'kjv',
-  'pt-br': 'nvt',
-  es: 'ntv',
+  'pt-br': 'almeida-livre',
+  es: 'rvr1909',
   fr: 'lsg',
   de: 'luth1912',
   it: 'nri',
@@ -60,7 +63,7 @@ const DEFAULT_VERSION_BY_LANGUAGE: Record<string, string> = {
   eo: 'lsb',
   fi: 'pr1933',
   gr: 'kjv', // só NT/LXX no idioma — fallback en
-  he: 'mh', // Modern Hebrew (AT+NT); aleppo/wlc/osmh são só AT
+  he: 'kjv', // aleppo/wlc/osmh são só AT; mh saiu (NT com direitos reservados)
   hu: 'kar',
   id: 'kjv', // indonesian sem Salmos no R2 — fallback en (ver nota acima)
   ja: 'kjv', // kgy com buracos no pool no R2 — fallback en (ver nota acima)
@@ -68,7 +71,7 @@ const DEFAULT_VERSION_BY_LANGUAGE: Record<string, string> = {
   nb: 'nb1930',
   nl: 'dutch1917',
   pl: 'bg',
-  'pt-pt': 'bpt',
+  'pt-pt': 'almeida-livre', // bpt saiu (direitos reservados)
   ro: 'vdc',
   sr: 'kjv', // skd sem conteúdo no R2 — fallback en (ver nota acima)
   sv: 'sv1917',
@@ -139,10 +142,12 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
 
   return serveWithCache(request, ctx, cacheKey, 'votd', async () => {
     try {
-      const versionData = (await getVersionCatalog(env)).bySlug.get(versionSlug);
-      if (!versionData) {
+      // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
+      const found = lookupVersion(await getVersionCatalog(env), versionSlug);
+      if (!found) {
         return legacyErrorResponse('VERSION_NOT_FOUND', `Versão não encontrada: ${versionSlug}`);
       }
+      const { slug, version: versionData } = found;
 
       const ref = pickVotdForDate(now);
       const bookData = BOOKS_BY_ID.get(ref.bookId);
@@ -154,11 +159,11 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
         });
       }
 
-      const verses = await fetchChapterFromR2(env, versionSlug, bookData.id, ref.chapter);
+      const verses = await fetchChapterFromR2(env, slug, bookData.id, ref.chapter);
       if (!verses || verses.length === 0) {
         return legacyErrorResponse(
           'CHAPTER_NOT_FOUND',
-          `Capítulo não disponível em ${versionSlug}: ${bookData.names.en} ${ref.chapter}`,
+          `Capítulo não disponível em ${slug}: ${bookData.names.en} ${ref.chapter}`,
         );
       }
 
@@ -178,17 +183,18 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
 
       const versePath =
         ref.verseStart === ref.verseEnd ? `${ref.verseStart}` : `${ref.verseStart}-${ref.verseEnd}`;
-      const fullUrl = `https://midvash.com/${locale}/${versionSlug}/${bookSlug}/${ref.chapter}/${versePath}`;
+      const fullUrl = `https://midvash.com/${locale}/${slug}/${bookSlug}/${ref.chapter}/${versePath}`;
 
       const body = JSON.stringify({
         reference,
         text,
-        version: versionSlug,
+        version: slug,
         book_slug: bookSlug,
         chapter: ref.chapter,
         verse_start: ref.verseStart,
         verse_end: ref.verseEnd,
         url: fullUrl,
+        copyright: versionData.copyright,
       });
 
       const ttl = secondsUntilNextUtcDay(now);
@@ -198,9 +204,10 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
         }),
         etag: etagFor([
           'votd',
+          'cr',
           dateKey,
           locale,
-          versionSlug,
+          slug,
           bookData.id,
           ref.chapter,
           ref.verseStart,

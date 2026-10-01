@@ -21,7 +21,7 @@ import type { Env } from '../../env';
 import { CACHE_HEADERS } from '../../env';
 import { buildCacheKey, etagFor, serveWithCache } from '../../lib/cache';
 import { errorResponse } from '../../lib/response';
-import { getVersionCatalog } from '../../versions';
+import { getVersionCatalog, lookupVersion } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { parseReference, verseParamFrom } from '../../lib/reference';
 
@@ -107,7 +107,9 @@ export function handleV1Passages(
   return serveWithCache(request, ctx, cacheKey, 'v1-passages', async () => {
     try {
       const catalog = await getVersionCatalog(env);
-      if (!catalog.bySlug.has(versionParam)) {
+      // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
+      const found = lookupVersion(catalog, versionParam);
+      if (!found) {
         return errorResponse('VERSION_NOT_FOUND', `Version "${versionParam}" not found.`, {
           availableVersions: catalog.versions.length,
         });
@@ -123,7 +125,13 @@ export function handleV1Passages(
 
       const body = JSON.stringify({
         data: items,
-        meta: { total: items.length, version: versionParam, resolved, failed },
+        meta: {
+          total: items.length,
+          version: found.slug,
+          resolved,
+          failed,
+          copyright: found.version.copyright,
+        },
       });
 
       // Batch imutável só quando tudo resolveu; senão TTL curto (ver PARTIAL_HEADERS).
@@ -132,7 +140,7 @@ export function handleV1Passages(
         response: new Response(body, { headers }),
         // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro
         // ETag antigo não servir 304 do shape anterior.
-        etag: etagFor(['v1', 'passages', 'p2', versionParam, failed, normalizedRefs.join('|')]),
+        etag: etagFor(['v1', 'passages', 'p2', 'cr', versionParam, failed, normalizedRefs.join('|')]),
       };
     } catch (error) {
       console.error('[v1/passages] Error:', error);
