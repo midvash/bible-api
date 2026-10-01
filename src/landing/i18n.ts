@@ -410,7 +410,7 @@ const en: Translations = {
   features: {
     title: 'Why Midvash API',
     cards: [
-      { title: '{versions} Bible versions', body: 'NIV, KJV, ESV, NVI, RVR1960 and many more — across {languages} languages.' },
+      { title: '{versions} Bible versions', body: 'KJV, BSB, WEB, Reina-Valera 1909, Louis Segond and many more, all public domain or openly licensed, across {languages} languages.' },
       { title: 'Edge cached', body: 'Sub-50ms responses worldwide via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Stable v1 schema with { data, meta } responses and structured errors.' },
       { title: 'Free forever', body: 'No signup, no API keys, no rate limits beyond fair use.' },
@@ -496,7 +496,7 @@ const es: Translations = {
   features: {
     title: 'Por qué Midvash API',
     cards: [
-      { title: '{versions} versiones bíblicas', body: 'NVI, RVR1960, NTV, KJV, ESV y muchas más — en {languages} idiomas.' },
+      { title: '{versions} versiones bíblicas', body: 'Reina-Valera 1909, Reina-Valera Gómez, KJV, BSB y muchas más, todas de dominio público o con licencia abierta, en {languages} idiomas.' },
       { title: 'Caché en el edge', body: 'Respuestas en menos de 50 ms gracias a Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Esquema v1 estable con respuestas { data, meta } y errores estructurados.' },
       { title: 'Gratis para siempre', body: 'Sin registro, sin claves, sin límites más allá del uso justo.' },
@@ -582,7 +582,7 @@ const ptBr: Translations = {
   features: {
     title: 'Por que a Midvash API',
     cards: [
-      { title: '{versions} versões da Bíblia', body: 'NVI, ARA, ACF, NAA, NTLH, KJV, NIV e muitas mais — em {languages} idiomas.' },
+      { title: '{versions} versões da Bíblia', body: 'Bíblia Livre (Almeida), Nova Bíblia Viva Aberta, NVA, KJV, BSB e muitas mais, todas em domínio público ou com licença aberta, em {languages} idiomas.' },
       { title: 'Cache no edge', body: 'Respostas abaixo de 50ms no mundo todo via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Schema v1 estável com respostas { data, meta } e erros estruturados.' },
       { title: 'Grátis para sempre', body: 'Sem cadastro, sem chaves, sem limites além do uso razoável.' },
@@ -752,7 +752,7 @@ const fr: Translations = {
   features: {
     title: 'Pourquoi Midvash API',
     cards: [
-      { title: '{versions} versions de la Bible', body: 'NIV, KJV, ESV, NVI, RVR1960 et bien plus — dans {languages} langues.' },
+      { title: '{versions} versions de la Bible', body: 'Louis Segond, Darby, Crampon, KJV, BSB et bien plus, toutes du domaine public ou sous licence libre, dans {languages} langues.' },
       { title: 'Cache à l\'edge', body: 'Réponses sous 50 ms partout dans le monde via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Schéma v1 stable avec réponses { data, meta } et erreurs structurées.' },
       { title: 'Gratuite à vie', body: 'Pas d\'inscription, pas de clé, pas de limites au-delà de l\'usage raisonnable.' },
@@ -827,7 +827,7 @@ const de: Translations = {
   features: {
     title: 'Warum Midvash API',
     cards: [
-      { title: '{versions} Bibelübersetzungen', body: 'NIV, KJV, ESV, NVI, RVR1960 und viele weitere — in {languages} Sprachen.' },
+      { title: '{versions} Bibelübersetzungen', body: 'Luther 1912, Schlachter 1951, Elberfelder 1905, KJV, BSB und viele weitere, alle gemeinfrei oder frei lizenziert, in {languages} Sprachen.' },
       { title: 'Edge-Cache', body: 'Antworten unter 50 ms weltweit über Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Stabiles v1-Schema mit { data, meta }-Antworten und strukturierten Fehlern.' },
       { title: 'Für immer kostenlos', body: 'Keine Anmeldung, keine Keys, keine Limits abseits fairer Nutzung.' },
@@ -902,7 +902,7 @@ const it: Translations = {
   features: {
     title: 'Perché Midvash API',
     cards: [
-      { title: '{versions} versioni bibliche', body: 'NIV, KJV, ESV, NVI, RVR1960 e molte altre — in {languages} lingue.' },
+      { title: '{versions} versioni bibliche', body: 'Riveduta, Diodati, Nuova Riveduta 1927, KJV, BSB e molte altre, tutte di pubblico dominio o con licenza libera, in {languages} lingue.' },
       { title: 'Cache edge', body: 'Risposte sotto i 50 ms in tutto il mondo via Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Schema v1 stabile con risposte { data, meta } ed errori strutturati.' },
       { title: 'Gratuita per sempre', body: 'Niente registrazione, niente chiavi, niente limiti oltre l\'uso equo.' },
@@ -977,7 +977,7 @@ const zh: Translations = {
   features: {
     title: '为什么选择 Midvash API',
     cards: [
-      { title: '{versions} 圣经版本', body: 'NIV、KJV、ESV、NVI、RVR1960 等众多版本，覆盖 {languages} 种语言。' },
+      { title: '{versions} 圣经版本', body: '和合本、KJV、BSB 等众多版本，全部为公有领域或开放许可，覆盖 {languages} 种语言。' },
       { title: '边缘缓存', body: '通过 Cloudflare R2 + Cache API 全球响应低于 50ms。' },
       { title: 'REST + JSON', body: '稳定的 v1 架构，统一返回 { data, meta } 与结构化错误。' },
       { title: '永久免费', body: '无需注册、无需密钥，仅遵守合理使用规则。' },
@@ -1052,7 +1052,7 @@ const ru: Translations = {
   features: {
     title: 'Почему Midvash API',
     cards: [
-      { title: '{versions} переводов Библии', body: 'NIV, KJV, ESV, NVI, RVR1960 и многие другие — на {languages} языках.' },
+      { title: '{versions} переводов Библии', body: 'Синодальный перевод, KJV, BSB и многие другие, все в общественном достоянии или под свободной лицензией, на {languages} языках.' },
       { title: 'Edge-кэш', body: 'Ответы быстрее 50 мс по всему миру через Cloudflare R2 + Cache API.' },
       { title: 'REST + JSON', body: 'Стабильная схема v1 с ответами { data, meta } и структурированными ошибками.' },
       { title: 'Бесплатно навсегда', body: 'Без регистрации, без ключей, без лимитов вне разумного использования.' },
@@ -1127,7 +1127,7 @@ const ko: Translations = {
   features: {
     title: 'Midvash API를 선택하는 이유',
     cards: [
-      { title: '{versions} 성경 번역본', body: 'NIV, KJV, ESV, NVI, RVR1960 외 다수 — {languages}개 언어.' },
+      { title: '{versions} 성경 번역본', body: '개역한글판, KJV, BSB 외 다수, 모두 퍼블릭 도메인 또는 공개 라이선스, {languages}개 언어.' },
       { title: '엣지 캐시', body: 'Cloudflare R2 + Cache API로 전 세계 50ms 이하 응답.' },
       { title: 'REST + JSON', body: '안정적인 v1 스키마, { data, meta } 응답과 구조화된 오류.' },
       { title: '영구 무료', body: '가입 없음, 키 없음, 합리적 사용 범위 내 제한 없음.' },
