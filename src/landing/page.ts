@@ -455,7 +455,6 @@ function renderVersionsSection(
           aria-controls="lang-panel-${escapeHtml(g.language)}"
           data-tab="${escapeHtml(g.language)}"
         >
-          <span class="lang-tab-code">${escapeHtml(g.language.toUpperCase())}</span>
           <span class="lang-tab-name">${escapeHtml(langLabel)}</span>
           <span class="lang-tab-count">${g.items.length}</span>
         </button>`;
@@ -1202,15 +1201,6 @@ body {
   border-bottom-color: var(--primary);
   font-weight: 600;
 }
-.lang-tab-code {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 30px; height: 22px; padding: 0 6px;
-  background: var(--primary); color: #fff;
-  border-radius: 4px;
-  font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.lang-tab.is-active .lang-tab-code { background: var(--primary); }
 .lang-tab-name { font-size: 0.875rem; }
 .lang-tab-count {
   display: inline-flex; align-items: center; justify-content: center;
