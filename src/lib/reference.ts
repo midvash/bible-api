@@ -44,6 +44,16 @@ export interface ParsedReference {
 const REFERENCE_RE = /^(.+?)[\s.:]*(\d+)(?::(\d+)(?:\s*-\s*(\d+))?)?$/;
 
 /**
+ * Abreviações de texto livre que brigam com um slug de URL. Em português,
+ * "Jo 3:16" é João, mas `jo` é o slug de Jó nas URLs (midvash.com/pt-br/…/jo/1).
+ * Só vale pra referência escrita (parse, passages); a rota de capítulo segue
+ * lendo `jo` como Jó. Com acento ("Jó 1:1"), continua Jó.
+ */
+const FREE_TEXT_ABBREVIATIONS: Readonly<Record<string, string>> = {
+  jo: 'joao',
+};
+
+/**
  * Parseia uma referência. Retorna `null` quando a string não tem a forma
  * `<livro> <capítulo>[...]`, quando o capítulo é < 1, ou quando um intervalo
  * de versículos é invertido (fim < início). NÃO garante que o livro exista.
@@ -71,7 +81,9 @@ export function parseReference(input: string): ParsedReference | null {
     bookRaw,
     // NFC recompõe o Hangul que normalizeLoose (NFD) decompôs em jamo, casando
     // com os slugs compostos do índice; ASCII/cirílico passam inalterados.
-    bookQuery: normalizeLoose(bookRaw).normalize('NFC'),
+    bookQuery:
+      FREE_TEXT_ABBREVIATIONS[bookRaw.toLowerCase().replace(/\.$/, '')] ??
+      normalizeLoose(bookRaw).normalize('NFC'),
     chapter,
     verseStart,
     verseEnd,
