@@ -6,12 +6,49 @@ import {
   type Locale,
   type Translations,
   type EndpointDoc,
+  type EcosystemKey,
 } from './i18n';
+import { licenseOf } from './license';
 import { DOCS_STRINGS, type DocsStrings } from './docs';
 import { BOOKS } from '../books';
 
 const SITE_URL = 'https://api.midvash.com';
-const REPO_URL = 'https://github.com/midvash/bible-api';
+const MIDVASH_URL = 'https://midvash.com';
+const MCP_URL = 'https://mcp.midvash.com';
+const IOS_URL = 'https://apps.apple.com/app/id6775930176';
+const ANDROID_URL = 'https://play.google.com/store/apps/details?id=com.midvash.mobile';
+// OG genérica da marca (2400x1260). A antiga midvash.com/brand/og-api.jpg dá 404.
+const OG_IMAGE = 'https://assets.midvash.com/seo-images/og-image-default.png';
+
+/** URL de midvash.com no locale (inglês sem prefixo, demais com /<locale>). */
+function midvashUrl(locale: Locale, path = ''): string {
+  return `${MIDVASH_URL}${locale === 'en' ? '' : `/${locale}`}${path}`;
+}
+
+// Slug da página da extensão Chrome em midvash.com (ROUTES.chromeExtension do monorepo).
+const CHROME_SLUG: Record<Locale, string> = {
+  en: '/chrome-extension',
+  'pt-br': '/extensao-chrome',
+  es: '/extension-chrome',
+  fr: '/extension-chrome',
+  de: '/chrome-erweiterung',
+  it: '/estensione-chrome',
+  zh: '/chrome-extension',
+  ru: '/chrome-extension',
+  ko: '/chrome-extension',
+};
+
+function ecosystemLinks(locale: Locale): Array<{ key: EcosystemKey; href: string; external?: boolean }> {
+  return [
+    { key: 'reader', href: midvashUrl(locale) },
+    { key: 'api', href: `${SITE_URL}${pathForLocale(locale)}` },
+    { key: 'mcp', href: `${MCP_URL}${locale === 'en' ? '' : `/${locale}`}` },
+    { key: 'wordpress', href: midvashUrl(locale, '/wordpress-plugin') },
+    { key: 'chrome', href: midvashUrl(locale, CHROME_SLUG[locale]) },
+    { key: 'ios', href: IOS_URL, external: true },
+    { key: 'android', href: ANDROID_URL, external: true },
+  ];
+}
 
 const ALTERNATE_NAMES: Partial<Record<Locale, string>> = {
   en: 'Bible API by Midvash',
@@ -179,8 +216,9 @@ const OSS_REPOS: ReadonlyArray<{ name: string; url: string; current?: boolean }>
   { name: 'bible-data', url: 'https://github.com/midvash/bible-data' },
   { name: 'bible-data-js', url: 'https://github.com/midvash/bible-data-js' },
   { name: 'bible-cross-references', url: 'https://github.com/midvash/bible-cross-references' },
-  { name: 'bible-by-midvash', url: 'https://github.com/midvash/bible-by-midvash' },
-  { name: 'emdash-plugin-bible', url: 'https://github.com/midvash/emdash-plugin-bible' },
+  { name: 'bible-mcp', url: 'https://github.com/midvash/bible-mcp' },
+  { name: 'bible-wordpress-plugin', url: 'https://github.com/midvash/bible-wordpress-plugin' },
+  { name: 'bible-emdash-plugin', url: 'https://github.com/midvash/bible-emdash-plugin' },
 ];
 
 const INSTAGRAM_ICON =
@@ -194,12 +232,18 @@ const SUCCESS_ENVELOPE_JSON = `{
   "data": {
     "version": "kjv",
     "book": "john",
+    "bookName": "John",
     "chapter": 3,
     "verse": 16,
+    "verseEnd": 16,
     "text": "For God so loved the world…",
     "verses": ["For God so loved the world…"]
   },
-  "meta": { "reference": "John 3:16", "total": 1 }
+  "meta": {
+    "reference": "John 3:16",
+    "total": 1,
+    "copyright": "King James Version (KJV)\\nPublic Domain.\\n…"
+  }
 }`;
 
 const ERROR_ENVELOPE_JSON = `{
@@ -226,8 +270,8 @@ const GUIDE_EXAMPLES: ReadonlyArray<{ call: string; curl: string; js: string; py
   {
     call: '/v1/kjv/john/3/16',
     curl: 'curl https://api.midvash.com/v1/kjv/john/3/16',
-    js: "const res = await fetch('https://api.midvash.com/v1/kjv/john/3/16');\nconst { data } = await res.json();\nconsole.log(data.text);",
-    py: "import requests\nr = requests.get('https://api.midvash.com/v1/kjv/john/3/16')\nprint(r.json()['data']['text'])",
+    js: "const res = await fetch('https://api.midvash.com/v1/kjv/john/3/16');\nconst { data, meta } = await res.json();\nconsole.log(data.text);\nconsole.log(meta.copyright); // show it next to the text",
+    py: "import requests\nbody = requests.get('https://api.midvash.com/v1/kjv/john/3/16').json()\nprint(body['data']['text'])\nprint(body['meta']['copyright'])  # show it next to the text",
   },
   {
     call: '/v1/versions?language=pt-br',
@@ -238,10 +282,71 @@ const GUIDE_EXAMPLES: ReadonlyArray<{ call: string; curl: string; js: string; py
   {
     call: '/v1/votd?language=en',
     curl: "curl 'https://api.midvash.com/v1/votd?language=en'",
-    js: "const res = await fetch('https://api.midvash.com/v1/votd?language=en');\nconst votd = await res.json(); // flat shape, no envelope\nconsole.log(votd.reference, votd.text);",
-    py: "import requests\nv = requests.get('https://api.midvash.com/v1/votd', params={'language': 'en'}).json()\nprint(v['reference'], v['text'])",
+    js: "const res = await fetch('https://api.midvash.com/v1/votd?language=en');\nconst votd = await res.json(); // flat shape, no envelope\nconsole.log(votd.reference, votd.text);\nconsole.log(votd.copyright);",
+    py: "import requests\nv = requests.get('https://api.midvash.com/v1/votd', params={'language': 'en'}).json()\nprint(v['reference'], v['text'])\nprint(v['copyright'])",
   },
 ];
+
+/**
+ * JSON-LD num único @graph: Organization (Midvash), WebAPI (esta API, com
+ * docs e spec), WebPage com breadcrumb e FAQPage espelhando a FAQ visível.
+ * `<` escapado pra não fechar o <script> por acidente.
+ */
+function jsonLd(locale: Locale, t: Translations): string {
+  const pageUrl = `${SITE_URL}${pathForLocale(locale)}`;
+  const orgId = `${MIDVASH_URL}/#organization`;
+  const graph = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': orgId,
+        name: 'Midvash',
+        url: MIDVASH_URL,
+        logo: `${MIDVASH_URL}/brand/icon.svg`,
+        sameAs: ['https://www.instagram.com/midvash', GITHUB_ORG_URL],
+      },
+      {
+        '@type': 'WebAPI',
+        '@id': `${SITE_URL}/#api`,
+        name: 'Bible API by Midvash',
+        alternateName: ALTERNATE_NAMES[locale] ?? 'Bible API by Midvash',
+        description: t.meta.description,
+        url: pageUrl,
+        documentation: `${SITE_URL}/docs`,
+        termsOfService: `${MIDVASH_URL}/terms`,
+        isAccessibleForFree: true,
+        provider: { '@id': orgId },
+      },
+      {
+        '@type': 'WebPage',
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: t.meta.title,
+        inLanguage: t.htmlLang,
+        about: { '@id': `${SITE_URL}/#api` },
+        breadcrumb: {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Midvash', item: midvashUrl(locale) },
+            { '@type': 'ListItem', position: 2, name: t.footer.ecosystem.api, item: pageUrl },
+          ],
+        },
+      },
+      {
+        '@type': 'FAQPage',
+        '@id': `${pageUrl}#faq`,
+        inLanguage: t.htmlLang,
+        mainEntity: t.faq.items.map((it) => ({
+          '@type': 'Question',
+          name: it.q,
+          acceptedAnswer: { '@type': 'Answer', text: it.a },
+        })),
+      },
+    ],
+  };
+  return JSON.stringify(graph).replace(/</g, '\\u003c');
+}
 
 function renderEndpointCard(ep: EndpointDoc, t: Translations): string {
   const id = endpointId(ep);
@@ -314,7 +419,7 @@ function groupVersionsByLanguage(
   }
 
   // Mapeia o locale da página para o language code dos dados
-  const pageLang = pageLocale === 'pt-br' ? 'pt-br' : pageLocale === 'es' ? 'es' : 'en';
+  const pageLang: string = pageLocale;
 
   const sorted = Array.from(groups.entries()).sort(([a, ai], [b, bi]) => {
     if (a === pageLang) return -1;
@@ -363,10 +468,17 @@ function renderVersionsSection(
       const cards = g.items
         .map((v) => {
           const scope = v.hasOldTestament && v.hasNewTestament
-            ? 'OT + NT'
+            ? t.versions.scopeFull
             : v.hasOldTestament
-              ? 'OT only'
-              : 'NT only';
+              ? t.versions.scopeOt
+              : t.versions.scopeNt;
+          const lic = licenseOf(v.copyright);
+          const licLabel =
+            lic.kind === 'cc'
+              ? lic.label
+              : lic.kind === 'pd'
+                ? t.versions.labelPublicDomain
+                : t.versions.labelTerms;
           return `
           <a class="version-card" href="https://api.midvash.com/v1/versions/${escapeHtml(v.slug)}" target="_blank" rel="noopener">
             <span class="version-badge">${escapeHtml(v.shortName)}</span>
@@ -376,6 +488,7 @@ function renderVersionsSection(
                 <code>${escapeHtml(v.slug)}</code>
                 <span class="version-scope">${escapeHtml(scope)}</span>
               </div>
+              <span class="version-license lic-${lic.kind}">${escapeHtml(licLabel)}</span>
             </div>
           </a>`;
         })
@@ -401,6 +514,22 @@ function renderVersionsSection(
           <h2>${escapeHtml(t.versions.title)}</h2>
           <p>${escapeHtml(t.versions.subtitle)}</p>
         </div>
+        <div class="license-notes">
+          <div class="callout">
+            <span class="callout-mark" aria-hidden="true">©</span>
+            <div class="callout-body">
+              <h3>${escapeHtml(t.versions.creditTitle)}</h3>
+              <p>${richText(t.versions.creditBody)}</p>
+            </div>
+          </div>
+          <div class="callout">
+            <span class="callout-mark" aria-hidden="true">↪</span>
+            <div class="callout-body">
+              <h3>${escapeHtml(t.versions.aliasTitle)}</h3>
+              <p>${richText(t.versions.aliasBody)}</p>
+            </div>
+          </div>
+        </div>
         <div class="lang-tabs-wrapper">
           <div class="lang-tabs" role="tablist">
             ${tabs}
@@ -408,6 +537,71 @@ function renderVersionsSection(
           <div class="lang-panels">
             ${panels}
           </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+/**
+ * Escapa o texto e marca como <code> os nomes técnicos citados na copy
+ * (campos e rotas), sem exigir HTML dentro das traduções.
+ */
+const CODE_TOKENS_RE =
+  /(meta\.copyright|data\.version|If-None-Match|\/v1\/passages|\/v1\/versions|\/v1\/votd|\/openapi\.json|(?<![\w.])\/docs\b)/g;
+function richText(str: string): string {
+  return escapeHtml(str).replace(CODE_TOKENS_RE, '<code>$1</code>');
+}
+
+/** "Mais do Midvash": MCP, plugin WordPress e o app (links no idioma da página). */
+function renderMoreSection(t: Translations, locale: Locale): string {
+  const m = t.more;
+  const cards: Array<{ icon: EcosystemKey; title: string; body: string; href: string }> = [
+    { icon: 'mcp', title: m.mcpTitle, body: m.mcpBody, href: `${MCP_URL}${locale === 'en' ? '' : `/${locale}`}` },
+    { icon: 'wordpress', title: m.wpTitle, body: m.wpBody, href: midvashUrl(locale, '/wordpress-plugin') },
+    { icon: 'reader', title: m.appTitle, body: m.appBody, href: midvashUrl(locale) },
+  ];
+  return `
+    <section id="more" class="docs-section alt">
+      <div class="container">
+        <div class="section-head">
+          <h2>${escapeHtml(m.title)}</h2>
+          <p>${escapeHtml(m.subtitle)}</p>
+        </div>
+        <div class="features-grid more-grid">
+          ${cards
+            .map(
+              (c) => `
+          <a class="feature-card more-card" href="${escapeHtml(c.href)}">
+            <span class="more-icon" aria-hidden="true">${ECOSYSTEM_ICONS[c.icon]}</span>
+            <h3>${escapeHtml(c.title)}</h3>
+            <p>${escapeHtml(c.body)}</p>
+            <span class="more-cta">${escapeHtml(m.cta)} →</span>
+          </a>`,
+            )
+            .join('')}
+        </div>
+      </div>
+    </section>`;
+}
+
+/** FAQ curta, com <details> nativo (sem JS). Espelhada no JSON-LD FAQPage. */
+function renderFaqSection(t: Translations): string {
+  return `
+    <section id="faq" class="docs-section">
+      <div class="container">
+        <div class="section-head">
+          <h2>${escapeHtml(t.faq.title)}</h2>
+        </div>
+        <div class="faq-list">
+          ${t.faq.items
+            .map(
+              (it) => `
+          <details class="faq-item">
+            <summary><h3>${escapeHtml(it.q)}</h3></summary>
+            <p>${richText(it.a)}</p>
+          </details>`,
+            )
+            .join('')}
         </div>
       </div>
     </section>`;
@@ -610,7 +804,22 @@ export function getLandingHtml(locale: Locale, versions: readonly VersionDefinit
   return html;
 }
 
+/**
+ * Tira a indentação dos templates (≈15% do HTML) sem tocar em <pre>, onde o
+ * espaço em branco é conteúdo.
+ */
+function compactHtml(html: string): string {
+  return html
+    .split(/(<pre[\s\S]*?<\/pre>)/)
+    .map((part, i) => (i % 2 === 1 ? part : part.replace(/\n[ \t]+/g, '\n').replace(/\n{2,}/g, '\n')))
+    .join('');
+}
+
 export function renderLandingPage(locale: Locale, versions: readonly VersionDefinition[]): string {
+  return compactHtml(renderLandingPageRaw(locale, versions));
+}
+
+function renderLandingPageRaw(locale: Locale, versions: readonly VersionDefinition[]): string {
   // Contagens reais derivadas do catálogo (R2) — interpoladas nos tokens
   // {versions}/{languages} das traduções. Mantém a copy sempre atual.
   const versionCount = versions.length;
@@ -662,7 +871,7 @@ export function renderLandingPage(locale: Locale, versions: readonly VersionDefi
     .map(
       (g) => `
       <section class="ep-group">
-        <h2 class="ep-group-title">${escapeHtml(g.group)}</h2>
+        <h3 class="ep-group-title">${escapeHtml(g.group)}</h3>
         ${g.items.map((ep) => renderEndpointCard(ep, t)).join('')}
       </section>`,
     )
@@ -689,14 +898,14 @@ export function renderLandingPage(locale: Locale, versions: readonly VersionDefi
 <meta property="og:url" content="${SITE_URL}${pathForLocale(locale)}">
 <meta property="og:site_name" content="Midvash">
 <meta property="og:locale" content="${OG_LOCALES[locale]}">
-<meta property="og:image" content="https://midvash.com/brand/og-api.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="600">
+<meta property="og:image" content="${OG_IMAGE}">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
 <meta property="og:image:alt" content="${escapeHtml(t.meta.title)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(t.meta.title)}">
 <meta name="twitter:description" content="${escapeHtml(t.meta.description)}">
-<meta name="twitter:image" content="https://midvash.com/brand/og-api.jpg">
+<meta name="twitter:image" content="${OG_IMAGE}">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
 <meta name="theme-color" content="#B17027">
 <link rel="icon" href="https://midvash.com/brand/favicon.ico" sizes="any">
@@ -705,9 +914,10 @@ export function renderLandingPage(locale: Locale, versions: readonly VersionDefi
 <link rel="canonical" href="${SITE_URL}${pathForLocale(locale)}">
 ${alternates}
 <link rel="alternate" hreflang="x-default" href="${SITE_URL}/">
+<link rel="alternate" type="application/json" href="${SITE_URL}/openapi.json" title="OpenAPI 3.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500;600&family=Literata:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500;600&family=Literata:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --primary: #B17027;
@@ -1327,6 +1537,42 @@ a.footer-link:hover .footer-link-icon { color: var(--primary); }
 .callout-body strong { display: block; color: var(--text); margin-bottom: 4px; font-family: var(--font-mono); font-size: 0.9rem; }
 .callout-body p { color: var(--text-soft); font-size: 0.9rem; }
 
+/* Versões e licenças: notas de crédito/alias + selo de licença no card */
+.license-notes { display: grid; gap: 14px; margin-bottom: 28px; }
+@media (min-width: 860px) { .license-notes { grid-template-columns: 1fr 1fr; } }
+.license-notes .callout { margin-top: 0; }
+.callout-body h3 { color: var(--text); margin-bottom: 4px; font-size: 0.95rem; font-weight: 700; }
+.callout-body code, .faq-item code {
+  font-family: var(--font-mono); font-size: 0.82em;
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 0 5px; border-radius: 4px;
+}
+.version-license {
+  align-self: flex-start; margin-top: 2px;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+.version-license.lic-cc { color: var(--primary); }
+
+/* Mais do Midvash */
+.more-card { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
+.more-icon svg { width: 28px; height: 28px; color: var(--primary); }
+.more-cta { margin-top: auto; font-weight: 600; color: var(--primary); font-size: 0.9rem; }
+
+/* FAQ */
+.faq-list { max-width: 820px; display: grid; gap: 10px; }
+.faq-item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 0 18px;
+}
+.faq-item summary { cursor: pointer; padding: 16px 0; list-style: none; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary h3 { display: inline; font-size: 1rem; font-weight: 600; color: var(--text); }
+.faq-item summary::before { content: '+'; display: inline-block; width: 1.2em; color: var(--primary); font-weight: 700; }
+.faq-item[open] summary::before { content: '−'; }
+.faq-item p { padding: 0 0 16px 1.2em; color: var(--text-soft); font-size: 0.95rem; line-height: 1.6; }
+.quick .code-block .comment { color: #a8a29e; }
+
 /* Errors table */
 .err-table {
   width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 20px;
@@ -1403,39 +1649,7 @@ a.footer-link:hover .footer-link-icon { color: var(--primary); }
 }
 </style>
 <script type="application/ld+json">
-${JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'WebAPI',
-  name: 'Bible API by Midvash',
-  alternateName: ALTERNATE_NAMES[locale] ?? 'Bible API by Midvash',
-  description: t.meta.description,
-  url: `${SITE_URL}${pathForLocale(locale)}`,
-  documentation: SITE_URL,
-  termsOfService: 'https://midvash.com/terms',
-  inLanguage: SUPPORTED_LOCALES as readonly string[],
-  isAccessibleForFree: true,
-  provider: {
-    '@type': 'Organization',
-    name: 'Midvash',
-    url: 'https://midvash.com',
-    logo: 'https://midvash.com/brand/icon.svg',
-  },
-})}
-</script>
-<script type="application/ld+json">
-${JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Midvash', item: 'https://midvash.com' + (locale === 'en' ? '' : '/' + locale) },
-    {
-      '@type': 'ListItem',
-      position: 2,
-      name: locale === 'pt-br' ? 'API da Bíblia' : locale === 'es' ? 'API de la Biblia' : 'Bible API',
-      item: `${SITE_URL}${pathForLocale(locale)}`,
-    },
-  ],
-})}
+${jsonLd(locale, t)}
 </script>
 </head>
 <body>
@@ -1464,6 +1678,7 @@ ${JSON.stringify({
     <div class="hero-cta">
       <a href="#endpoints" class="btn btn-primary">${escapeHtml(t.hero.ctaPrimary)} →</a>
       <a href="#quick" class="btn btn-secondary">${escapeHtml(t.hero.ctaSecondary)}</a>
+      <a href="/docs" class="btn btn-secondary">${escapeHtml(t.hero.ctaDocs)}</a>
     </div>
   </div>
 </section>
@@ -1480,9 +1695,10 @@ ${JSON.stringify({
         </button>
       </div>
       <div>
-        <pre class="code-block"><span class="keyword">fetch</span>(<span class="string">'https://api.midvash.com/v1/kjv/john/3/16'</span>)
-  .then(r =&gt; r.<span class="keyword">json</span>())
-  .then(data =&gt; <span class="keyword">console</span>.log(data.text))</pre>
+        <pre class="code-block"><span class="keyword">const</span> res = <span class="keyword">await</span> fetch(<span class="string">'https://api.midvash.com/v1/kjv/john/3/16'</span>);
+<span class="keyword">const</span> { data, meta } = <span class="keyword">await</span> res.json();
+console.log(data.text);
+console.log(meta.copyright); <span class="comment">// show it with the text</span></pre>
       </div>
     </div>
     <div class="container" style="max-width: 920px; margin-top: 24px;">
@@ -1510,8 +1726,6 @@ ${JSON.stringify({
 
 ${renderVersionsSection(t, locale, versions)}
 
-${renderBooksSection(docs, locale)}
-
 <section id="endpoints" class="endpoints-section">
   <div class="container">
     <div class="section-head">
@@ -1529,11 +1743,17 @@ ${renderBooksSection(docs, locale)}
   </div>
 </section>
 
+${renderGuidesSection(docs)}
+
 ${renderFormatSection(docs)}
 
 ${renderErrorsSection(docs)}
 
-${renderGuidesSection(docs)}
+${renderBooksSection(docs, locale)}
+
+${renderMoreSection(t, locale)}
+
+${renderFaqSection(t)}
 
 </main>
 
@@ -1547,7 +1767,7 @@ ${renderGuidesSection(docs)}
           <span class="footer-brand-by">by Midvash</span>
         </span>
         <div class="footer-social" aria-label="${escapeHtml(t.footer.socialLabel)}">
-          <a href="https://instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
+          <a href="https://www.instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
           <a href="${GITHUB_ORG_URL}" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="footer-social-icon">${GITHUB_ICON}</a>
         </div>
       </div>
@@ -1555,16 +1775,15 @@ ${renderGuidesSection(docs)}
         <div class="footer-col">
           <h2 class="footer-col-title">${escapeHtml(t.footer.productsLabel)}</h2>
           <ul>
-            ${t.footer.ecosystem
+            ${ecosystemLinks(locale)
               .map((l) => {
-                const icon = `<span class="footer-link-icon" aria-hidden="true">${ECOSYSTEM_ICONS[l.iconKey]}</span>`;
-                const text = `<span class="footer-link-text">${escapeHtml(l.label)}</span>`;
-                if (l.soon) {
-                  return `<li><span class="footer-link is-soon">${icon}${text}<span class="soon-badge">${escapeHtml(t.footer.soonLabel)}</span></span></li>`;
-                }
-                const cur = l.current ? ' is-current' : '';
-                const aria = l.current ? ' aria-current="page"' : '';
-                return `<li><a class="footer-link${cur}" href="${escapeHtml(l.href ?? '#')}"${aria}>${icon}${text}</a></li>`;
+                const icon = `<span class="footer-link-icon" aria-hidden="true">${ECOSYSTEM_ICONS[l.key]}</span>`;
+                const text = `<span class="footer-link-text">${escapeHtml(t.footer.ecosystem[l.key])}</span>`;
+                const isCurrent = l.key === 'api';
+                const cur = isCurrent ? ' is-current' : '';
+                const aria = isCurrent ? ' aria-current="page"' : '';
+                const ext = l.external ? ' target="_blank" rel="noopener"' : '';
+                return `<li><a class="footer-link${cur}" href="${escapeHtml(l.href)}"${aria}${ext}>${icon}${text}</a></li>`;
               })
               .join('')}
           </ul>

@@ -25,9 +25,9 @@
  *     GET /openapi.json (alias /v1/openapi.json) → spec OpenAPI 3.1
  *     GET /docs                              → referência interativa (Scalar)
  *
- *   Landing (api.midvash.com/, /es, /pt-br):
- *     GET / com Accept: text/html            → landing HTML
- *     GET /es, /pt-br                        → landing traduzida
+ *   Landing (api.midvash.com/ + /pt-br, /es, /fr, /de, /it, /zh, /ru, /ko):
+ *     GET / com Accept: text/html            → landing HTML (en, canônica)
+ *     GET /<locale>                          → landing traduzida (URL própria por idioma)
  */
 
 import type { Env } from './env';

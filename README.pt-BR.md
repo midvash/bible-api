@@ -56,7 +56,7 @@ erro sugere o mais próximo (`didYouMean`).
 
 A API só serve versões que pode redistribuir: domínio público ou licença
 aberta (CC BY, CC BY-SA). Toda resposta com texto traz o crédito da versão em
-`meta.copyright` (ou `copyright` nas rotas legadas). Mostre junto do texto; as
+`meta.copyright` (ou `copyright` nas rotas legadas e no `/v1/votd`). Mostre junto do texto; as
 licenças CC exigem.
 
 Versões com todos os direitos reservados (NIV, ESV, NVI, NVT…) não são
@@ -110,12 +110,13 @@ Faz parte do [**Midvash**](https://midvash.com) — uma plataforma gratuita de l
 | | |
 |---|---|
 | 📖 **Leitor (web)** | [midvash.com](https://midvash.com) — 9 idiomas |
-| 📱 **App iOS** | [midvash.app/ios](https://midvash.app/ios) |
+| 📱 **App iOS** | [App Store](https://apps.apple.com/app/id6775930176) |
+| 📱 **App Android** | [Google Play](https://play.google.com/store/apps/details?id=com.midvash.mobile) |
 | 🔌 **API** | [api.midvash.com](https://api.midvash.com) · [`bible-api`](https://github.com/midvash/bible-api) |
 | 🤖 **Servidor MCP** | [mcp.midvash.com](https://mcp.midvash.com) · [`bible-mcp`](https://github.com/midvash/bible-mcp) |
-| 🧩 **Plugin WordPress** | [midvash.app/wordpress-plugin](https://midvash.app/wordpress-plugin) · [`bible-wordpress-plugin`](https://github.com/midvash/bible-wordpress-plugin) |
-| 🧩 **Plugin EmDash** | [midvash.app/emdash-plugin](https://midvash.app/emdash-plugin) · [`emdash-plugin-bible`](https://github.com/midvash/emdash-plugin-bible) |
-| 🌐 **Extensão Chrome** | [midvash.app/chrome-extension](https://midvash.app/chrome-extension) · [`bible-chrome-extension`](https://github.com/midvash/bible-chrome-extension) |
+| 🧩 **Plugin WordPress** | [midvash.com/pt-br/wordpress-plugin](https://midvash.com/pt-br/wordpress-plugin) · [`bible-wordpress-plugin`](https://github.com/midvash/bible-wordpress-plugin) |
+| 🧩 **Plugin EmDash** | [midvash.com/pt-br/emdash-plugin](https://midvash.com/pt-br/emdash-plugin) · [`bible-emdash-plugin`](https://github.com/midvash/bible-emdash-plugin) |
+| 🌐 **Extensão Chrome** | [midvash.com/pt-br/extensao-chrome](https://midvash.com/pt-br/extensao-chrome) · [`bible-chrome-extension`](https://github.com/midvash/bible-chrome-extension) |
 | 📦 **Dados abertos** | [`bible-data`](https://github.com/midvash/bible-data) · [`bible-data-js`](https://github.com/midvash/bible-data-js) · [`bible-cross-references`](https://github.com/midvash/bible-cross-references) |
 
-<sub>Gratuito e aberto, feito pela [Midvash](https://midvash.com) · [midvash.com](https://midvash.com) · [midvash.app](https://midvash.app)</sub>
+<sub>Gratuito e aberto, feito pela [Midvash](https://midvash.com) · [midvash.com](https://midvash.com)</sub>
