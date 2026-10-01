@@ -21,7 +21,7 @@ import type { Env } from '../../env';
 import { CACHE_HEADERS } from '../../env';
 import { buildCacheKey, etagFor, serveWithCache } from '../../lib/cache';
 import { errorResponse } from '../../lib/response';
-import { getVersionCatalog } from '../../versions';
+import { getVersionCatalog, lookupVersion } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { parseReference, verseParamFrom } from '../../lib/reference';
 
@@ -107,8 +107,9 @@ export function handleV1Passages(
   return serveWithCache(request, ctx, cacheKey, 'v1-passages', async () => {
     try {
       const catalog = await getVersionCatalog(env);
-      const version = catalog.bySlug.get(versionParam);
-      if (!version) {
+      // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
+      const found = lookupVersion(catalog, versionParam);
+      if (!found) {
         return errorResponse('VERSION_NOT_FOUND', `Version "${versionParam}" not found.`, {
           availableVersions: catalog.versions.length,
         });
@@ -126,10 +127,10 @@ export function handleV1Passages(
         data: items,
         meta: {
           total: items.length,
-          version: versionParam,
+          version: found.slug,
           resolved,
           failed,
-          copyright: version.copyright,
+          copyright: found.version.copyright,
         },
       });
 

@@ -52,6 +52,17 @@ Los slugs de los libros funcionan en cualquiera de los 9 idiomas (`john`, `joao`
 con o sin guion (`2-samuel` o `2samuel`). Si un slug no resuelve, el cuerpo del
 error sugiere el más cercano (`didYouMean`).
 
+## Versiones bíblicas y atribución
+
+La API solo sirve versiones que puede redistribuir: dominio público o licencia
+abierta (CC BY, CC BY-SA). Toda respuesta con texto trae el crédito de la
+versión en `meta.copyright` (o `copyright` en las rutas legadas). Muéstralo
+junto al texto; las licencias CC lo exigen.
+
+Las versiones con todos los derechos reservados (NIV, ESV, NVI, NTV…) no se
+sirven. Quien pida una de ellas recibe una versión libre del mismo idioma, y
+`data.version` indica cuál llegó.
+
 ## Límite de tasa
 
 **No hay límite de tasa.** Esta es una API pública, gratuita y cacheada en el

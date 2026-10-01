@@ -15,7 +15,7 @@
  * Cache: 24h (max-age=86400). Cache API key embute language+version+date UTC.
  */
 
-import { getVersionCatalog } from '../versions';
+import { getVersionCatalog, lookupVersion } from '../versions';
 import { ERROR_5XX_HEADERS, type Env } from '../env';
 import { normalizeLocale, type ApiLocale } from '../lib/locale';
 import { buildCacheKey, etagFor, serveWithCache } from '../lib/cache';
@@ -142,10 +142,12 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
 
   return serveWithCache(request, ctx, cacheKey, 'votd', async () => {
     try {
-      const versionData = (await getVersionCatalog(env)).bySlug.get(versionSlug);
-      if (!versionData) {
+      // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
+      const found = lookupVersion(await getVersionCatalog(env), versionSlug);
+      if (!found) {
         return legacyErrorResponse('VERSION_NOT_FOUND', `Versão não encontrada: ${versionSlug}`);
       }
+      const { slug, version: versionData } = found;
 
       const ref = pickVotdForDate(now);
       const bookData = BOOKS_BY_ID.get(ref.bookId);
@@ -157,11 +159,11 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
         });
       }
 
-      const verses = await fetchChapterFromR2(env, versionSlug, bookData.id, ref.chapter);
+      const verses = await fetchChapterFromR2(env, slug, bookData.id, ref.chapter);
       if (!verses || verses.length === 0) {
         return legacyErrorResponse(
           'CHAPTER_NOT_FOUND',
-          `Capítulo não disponível em ${versionSlug}: ${bookData.names.en} ${ref.chapter}`,
+          `Capítulo não disponível em ${slug}: ${bookData.names.en} ${ref.chapter}`,
         );
       }
 
@@ -181,17 +183,18 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
 
       const versePath =
         ref.verseStart === ref.verseEnd ? `${ref.verseStart}` : `${ref.verseStart}-${ref.verseEnd}`;
-      const fullUrl = `https://midvash.com/${locale}/${versionSlug}/${bookSlug}/${ref.chapter}/${versePath}`;
+      const fullUrl = `https://midvash.com/${locale}/${slug}/${bookSlug}/${ref.chapter}/${versePath}`;
 
       const body = JSON.stringify({
         reference,
         text,
-        version: versionSlug,
+        version: slug,
         book_slug: bookSlug,
         chapter: ref.chapter,
         verse_start: ref.verseStart,
         verse_end: ref.verseEnd,
         url: fullUrl,
+        copyright: versionData.copyright,
       });
 
       const ttl = secondsUntilNextUtcDay(now);
@@ -201,9 +204,10 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
         }),
         etag: etagFor([
           'votd',
+          'cr',
           dateKey,
           locale,
-          versionSlug,
+          slug,
           bookData.id,
           ref.chapter,
           ref.verseStart,

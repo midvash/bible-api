@@ -28,6 +28,11 @@ const env = {
   R2_BUCKET: {
     async get(key: string) {
       if (key === 'catalog/versions.json') return { json: async () => CATALOG };
+      // nvt saiu da API (sem licença) e aponta pra kjv; `fora` aponta pra
+      // slug inexistente e tem que ser descartado.
+      if (key === 'catalog/version-aliases.json') {
+        return { json: async () => ({ nvt: 'kjv', fora: 'nao-existe' }) };
+      }
       if (key === `kjv/${PS}/23.json`) return { text: async () => JSON.stringify(PSALM23) };
       return null;
     },
@@ -173,5 +178,36 @@ describe('atribuição da versão junto do texto', () => {
     for (const body of [whole, preview, range]) {
       expect(body.meta.copyright).toBe('King James Version (KJV)\nPublic Domain.');
     }
+  });
+});
+
+describe('versão que saiu da API', () => {
+  it('serve a versão livre no lugar e diz qual veio', async () => {
+    const res = await handleV1Chapter(
+      new Request('https://api.midvash.com/v1/nvt/psalms/23'),
+      env,
+      ctx,
+      'nvt',
+      'psalms',
+      '23',
+      undefined,
+    );
+    const body = await json(res);
+    expect(res.status).toBe(200);
+    expect(body.data.version).toBe('kjv');
+    expect(body.data.verses).toEqual(PSALM23);
+  });
+
+  it('alias pra slug inexistente vira 404', async () => {
+    const res = await handleV1Chapter(
+      new Request('https://api.midvash.com/v1/fora/psalms/23'),
+      env,
+      ctx,
+      'fora',
+      'psalms',
+      '23',
+      undefined,
+    );
+    expect(res.status).toBe(404);
   });
 });

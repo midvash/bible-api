@@ -52,6 +52,17 @@ Book slugs work in any of 9 languages (`john`, `joao`, `juan`), with or without
 hyphens (`2-samuel` or `2samuel`). If a slug doesn't resolve, the error body
 suggests the closest one (`didYouMean`).
 
+## Bible versions and attribution
+
+The API only serves versions it is allowed to redistribute: public domain or
+open licenses (CC BY, CC BY-SA). Each text response carries the version's
+attribution in `meta.copyright` (or `copyright` on legacy routes). Show it next
+to the text; CC licenses require it.
+
+Versions with all rights reserved (NIV, ESV, NVI, NVT…) are not served. A
+request for one of them gets a free version in the same language instead, and
+`data.version` says which one came back.
+
 ## Rate limiting
 
 **There is no rate limit.** This is a free, public, edge-cached API: over 99% of
