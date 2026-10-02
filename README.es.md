@@ -3,7 +3,7 @@
 > 🌐 [English](./README.md) · [Português (BR)](./README.pt-BR.md) · **Español**
 
 API pública de la Biblia, gratuita, sin clave y de solo lectura. Versículos, capítulos, libros y versiones
-en **62 traducciones bíblicas libres en 31 idiomas** — servidos desde
+en **más de 100 traducciones bíblicas libres en 68 idiomas** — servidos desde
 el edge de Cloudflare con caché agresivo. Impulsa
 [api.midvash.com](https://api.midvash.com).
 

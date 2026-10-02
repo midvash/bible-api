@@ -3,7 +3,7 @@
 > 🌐 **English** · [Português (BR)](./README.pt-BR.md) · [Español](./README.es.md)
 
 Free, no-key, read-only public Bible API. Verses, chapters, books and versions
-across **62 free Bible translations in 31 languages** — served from
+across **100+ free Bible translations in 68 languages** — served from
 Cloudflare's edge with aggressive caching. Powers
 [api.midvash.com](https://api.midvash.com).
 
