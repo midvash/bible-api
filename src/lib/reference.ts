@@ -89,13 +89,3 @@ export function parseReference(input: string): ParsedReference | null {
     verseEnd,
   };
 }
-
-/**
- * Serializa a parte de versículo de uma referência parseada para o formato
- * que `resolveChapter` espera no `verseParam` ("16", "16-18", ou undefined).
- */
-export function verseParamFrom(ref: ParsedReference): string | undefined {
-  if (ref.verseStart === null) return undefined;
-  if (ref.verseEnd === null || ref.verseEnd === ref.verseStart) return `${ref.verseStart}`;
-  return `${ref.verseStart}-${ref.verseEnd}`;
-}

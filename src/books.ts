@@ -4,16 +4,16 @@
  * importam @midvash/i18n.
  */
 
-export type Locale = 'en' | 'pt-br' | 'es' | 'fr' | 'de' | 'it' | 'zh' | 'ru' | 'ko';
+import type { ApiLocale } from './lib/locale';
 
 export interface BookDefinition {
     id: number;
     chapters: number;
     testament: 'old' | 'new';
     category: string;
-    slugs: Record<Locale, string>;
-    names: Record<Locale, string>;
-    abbrev: Record<Locale, string>;
+    slugs: Record<ApiLocale, string>;
+    names: Record<ApiLocale, string>;
+    abbrev: Record<ApiLocale, string>;
 }
 
 // Convenções:
@@ -619,3 +619,16 @@ export const BOOKS: BookDefinition[] = [
         abbrev: { en: 'Rev', 'pt-br': 'Ap', es: 'Ap', fr: 'Ap', de: 'Offb', it: 'Ap', zh: '启', ru: 'Откр', ko: '계' }
     }
 ];
+
+/** Shape público de um livro — o mesmo em /books (legado) e /v1/books. */
+export function serializeBook(book: BookDefinition) {
+  return {
+    id: book.id,
+    name: book.names,
+    slug: book.slugs,
+    abbrev: book.abbrev,
+    chapters: book.chapters,
+    testament: book.testament,
+    category: book.category,
+  };
+}

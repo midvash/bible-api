@@ -31,7 +31,7 @@
  */
 
 import type { Env } from './env';
-import { HTML_HEADERS } from './env';
+import { HTML_HEADERS, JSON_BASE_HEADERS } from './env';
 import {
   handleRoot,
   handleVersions,
@@ -43,8 +43,9 @@ import { handleVotd } from './handlers/votd';
 import { handleOpenApiJson, handleDocs } from './handlers/openapi';
 import { getLandingHtml } from './landing/page';
 import { getVersionCatalog } from './versions';
-import { localeFromPath, SUPPORTED_LOCALES, pathForLocale } from './landing/i18n';
-import { buildCacheKey, etagFor, serveWithCache } from './lib/cache';
+import { localeFromPath, pathForLocale } from './landing/i18n';
+import { LOCALES } from './lib/locale';
+import { buildCacheKey, contentHash, etagFor, serveWithCache } from './lib/cache';
 
 const CORS_PREFLIGHT_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -57,11 +58,8 @@ const CORS_PREFLIGHT_HEADERS = {
 // TTL corta o churn de scrapers/loops sem prender um endpoint recém-lançado
 // por mais que isso.
 const NOT_FOUND_HEADERS = {
-  'Content-Type': 'application/json',
+  ...JSON_BASE_HEADERS,
   'Cache-Control': 'public, max-age=3600',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
-  'X-Robots-Tag': 'noindex, nofollow',
 } as const;
 
 const METHOD_NOT_ALLOWED_HEADERS = {
@@ -87,10 +85,10 @@ const ROBOTS_ETAG = etagFor(['robots']);
 
 const SITEMAP_BODY = (() => {
   const SITE = 'https://api.midvash.com';
-  const alternates = SUPPORTED_LOCALES.map(
+  const alternates = LOCALES.map(
     (l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE}${pathForLocale(l)}"/>`,
   ).join('\n');
-  const urls = SUPPORTED_LOCALES.map((l) => pathForLocale(l));
+  const urls = LOCALES.map((l) => pathForLocale(l));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls
     .map(
       (u) =>
@@ -106,7 +104,7 @@ const SITEMAP_HEADERS = {
 } as const;
 const SITEMAP_ETAG = etagFor(['sitemap']);
 
-// Versão de cache da landing derivada do HTML renderizado (FNV-1a). Muda sozinha
+// Versão de cache da landing derivada do HTML renderizado (contentHash). Muda sozinha
 // a cada alteração de conteúdo/CSS/i18n, então o deploy seguinte invalida o edge
 // cache automaticamente — sem purge manual e sem bump de constante. Memoizada por
 // locale (o HTML em si já é memoizado por isolate em getLandingHtml).
@@ -114,12 +112,7 @@ const landingVersionCache = new Map<string, string>();
 function landingVersion(locale: string, html: string): string {
   const memo = landingVersionCache.get(locale);
   if (memo) return memo;
-  let h = 2166136261;
-  for (let i = 0; i < html.length; i++) {
-    h ^= html.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const v = (h >>> 0).toString(36);
+  const v = contentHash(html);
   landingVersionCache.set(locale, v);
   return v;
 }

@@ -13,12 +13,10 @@ export interface Env {
 }
 
 /**
- * Headers padrão para respostas JSON imutáveis (1 ano, immutable).
- * Conteúdo bíblico publicado nunca muda — versionar via URL pra invalidar.
- * X-Robots-Tag previne indexação pelos buscadores.
+ * Base de toda resposta JSON: CORS público + X-Robots-Tag (previne indexação).
+ * Sem `Cache-Control` — cada variante abaixo (ou `errorResponse`) define o seu.
  */
-export const CACHE_HEADERS = {
-  'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
+export const JSON_BASE_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
@@ -27,42 +25,28 @@ export const CACHE_HEADERS = {
 } as const;
 
 /**
- * Headers para metadados que evoluem com o catálogo (ex.: doc do root).
+ * Respostas JSON imutáveis (1 ano, immutable).
+ * Conteúdo bíblico publicado nunca muda — versionar via URL pra invalidar.
+ */
+export const CACHE_HEADERS = {
+  ...JSON_BASE_HEADERS,
+  'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
+} as const;
+
+/**
+ * Metadados que evoluem com o catálogo (ex.: doc do root).
  * TTL de 1 dia: mudanças de catálogo aparecem em até 24h em todos os colos,
  * sem depender de purge manual — diferente do conteúdo bíblico (imutável, 1 ano).
  */
 export const METADATA_HEADERS = {
+  ...JSON_BASE_HEADERS,
   'Cache-Control': 'public, max-age=86400, s-maxage=86400',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
-  'Content-Type': 'application/json',
-  'X-Robots-Tag': 'noindex, nofollow',
 } as const;
 
-/**
- * Headers para erros 4xx — TTL curto (60s) pra evitar prender 404 transitório
- * por 1 ano no edge.
- */
-export const ERROR_4XX_HEADERS = {
-  'Cache-Control': 'public, max-age=60',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
-  'Content-Type': 'application/json',
-  'X-Robots-Tag': 'noindex, nofollow',
-} as const;
-
-/**
- * Headers para erros 5xx — não cachear, deixar retry funcionar.
- */
+/** Erros 5xx — não cachear, deixar retry funcionar. */
 export const ERROR_5XX_HEADERS = {
+  ...JSON_BASE_HEADERS,
   'Cache-Control': 'no-store',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
-  'Content-Type': 'application/json',
-  'X-Robots-Tag': 'noindex, nofollow',
 } as const;
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseReference, verseParamFrom } from '../src/lib/reference';
+import { parseReference } from '../src/lib/reference';
 
 describe('parseReference', () => {
   it('versículo único', () => {
@@ -75,12 +75,6 @@ describe('parseReference', () => {
 
   it('rejeita capítulo zero', () => {
     expect(parseReference('john 0:1')).toBeNull();
-  });
-
-  it('verseParamFrom serializa as três formas', () => {
-    expect(verseParamFrom(parseReference('psalms 23')!)).toBeUndefined();
-    expect(verseParamFrom(parseReference('john 3:16')!)).toBe('16');
-    expect(verseParamFrom(parseReference('genesis 1:1-3')!)).toBe('1-3');
   });
 });
 

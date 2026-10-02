@@ -14,7 +14,7 @@
  * cache é responsabilidade de `serveWithCache` (lib/cache).
  */
 
-import { CACHE_HEADERS, ERROR_4XX_HEADERS, ERROR_5XX_HEADERS } from '../env';
+import { CACHE_HEADERS, ERROR_5XX_HEADERS, JSON_BASE_HEADERS } from '../env';
 
 export interface ResponseMeta {
   total?: number;
@@ -112,7 +112,7 @@ export function errorResponse(
 function errorHeaders(code: ApiErrorCode): HeadersInit {
   return HTTP_STATUS_FOR_CODE[code] >= 500
     ? ERROR_5XX_HEADERS
-    : { ...ERROR_4XX_HEADERS, 'Cache-Control': `public, max-age=${CACHE_TTL_FOR_CODE[code]}` };
+    : { ...JSON_BASE_HEADERS, 'Cache-Control': `public, max-age=${CACHE_TTL_FOR_CODE[code]}` };
 }
 
 /**

@@ -13,7 +13,7 @@
 
 import type { Env } from '../env';
 import { HTML_HEADERS, METADATA_HEADERS } from '../env';
-import { buildCacheKey, etagFor, serveWithCache } from '../lib/cache';
+import { buildCacheKey, contentHash, etagFor, serveWithCache } from '../lib/cache';
 
 // ─── Schemas reutilizados ───────────────────────────────────────────────────
 
@@ -463,17 +463,8 @@ const OPENAPI_SPEC = {
 
 const OPENAPI_BODY = JSON.stringify(OPENAPI_SPEC);
 
-// FNV-1a do corpo — mesmo truque da landing: mudou o spec, mudou o ETag.
-function fnv(s: string): string {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0).toString(36);
-}
-
-const OPENAPI_ETAG = etagFor(['openapi', fnv(OPENAPI_BODY)]);
+// Hash do corpo: mudou o spec, mudou o ETag.
+const OPENAPI_ETAG = etagFor(['openapi', contentHash(OPENAPI_BODY)]);
 
 // /docs — Scalar por CDN em cima do /openapi.json. Página estática mínima;
 // a referência em si é renderizada no cliente.
@@ -491,7 +482,7 @@ const DOCS_HTML = `<!doctype html>
 </body>
 </html>
 `;
-const DOCS_ETAG = etagFor(['docs', fnv(DOCS_HTML)]);
+const DOCS_ETAG = etagFor(['docs', contentHash(DOCS_HTML)]);
 
 export function handleOpenApiJson(
   request: Request,

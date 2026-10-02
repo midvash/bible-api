@@ -7,7 +7,7 @@
  * códigos de erro) vivem em `page.ts` — aqui só as strings traduzíveis.
  */
 
-import type { Locale } from './i18n';
+import type { ApiLocale } from '../lib/locale';
 
 export interface HttpRow {
   k: string;
@@ -58,7 +58,7 @@ export interface DocsStrings {
   };
 }
 
-export const DOCS_STRINGS: Record<Locale, DocsStrings> = {
+export const DOCS_STRINGS: Record<ApiLocale, DocsStrings> = {
   en: {
     format: {
       title: "Response format & caching",

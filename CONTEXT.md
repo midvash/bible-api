@@ -35,9 +35,13 @@ código, commits e discussões — não inventar sinônimos.
   `serveWithCache(request, ctx, cacheKey, label, produce)` (`src/lib/cache.ts`):
   match no edge → produce em miss → ETag/304 → put via `waitUntil` → HEAD.
   Handlers só produzem o corpo. TTL vem dos headers que `produce` coloca na
-  Response.
+  Response. A chave é do handler: `normalizeCacheKey(request, params)` só
+  baixa o path e descarta a query; os query params que variam o corpo entram
+  já canonizados pelo próprio handler (mesma regra pra chave e corpo).
 
-- **Locale canônico** — a única regra de normalização de locale é
+- **Locale canônico** — os 9 locales vivem uma vez só, em `LOCALES` /
+  `ApiLocale` (`src/lib/locale.ts`), usados por livros, lookup e landing. A
+  única regra de normalização de locale é
   `normalizeLocale` (`src/lib/locale.ts`): `pt`/`pt-pt` → `pt-br`,
   desconhecido → `en`. Cache key e corpo usam a mesma regra (divergência
   fragmenta o edge cache).

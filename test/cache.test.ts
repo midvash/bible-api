@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildCacheKey, normalizeCacheKey, serveWithCache } from '../src/lib/cache';
+import { handleVersions } from '../src/handlers/legacy';
+import type { Env } from '../src/env';
 
 /** Stub do Cache API global (caches.default) para os testes. */
 function stubCaches() {
@@ -27,20 +29,52 @@ function fakeCtx() {
 }
 
 describe('normalizeCacheKey', () => {
-  it('normaliza o locale legado com a regra canônica (pt-pt → pt-br)', () => {
-    const key = normalizeCacheKey(new Request('https://api.midvash.com/versions?locale=pt-pt'));
-    expect(new URL(key.url).search).toBe('?locale=pt-br');
-  });
-
-  it('preserva locales além de pt/es (fr não colapsa mais em en)', () => {
-    const key = normalizeCacheKey(new Request('https://api.midvash.com/versions?locale=fr'));
-    expect(new URL(key.url).search).toBe('?locale=fr');
+  it('descarta a query e só mantém os params canônicos que o handler passa', () => {
+    const key = normalizeCacheKey(
+      new Request('https://api.midvash.com/Versions/?locale=pt-pt&utm=x'),
+      { locale: 'pt-br', vazio: '', ausente: undefined },
+    );
+    expect(key.url).toBe('https://api.midvash.com/versions?locale=pt-br');
   });
 
   it('descarta query irrelevante e lowercase o path', () => {
     const key = normalizeCacheKey(new Request('https://api.midvash.com/NVI/John/3?utm=x'));
     expect(new URL(key.url).pathname).toBe('/nvi/john/3');
     expect(new URL(key.url).search).toBe('');
+  });
+});
+
+describe('GET /versions (legado) — chave e corpo usam o mesmo locale', () => {
+  const CATALOG = [
+    { slug: 'kjv', name: 'KJV', shortName: 'KJV', language: 'en', hasOldTestament: true, hasNewTestament: true, totalBooks: 66, totalChapters: 1189 },
+    { slug: 'almeida-livre', name: 'Almeida', shortName: 'AL', language: 'pt-br', hasOldTestament: true, hasNewTestament: true, totalBooks: 66, totalChapters: 1189 },
+  ];
+  const env = {
+    R2_BUCKET: {
+      async get(key: string) {
+        return key === 'catalog/versions.json' ? { json: async () => CATALOG } : null;
+      },
+    },
+  } as unknown as Env;
+
+  it('pt-pt canoniza para pt-br; sem ?locale não colide com ?locale=en', async () => {
+    const store = stubCaches();
+    const { ctx } = fakeCtx();
+    const call = (q: string) => handleVersions(new Request(`https://api.midvash.com/versions${q}`), env, ctx);
+
+    const pt = JSON.parse(await (await call('?locale=pt-pt')).text());
+    expect(pt.versions.map((v: { slug: string }) => v.slug)).toEqual(['almeida-livre']);
+
+    const all = JSON.parse(await (await call('')).text());
+    const en = JSON.parse(await (await call('?locale=en')).text());
+    expect(all.versions).toHaveLength(2);
+    expect(en.versions).toHaveLength(1);
+
+    expect([...store.keys()].sort()).toEqual([
+      'https://api.midvash.com/versions',
+      'https://api.midvash.com/versions?locale=en',
+      'https://api.midvash.com/versions?locale=pt-br',
+    ]);
   });
 });
 

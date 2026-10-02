@@ -1,14 +1,13 @@
 import type { VersionDefinition } from '../versions';
 import {
   TRANSLATIONS,
-  SUPPORTED_LOCALES,
   pathForLocale,
-  type Locale,
   type Translations,
   type EndpointDoc,
   type EcosystemKey,
 } from './i18n';
 import { licenseOf } from './license';
+import { LOCALES, type ApiLocale } from '../lib/locale';
 import { DOCS_STRINGS, type DocsStrings } from './docs';
 import { BOOKS } from '../books';
 
@@ -21,12 +20,12 @@ const ANDROID_URL = 'https://play.google.com/store/apps/details?id=com.midvash.m
 const OG_IMAGE = 'https://assets.midvash.com/seo-images/og-image-default.png';
 
 /** URL de midvash.com no locale (inglês sem prefixo, demais com /<locale>). */
-function midvashUrl(locale: Locale, path = ''): string {
+function midvashUrl(locale: ApiLocale, path = ''): string {
   return `${MIDVASH_URL}${locale === 'en' ? '' : `/${locale}`}${path}`;
 }
 
 // Slug da página da extensão Chrome em midvash.com (ROUTES.chromeExtension do monorepo).
-const CHROME_SLUG: Record<Locale, string> = {
+const CHROME_SLUG: Record<ApiLocale, string> = {
   en: '/chrome-extension',
   'pt-br': '/extensao-chrome',
   es: '/extension-chrome',
@@ -38,7 +37,7 @@ const CHROME_SLUG: Record<Locale, string> = {
   ko: '/chrome-extension',
 };
 
-function ecosystemLinks(locale: Locale): Array<{ key: EcosystemKey; href: string; external?: boolean }> {
+function ecosystemLinks(locale: ApiLocale): Array<{ key: EcosystemKey; href: string; external?: boolean }> {
   return [
     { key: 'reader', href: midvashUrl(locale) },
     { key: 'api', href: `${SITE_URL}${pathForLocale(locale)}` },
@@ -50,7 +49,7 @@ function ecosystemLinks(locale: Locale): Array<{ key: EcosystemKey; href: string
   ];
 }
 
-const ALTERNATE_NAMES: Partial<Record<Locale, string>> = {
+const ALTERNATE_NAMES: Partial<Record<ApiLocale, string>> = {
   en: 'Bible API by Midvash',
   'pt-br': 'API da Bíblia Midvash',
   es: 'API de la Biblia Midvash',
@@ -62,7 +61,7 @@ const ALTERNATE_NAMES: Partial<Record<Locale, string>> = {
   ko: 'Midvash 성경 API',
 };
 
-const LOCALE_NATIVE_NAMES: Record<Locale, string> = {
+const LOCALE_NATIVE_NAMES: Record<ApiLocale, string> = {
   en: 'English',
   'pt-br': 'Português',
   es: 'Español',
@@ -76,7 +75,7 @@ const LOCALE_NATIVE_NAMES: Record<Locale, string> = {
 
 // Mapeia locale → slug do SVG em midvash.com/flags/. Mesmas bandeiras
 // redondas usadas no Header do app principal (apps/web/components/Header.tsx).
-const LOCALE_FLAGS: Record<Locale, string> = {
+const LOCALE_FLAGS: Record<ApiLocale, string> = {
   en: 'us',
   'pt-br': 'br',
   es: 'es',
@@ -90,7 +89,7 @@ const LOCALE_FLAGS: Record<Locale, string> = {
 
 const FLAG_BASE_URL = 'https://midvash.com/flags';
 
-const OG_LOCALES: Record<Locale, string> = {
+const OG_LOCALES: Record<ApiLocale, string> = {
   en: 'en_US',
   'pt-br': 'pt_BR',
   es: 'es_ES',
@@ -102,7 +101,7 @@ const OG_LOCALES: Record<Locale, string> = {
   ko: 'ko_KR',
 };
 
-const SELECT_LANGUAGE_LABEL: Record<Locale, string> = {
+const SELECT_LANGUAGE_LABEL: Record<ApiLocale, string> = {
   en: 'Select language',
   'pt-br': 'Selecionar idioma',
   es: 'Seleccionar idioma',
@@ -120,8 +119,8 @@ const GLOBE_ICON =
 const CARET_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
 
-function langSwitcherMarkup(currentLocale: Locale, ariaLabel: string): string {
-  const items = SUPPORTED_LOCALES.map((l) => {
+function langSwitcherMarkup(currentLocale: ApiLocale, ariaLabel: string): string {
+  const items = LOCALES.map((l) => {
     const isActive = l === currentLocale;
     return `<li role="none"><a href="${pathForLocale(l)}" class="lang-item${isActive ? ' is-active' : ''}" hreflang="${l}" role="menuitem"${isActive ? ' aria-current="page"' : ''}><img class="lang-flag" src="${FLAG_BASE_URL}/${LOCALE_FLAGS[l]}.svg" alt="" width="20" height="20" loading="lazy"><span class="lang-name">${escapeHtml(LOCALE_NATIVE_NAMES[l])}</span></a></li>`;
   }).join('');
@@ -292,7 +291,7 @@ const GUIDE_EXAMPLES: ReadonlyArray<{ call: string; curl: string; js: string; py
  * docs e spec), WebPage com breadcrumb e FAQPage espelhando a FAQ visível.
  * `<` escapado pra não fechar o <script> por acidente.
  */
-function jsonLd(locale: Locale, t: Translations): string {
+function jsonLd(locale: ApiLocale, t: Translations): string {
   const pageUrl = `${SITE_URL}${pathForLocale(locale)}`;
   const orgId = `${MIDVASH_URL}/#organization`;
   const graph = {
@@ -406,7 +405,7 @@ function renderEndpointCard(ep: EndpointDoc, t: Translations): string {
  */
 function groupVersionsByLanguage(
   versions: readonly VersionDefinition[],
-  pageLocale: Locale,
+  pageLocale: ApiLocale,
 ): Array<{ language: string; items: VersionDefinition[] }> {
   const groups = new Map<string, VersionDefinition[]>();
   for (const v of versions) {
@@ -436,7 +435,7 @@ function groupVersionsByLanguage(
 
 function renderVersionsSection(
   t: Translations,
-  locale: Locale,
+  locale: ApiLocale,
   versions: readonly VersionDefinition[],
 ): string {
   const groups = groupVersionsByLanguage(versions, locale);
@@ -552,7 +551,7 @@ function richText(str: string): string {
 }
 
 /** "Mais do Midvash": MCP, plugin WordPress e o app (links no idioma da página). */
-function renderMoreSection(t: Translations, locale: Locale): string {
+function renderMoreSection(t: Translations, locale: ApiLocale): string {
   const m = t.more;
   const cards: Array<{ icon: EcosystemKey; title: string; body: string; href: string }> = [
     { icon: 'mcp', title: m.mcpTitle, body: m.mcpBody, href: `${MCP_URL}${locale === 'en' ? '' : `/${locale}`}` },
@@ -636,7 +635,7 @@ function fillCounts<T>(value: T, vars: { versions: number; languages: number; ye
  * Browser dos 66 livros, agrupado por testamento (espelha o browser de versões).
  * Nomes/slugs/abreviações no idioma da página; cada card linka pro /v1/books/{slug}.
  */
-function renderBooksSection(docs: DocsStrings, locale: Locale): string {
+function renderBooksSection(docs: DocsStrings, locale: ApiLocale): string {
   const b = docs.books;
 
   const renderGroup = (label: string, testament: 'old' | 'new'): string => {
@@ -792,9 +791,9 @@ function renderGuidesSection(docs: DocsStrings): string {
  * miss por isolate roda o render uma vez. `versions` deve vir do mesmo catálogo
  * (`getVersionCatalog`) que alimenta os endpoints JSON.
  */
-const landingCache = new Map<Locale, string>();
+const landingCache = new Map<ApiLocale, string>();
 
-export function getLandingHtml(locale: Locale, versions: readonly VersionDefinition[]): string {
+export function getLandingHtml(locale: ApiLocale, versions: readonly VersionDefinition[]): string {
   const cached = landingCache.get(locale);
   if (cached) return cached;
   const html = renderLandingPage(locale, versions);
@@ -814,11 +813,11 @@ function compactHtml(html: string): string {
     .join('');
 }
 
-export function renderLandingPage(locale: Locale, versions: readonly VersionDefinition[]): string {
+export function renderLandingPage(locale: ApiLocale, versions: readonly VersionDefinition[]): string {
   return compactHtml(renderLandingPageRaw(locale, versions));
 }
 
-function renderLandingPageRaw(locale: Locale, versions: readonly VersionDefinition[]): string {
+function renderLandingPageRaw(locale: ApiLocale, versions: readonly VersionDefinition[]): string {
   // Contagens reais derivadas do catálogo (R2) — interpoladas nos tokens
   // {versions}/{languages} das traduções. Mantém a copy sempre atual.
   const versionCount = versions.length;
@@ -833,7 +832,7 @@ function renderLandingPageRaw(locale: Locale, versions: readonly VersionDefiniti
   });
   const docs = DOCS_STRINGS[locale];
 
-  const alternates = SUPPORTED_LOCALES.map(
+  const alternates = LOCALES.map(
     (l) => `<link rel="alternate" hreflang="${l}" href="${SITE_URL}${pathForLocale(l)}">`,
   ).join('\n');
 
