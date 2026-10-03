@@ -14,6 +14,7 @@
  */
 
 import type { Env } from './env';
+import { closestString } from './lib/suggest';
 
 export interface VersionDefinition {
   slug: string;
@@ -44,21 +45,43 @@ export interface VersionDefinition {
 export interface VersionCatalog {
   /** Lista completa, na ordem em que o monorepo serializou. */
   versions: readonly VersionDefinition[];
-  /** Lookup O(1) por slug (substitui o antigo `VERSIONS_BY_SLUG`). */
-  bySlug: ReadonlyMap<string, VersionDefinition>;
   /**
-   * Slug que saiu da API (direitos reservados, sem licença) → versão livre do
-   * mesmo idioma servida no lugar. Vem de `catalog/version-aliases.json`.
-   * Existe pra cliente antigo (plugin WordPress com NVT salva) não quebrar.
+   * Resolve o slug pedido (case-insensitive) para uma versão do catálogo,
+   * seguindo alias de versão que saiu da API (direitos reservados → versão
+   * livre do mesmo idioma, `catalog/version-aliases.json`; existe pra cliente
+   * antigo — plugin WordPress com NVT salva — não quebrar). Devolve o slug
+   * efetivo (o que vai na resposta) e a definição. Único caminho slug → versão:
+   * toda rota enxerga os mesmos aliases.
    */
-  aliases: ReadonlyMap<string, string>;
+  lookup(slug: string): { slug: string; version: VersionDefinition } | null;
+  /** Slug do catálogo mais próximo ("did you mean"), ou null. */
+  suggest(slug: string): string | null;
 }
 
 /** Chave do catálogo serializado no bucket R2 `bible`. */
-export const R2_CATALOG_KEY = 'catalog/versions.json';
-export const R2_ALIASES_KEY = 'catalog/version-aliases.json';
+const R2_CATALOG_KEY = 'catalog/versions.json';
+const R2_ALIASES_KEY = 'catalog/version-aliases.json';
 
-const EMPTY_CATALOG: VersionCatalog = { versions: [], bySlug: new Map(), aliases: new Map() };
+function makeCatalog(
+  versions: readonly VersionDefinition[],
+  bySlug: ReadonlyMap<string, VersionDefinition>,
+  aliases: ReadonlyMap<string, string>,
+): VersionCatalog {
+  return {
+    versions,
+    lookup(slug) {
+      const requested = slug.toLowerCase().trim();
+      const effective = aliases.get(requested) ?? requested;
+      const version = bySlug.get(effective);
+      return version ? { slug: effective, version } : null;
+    },
+    suggest(slug) {
+      return closestString(slug.toLowerCase().trim(), bySlug.keys());
+    },
+  };
+}
+
+const EMPTY_CATALOG: VersionCatalog = makeCatalog([], new Map(), new Map());
 
 /**
  * Memo por isolate. Só é populado em sucesso com dados — ausência ou erro
@@ -100,7 +123,7 @@ export async function getVersionCatalog(env: Env): Promise<VersionCatalog> {
   }
 
   const bySlug = new Map<string, VersionDefinition>(versions.map((v) => [v.slug, v]));
-  cached = { versions, bySlug, aliases: await loadAliases(env, bySlug) };
+  cached = makeCatalog(versions, bySlug, await loadAliases(env, bySlug));
   return cached;
 }
 
@@ -124,17 +147,4 @@ async function loadAliases(
     console.error(`[catalog] erro ao ler ${R2_ALIASES_KEY}:`, err);
     return new Map();
   }
-}
-
-/**
- * Resolve o slug pedido pra uma versão do catálogo, seguindo alias de versão
- * que saiu. Devolve o slug efetivo (o que vai na resposta) e a definição.
- */
-export function lookupVersion(
-  catalog: VersionCatalog,
-  slug: string,
-): { slug: string; version: VersionDefinition } | null {
-  const effective = catalog.aliases.get(slug) ?? slug;
-  const version = catalog.bySlug.get(effective);
-  return version ? { slug: effective, version } : null;
 }

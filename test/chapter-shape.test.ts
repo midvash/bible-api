@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { handleV1Chapter } from '../src/handlers/v1/chapters';
 import { parsePreviewParam, previewOfChapter } from '../src/lib/chapter';
-import { normalizeCacheKey } from '../src/lib/cache';
+import { handleV1VersionDetail } from '../src/handlers/v1/versions';
+import { handleV1Parse } from '../src/handlers/v1/parse';
 import { lookupBook } from '../src/lib/book-lookup';
 import type { Env } from '../src/env';
 
@@ -39,8 +40,10 @@ const env = {
   },
 } as unknown as Env;
 
+let store = new Map<string, Response>();
+
 function stubCaches() {
-  const store = new Map<string, Response>();
+  store = new Map<string, Response>();
   (globalThis as Record<string, unknown>).caches = {
     default: {
       async match(key: Request) {
@@ -141,22 +144,29 @@ describe('previewOfChapter', () => {
   });
 });
 
-describe('normalizeCacheKey — preview de capítulo', () => {
-  it('preserva preview canônico e descarta outros params', () => {
-    const key = normalizeCacheKey(
-      new Request('https://api.midvash.com/v1/KJV/Psalms/23?preview=5&utm=x'),
-    );
-    expect(key.url).toBe('https://api.midvash.com/v1/kjv/psalms/23?preview=40');
+describe('cache key do capítulo — o handler canoniza o preview', () => {
+  async function keyFor(url: string, verseParam?: string) {
+    const [, , , , version, book, chapter] = new URL(url).pathname.split('/');
+    await handleV1Chapter(new Request(url), env, ctx, version, book, chapter, verseParam);
+    return [...store.keys()];
+  }
+
+  it('preserva preview canônico (clampado) e descarta outros params', async () => {
+    expect(await keyFor('https://api.midvash.com/v1/KJV/Psalms/23?preview=5&utm=x')).toEqual([
+      'https://api.midvash.com/v1/kjv/psalms/23?preview=40',
+    ]);
   });
 
-  it('sem preview válido, chave fica sem query', () => {
-    const key = normalizeCacheKey(new Request('https://api.midvash.com/v1/kjv/psalms/23?preview=abc'));
-    expect(key.url).toBe('https://api.midvash.com/v1/kjv/psalms/23');
+  it('sem preview válido, chave fica sem query', async () => {
+    expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?preview=abc')).toEqual([
+      'https://api.midvash.com/v1/kjv/psalms/23',
+    ]);
   });
 
-  it('rota de versículo não ganha preview (segue sem query)', () => {
-    const key = normalizeCacheKey(new Request('https://api.midvash.com/v1/kjv/john/3/16?preview=100'));
-    expect(key.url).toBe('https://api.midvash.com/v1/kjv/john/3/16');
+  it('rota de versículo não ganha preview (segue sem query)', async () => {
+    expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23/1?preview=100', '1')).toEqual([
+      'https://api.midvash.com/v1/kjv/psalms/23/1',
+    ]);
   });
 });
 
@@ -209,5 +219,26 @@ describe('versão que saiu da API', () => {
       undefined,
     );
     expect(res.status).toBe(404);
+  });
+
+  it('/v1/versions/{alias} responde com a versão livre que a substitui', async () => {
+    const res = await handleV1VersionDetail(
+      new Request('https://api.midvash.com/v1/versions/nvt'),
+      env,
+      ctx,
+      'nvt',
+    );
+    expect(res.status).toBe(200);
+    expect((await json(res)).data.slug).toBe('kjv');
+  });
+
+  it('/v1/parse?version={alias} devolve o slug efetivo', async () => {
+    const res = await handleV1Parse(
+      new Request('https://api.midvash.com/v1/parse?q=psalms%2023&version=nvt'),
+      env,
+      ctx,
+    );
+    expect(res.status).toBe(200);
+    expect((await json(res)).data.version).toBe('kjv');
   });
 });

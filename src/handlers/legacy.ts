@@ -10,12 +10,13 @@
  */
 
 import { getVersionCatalog, type VersionCatalog, type VersionDefinition } from '../versions';
-import { BOOKS } from '../books';
+import { BOOKS, serializeBook } from '../books';
 import { CACHE_HEADERS, METADATA_HEADERS, ERROR_5XX_HEADERS, type Env } from '../env';
 import { normalizeLocale } from '../lib/locale';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../lib/cache';
 import { legacyErrorResponse } from '../lib/response';
 import { resolveChapter } from '../lib/resolve-chapter';
+import { parseVerseParam } from '../lib/chapter';
 
 // ─── Pre-baked bodies ──────────────────────────────────────────────────────
 /**
@@ -129,17 +130,7 @@ function getPrebakedVersions(catalog: VersionCatalog): PrebakedLegacyVersions {
   return result;
 }
 
-const BOOKS_BODY = JSON.stringify({
-  books: BOOKS.map((book) => ({
-    id: book.id,
-    name: book.names,
-    slug: book.slugs,
-    abbrev: book.abbrev,
-    chapters: book.chapters,
-    testament: book.testament,
-    category: book.category,
-  })),
-});
+const BOOKS_BODY = JSON.stringify({ books: BOOKS.map(serializeBook) });
 const BOOKS_ETAG = etagFor(['legacy', 'books', BOOKS.length]);
 
 // ─── GET / ────────────────────────────────────────────────────────────────
@@ -160,19 +151,23 @@ export function handleVersions(
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  return serveWithCache(request, ctx, normalizeCacheKey(request), 'versions', async () => {
+  const localeParam = new URL(request.url).searchParams.get('locale');
+  // Sem `?locale` = lista inteira; com = filtrada pelo locale canônico (pt-pt →
+  // pt-br). A chave usa o mesmo valor: antes `/versions` e `/versions?locale=en`
+  // caíam na mesma entrada do edge com corpos diferentes.
+  const locale = localeParam ? normalizeLocale(localeParam) : undefined;
+
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { locale }), 'versions', async () => {
     const { allBody, byLocale, listEtag } = getPrebakedVersions(await getVersionCatalog(env));
 
-    const localeParam = new URL(request.url).searchParams.get('locale');
-    if (!localeParam) {
+    if (!locale) {
       return { response: new Response(allBody, { headers: CACHE_HEADERS }), etag: listEtag };
     }
 
-    const normalizedLocale = normalizeLocale(localeParam);
-    const body = byLocale[normalizedLocale] ?? JSON.stringify({ versions: [] });
+    const body = byLocale[locale] ?? JSON.stringify({ versions: [] });
     return {
       response: new Response(body, { headers: CACHE_HEADERS }),
-      etag: etagFor(['legacy', 'versions', normalizedLocale]),
+      etag: etagFor(['legacy', 'versions', locale]),
     };
   });
 }
@@ -196,7 +191,8 @@ export function handleVerse(
 
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'verse', async () => {
     try {
-      const r = await resolveChapter(env, version, book, chapter, verseParam);
+      // Segmento de versículo inválido ("abc") serve o capítulo inteiro.
+      const r = await resolveChapter(env, version, book, parseInt(chapter, 10), parseVerseParam(verseParam));
 
       switch (r.kind) {
         case 'version_not_found':
@@ -211,8 +207,8 @@ export function handleVerse(
           return legacyErrorResponse(
             'BOOK_NOT_FOUND',
             r.didYouMean
-              ? `Livro não encontrado: ${book}. Você quis dizer "${r.didYouMean}"?`
-              : `Livro não encontrado: ${book}`,
+              ? `Livro não encontrado: ${r.bookDecoded}. Você quis dizer "${r.didYouMean}"?`
+              : `Livro não encontrado: ${r.bookDecoded}`,
             r.didYouMean ? { didYouMean: r.didYouMean } : undefined,
           );
         case 'invalid_chapter':

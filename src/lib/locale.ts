@@ -1,30 +1,13 @@
 /**
- * Locales suportados nos endpoints que retornam dados localizados
- * (lookup de versões/livros, formatReference, etc.). Alinhado com os 9
- * locales oficiais do Midvash (packages/i18n).
+ * Os 9 locales oficiais do Midvash (packages/i18n) — fonte única para API,
+ * slugs de livro e landing. A ordem importa: é a prioridade de slug no
+ * lookup de livro (um slug repetido entre locales resolve pelo primeiro).
  */
-export type ApiLocale =
-  | 'en'
-  | 'pt-br'
-  | 'es'
-  | 'fr'
-  | 'de'
-  | 'it'
-  | 'zh'
-  | 'ru'
-  | 'ko';
+export const LOCALES = ['en', 'pt-br', 'es', 'fr', 'de', 'it', 'zh', 'ru', 'ko'] as const;
 
-const VALID_LOCALES = new Set<ApiLocale>([
-  'en',
-  'pt-br',
-  'es',
-  'fr',
-  'de',
-  'it',
-  'zh',
-  'ru',
-  'ko',
-]);
+export type ApiLocale = (typeof LOCALES)[number];
+
+const VALID_LOCALES: ReadonlySet<string> = new Set(LOCALES);
 
 /**
  * Normaliza o query param `locale` para o formato canônico usado nos
@@ -35,5 +18,5 @@ export function normalizeLocale(locale: string | null | undefined): ApiLocale {
   if (!locale) return 'en';
   const v = locale.toLowerCase().trim();
   if (v === 'pt' || v === 'pt-br' || v === 'pt-pt') return 'pt-br';
-  return VALID_LOCALES.has(v as ApiLocale) ? (v as ApiLocale) : 'en';
+  return VALID_LOCALES.has(v) ? (v as ApiLocale) : 'en';
 }

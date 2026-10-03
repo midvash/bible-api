@@ -2,7 +2,7 @@
  * Lookup de livro por slug — todo o caminho "slug → livro" vive aqui.
  *
  * Interface:
- *   - `lookupBook(slug)` → `{ book }` ou `{ book: null, didYouMean }`.
+ *   - `lookupBook(slug)` → `{ book }` ou `{ book: null, didYouMean, decoded }`.
  *   - `BOOKS_BY_ID` — lookup O(1) por id (pool do VOTD referencia por id).
  *
  * A implementação esconde: decode de pct-encoding (slugs ru/zh/ko chegam
@@ -11,10 +11,9 @@
  * distância de edição ("did you mean").
  */
 
-import { BOOKS, type BookDefinition, type Locale } from '../books';
+import { BOOKS, type BookDefinition } from '../books';
+import { LOCALES } from './locale';
 import { closestString, normalizeLoose } from './suggest';
-
-const BOOK_LOCALES: Locale[] = ['en', 'pt-br', 'es', 'fr', 'de', 'it', 'zh', 'ru', 'ko'];
 
 export const BOOKS_BY_ID: ReadonlyMap<number, BookDefinition> = new Map(
   BOOKS.map((book) => [book.id, book]),
@@ -24,7 +23,7 @@ const BOOKS_BY_SLUG: ReadonlyMap<string, BookDefinition> = (() => {
   const map = new Map<string, BookDefinition>();
   // 1º passe: slugs canônicos (com hífen) têm prioridade sobre qualquer alias.
   for (const book of BOOKS) {
-    for (const locale of BOOK_LOCALES) {
+    for (const locale of LOCALES) {
       const slug = book.slugs[locale];
       if (slug && !map.has(slug)) {
         map.set(slug, book);
@@ -35,7 +34,7 @@ const BOOKS_BY_SLUG: ReadonlyMap<string, BookDefinition> = (() => {
   // montam a URL sem o hífen e viram um loop de 404 (issue midvash#1420);
   // aceitar o alias transforma esses misses em 200 imutável cacheado no edge.
   for (const book of BOOKS) {
-    for (const locale of BOOK_LOCALES) {
+    for (const locale of LOCALES) {
       const alias = book.slugs[locale]?.replace(/-/g, '');
       if (alias && !map.has(alias)) {
         map.set(alias, book);
@@ -49,7 +48,7 @@ const BOOKS_BY_SLUG: ReadonlyMap<string, BookDefinition> = (() => {
 const LOOSE_BOOK_SLUGS: ReadonlyMap<string, string> = (() => {
   const map = new Map<string, string>();
   for (const book of BOOKS) {
-    for (const locale of BOOK_LOCALES) {
+    for (const locale of LOCALES) {
       const slug = book.slugs[locale];
       if (!slug) continue;
       const loose = normalizeLoose(slug);
@@ -71,8 +70,13 @@ function safeDecode(slug: string): string {
 }
 
 export type BookLookup =
-  | { book: BookDefinition; didYouMean?: undefined }
-  | { book: null; didYouMean: string | null };
+  | { book: BookDefinition; didYouMean?: undefined; decoded?: undefined }
+  | {
+      book: null;
+      didYouMean: string | null;
+      /** Slug como o cliente escreveu, já sem pct-encoding — pra mensagens de erro. */
+      decoded: string;
+    };
 
 /**
  * Resolve um slug (em qualquer um dos 9 locales, com ou sem hífen) para um
@@ -89,10 +93,5 @@ export function lookupBook(slug: string): BookLookup {
   if (book) return { book };
 
   const exact = LOOSE_BOOK_SLUGS.get(normalizeLoose(decoded));
-  return { book: null, didYouMean: exact ?? closestString(decoded, ALL_BOOK_SLUGS) };
-}
-
-/** Nome do slug apresentável em mensagens de erro (decodificado). */
-export function displaySlug(slug: string): string {
-  return safeDecode(slug);
+  return { book: null, didYouMean: exact ?? closestString(decoded, ALL_BOOK_SLUGS), decoded };
 }

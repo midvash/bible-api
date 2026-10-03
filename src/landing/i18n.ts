@@ -6,28 +6,7 @@
  * /zh, /ru, /ko.
  */
 
-export type Locale =
-  | 'en'
-  | 'es'
-  | 'pt-br'
-  | 'fr'
-  | 'de'
-  | 'it'
-  | 'zh'
-  | 'ru'
-  | 'ko';
-
-export const SUPPORTED_LOCALES: readonly Locale[] = [
-  'en',
-  'pt-br',
-  'es',
-  'fr',
-  'de',
-  'it',
-  'zh',
-  'ru',
-  'ko',
-] as const;
+import type { ApiLocale } from '../lib/locale';
 
 export interface EndpointDoc {
   method: 'GET';
@@ -160,7 +139,7 @@ interface GroupStrings {
   pPreviewQ: string;
 }
 
-const GROUP_STRINGS: Record<Locale, GroupStrings> = {
+const GROUP_STRINGS: Record<ApiLocale, GroupStrings> = {
   en: {
     listVersions: "List all available Bible versions ({versions}), with license text",
     versionDetail: 'Get metadata for a specific version',
@@ -415,7 +394,7 @@ const GROUP_STRINGS: Record<Locale, GroupStrings> = {
   },
 };
 
-const COMMON_GROUPS = (lang: Locale): EndpointGroup[] => {
+const COMMON_GROUPS = (lang: ApiLocale): EndpointGroup[] => {
   const t = GROUP_STRINGS[lang];
 
   return [
@@ -519,7 +498,7 @@ const COMMON_GROUPS = (lang: Locale): EndpointGroup[] => {
   ];
 };
 
-const LANGUAGE_NAMES_BY_LOCALE: Record<Locale, Record<string, string>> = {
+const LANGUAGE_NAMES_BY_LOCALE: Record<ApiLocale, Record<string, string>> = {
   en: {
     en: 'English', 'pt-br': 'Portuguese', 'pt-pt': 'Portuguese (PT)',
     es: 'Spanish', he: 'Hebrew', gr: 'Greek', la: 'Latin', fr: 'French', it: 'Italian',
@@ -1512,7 +1491,7 @@ const ko: Translations = {
   },
 };
 
-export const TRANSLATIONS: Record<Locale, Translations> = {
+export const TRANSLATIONS: Record<ApiLocale, Translations> = {
   en,
   es,
   'pt-br': ptBr,
@@ -1529,7 +1508,7 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
  *  /        → en (canônico)
  *  /<loc>   → loc (pt-br, es, fr, de, it, zh, ru, ko)
  */
-const PATH_TO_LOCALE: Record<string, Locale> = {
+const PATH_TO_LOCALE: Record<string, ApiLocale> = {
   '/pt-br': 'pt-br',
   '/es': 'es',
   '/fr': 'fr',
@@ -1540,7 +1519,7 @@ const PATH_TO_LOCALE: Record<string, Locale> = {
   '/ko': 'ko',
 };
 
-export function localeFromPath(pathname: string): Locale | null {
+export function localeFromPath(pathname: string): ApiLocale | null {
   const clean = pathname.replace(/\/+$/, '');
   if (clean === '' || clean === '/') return 'en';
   return PATH_TO_LOCALE[clean] ?? null;
@@ -1550,7 +1529,7 @@ export function localeFromPath(pathname: string): Locale | null {
  * Retorna o caminho público correspondente a um locale.
  * Inglês é canônico em "/".
  */
-export function pathForLocale(locale: Locale): string {
+export function pathForLocale(locale: ApiLocale): string {
   if (locale === 'en') return '/';
   return `/${locale}`;
 }

@@ -1,20 +1,8 @@
-import { BOOKS, type BookDefinition } from '../../books';
+import { BOOKS, serializeBook } from '../../books';
 import { CACHE_HEADERS, type Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
-import { displaySlug, lookupBook } from '../../lib/book-lookup';
-
-function serializeBook(book: BookDefinition) {
-  return {
-    id: book.id,
-    name: book.names,
-    slug: book.slugs,
-    abbrev: book.abbrev,
-    chapters: book.chapters,
-    testament: book.testament,
-    category: book.category,
-  };
-}
+import { lookupBook } from '../../lib/book-lookup';
 
 // Pre-bake: BOOKS é constante.
 const ALL_BOOKS_DATA = BOOKS.map(serializeBook);
@@ -44,20 +32,18 @@ export function handleV1BooksList(
   _env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-books-list', () => {
-    const testamentParam = new URL(request.url).searchParams.get('testament');
+  const testamentParam = new URL(request.url).searchParams.get('testament');
+  // Só old/new são variantes; qualquer outro valor serve a lista inteira.
+  const testament = testamentParam === 'old' || testamentParam === 'new' ? testamentParam : undefined;
 
-    let body = ALL_BOOKS_BODY;
-    let etag = BOOKS_LIST_ETAG;
-    if (testamentParam === 'old') {
-      body = OLD_BOOKS_BODY;
-      etag = OLD_BOOKS_ETAG;
-    } else if (testamentParam === 'new') {
-      body = NEW_BOOKS_BODY;
-      etag = NEW_BOOKS_ETAG;
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { testament }), 'v1-books-list', () => {
+    if (testament === 'old') {
+      return { response: new Response(OLD_BOOKS_BODY, { headers: CACHE_HEADERS }), etag: OLD_BOOKS_ETAG };
     }
-
-    return { response: new Response(body, { headers: CACHE_HEADERS }), etag };
+    if (testament === 'new') {
+      return { response: new Response(NEW_BOOKS_BODY, { headers: CACHE_HEADERS }), etag: NEW_BOOKS_ETAG };
+    }
+    return { response: new Response(ALL_BOOKS_BODY, { headers: CACHE_HEADERS }), etag: BOOKS_LIST_ETAG };
   });
 }
 
@@ -73,9 +59,8 @@ export function handleV1BookDetail(
   slug: string,
 ): Promise<Response> {
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-book-detail', () => {
-    const { book, didYouMean } = lookupBook(slug);
+    const { book, didYouMean, decoded: shown } = lookupBook(slug);
     if (!book) {
-      const shown = displaySlug(slug);
       return errorResponse(
         'BOOK_NOT_FOUND',
         didYouMean

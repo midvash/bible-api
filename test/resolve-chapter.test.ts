@@ -36,7 +36,7 @@ const env = {
 
 describe('resolveChapter', () => {
   it('resolve capítulo inteiro', async () => {
-    const r = await resolveChapter(env, 'KJV', 'john', '3', undefined);
+    const r = await resolveChapter(env, 'KJV', 'john', 3, null);
     expect(r.kind).toBe('ok');
     if (r.kind !== 'ok') return;
     expect(r.versionSlug).toBe('kjv');
@@ -47,7 +47,7 @@ describe('resolveChapter', () => {
   });
 
   it('resolve versículo único com texto e referência', async () => {
-    const r = await resolveChapter(env, 'kjv', 'john', '3', '16');
+    const r = await resolveChapter(env, 'kjv', 'john', 3, { start: 16, end: 16 });
     expect(r.kind).toBe('ok');
     if (r.kind !== 'ok') return;
     expect(r.selection?.text).toBe('For God so loved the world…');
@@ -55,7 +55,7 @@ describe('resolveChapter', () => {
   });
 
   it('resolve livro por alias sem hífen e locale alternativo', async () => {
-    const r = await resolveChapter(env, 'kjv', 'joao', '3', '15-16');
+    const r = await resolveChapter(env, 'kjv', 'joao', 3, { start: 15, end: 16 });
     expect(r.kind).toBe('ok');
     if (r.kind !== 'ok') return;
     expect(r.selection?.verses).toEqual(['v15', 'For God so loved the world…']);
@@ -63,27 +63,27 @@ describe('resolveChapter', () => {
   });
 
   it('versão inexistente, com did-you-mean', async () => {
-    const r = await resolveChapter(env, 'kjw', 'john', '3', undefined);
+    const r = await resolveChapter(env, 'kjw', 'john', 3, null);
     expect(r).toMatchObject({ kind: 'version_not_found', didYouMean: 'kjv' });
   });
 
   it('livro inexistente, com did-you-mean', async () => {
-    const r = await resolveChapter(env, 'kjv', 'johm', '3', undefined);
+    const r = await resolveChapter(env, 'kjv', 'johm', 3, null);
     expect(r).toMatchObject({ kind: 'book_not_found', didYouMean: 'john' });
   });
 
   it('capítulo fora do range do livro', async () => {
-    const r = await resolveChapter(env, 'kjv', 'john', '99', undefined);
+    const r = await resolveChapter(env, 'kjv', 'john', 99, null);
     expect(r.kind).toBe('invalid_chapter');
   });
 
   it('capítulo sem dados no R2', async () => {
-    const r = await resolveChapter(env, 'kjv', 'john', '4', undefined);
+    const r = await resolveChapter(env, 'kjv', 'john', 4, null);
     expect(r.kind).toBe('chapter_not_found');
   });
 
   it('versículo fora do range do capítulo', async () => {
-    const r = await resolveChapter(env, 'kjv', 'john', '3', '17-99');
+    const r = await resolveChapter(env, 'kjv', 'john', 3, { start: 17, end: 99 });
     expect(r).toMatchObject({ kind: 'verse_out_of_range', maxVerses: 16 });
   });
 });

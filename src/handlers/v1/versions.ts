@@ -72,15 +72,17 @@ export function handleV1VersionsList(
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-versions-list', async () => {
+  // Mesmo valor na chave e no corpo: `?language=%20` não pode colidir com a
+  // lista inteira nem ganhar entrada própria no edge.
+  const lang = (new URL(request.url).searchParams.get('language') ?? '').toLowerCase().trim();
+
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { language: lang }), 'v1-versions-list', async () => {
     const { allBody, byLanguage, listEtag } = getPrebaked(await getVersionCatalog(env));
 
-    const languageParam = new URL(request.url).searchParams.get('language');
-    if (!languageParam) {
+    if (!lang) {
       return { response: new Response(allBody, { headers: CACHE_HEADERS }), etag: listEtag };
     }
 
-    const lang = languageParam.toLowerCase().trim();
     const body = byLanguage[lang] ?? JSON.stringify({ data: [], meta: { total: 0, language: lang } });
     return {
       response: new Response(body, { headers: CACHE_HEADERS }),
@@ -101,15 +103,17 @@ export function handleV1VersionDetail(
   return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-version-detail', async () => {
     const catalog = await getVersionCatalog(env);
     const versionSlug = slug.toLowerCase().trim();
-    const version = catalog.bySlug.get(versionSlug);
-    if (!version) {
+    // Versão que saiu da API (alias) responde com a livre que a substitui,
+    // igual às rotas de conteúdo.
+    const found = catalog.lookup(versionSlug);
+    if (!found) {
       return errorResponse('VERSION_NOT_FOUND', `Version "${slug}" not found.`, {
         availableVersions: catalog.versions.length,
       });
     }
 
     return {
-      response: okResponse(serializeVersion(version)),
+      response: okResponse(serializeVersion(found.version)),
       etag: etagFor(['v1', 'version', 'enriched', versionSlug]),
     };
   });

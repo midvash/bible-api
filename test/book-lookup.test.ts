@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { displaySlug, lookupBook } from '../src/lib/book-lookup';
+import { lookupBook } from '../src/lib/book-lookup';
 
 describe('lookupBook', () => {
   it('resolve slug canônico em qualquer locale', () => {
@@ -43,6 +43,7 @@ describe('lookupBook', () => {
 
   it('tolera pct-encoding malformado', () => {
     expect(lookupBook('%E0%A4%A').book).toBeNull();
-    expect(displaySlug('%E0%A4%A')).toBe('%E0%A4%A');
+    expect(lookupBook('%E0%A4%A').decoded).toBe('%E0%A4%A');
+    expect(lookupBook('%EC%B0%BD%EC%84%B8').decoded).toBe('창세');
   });
 });

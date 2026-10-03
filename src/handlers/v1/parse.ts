@@ -65,13 +65,15 @@ export function handleV1Parse(request: Request, env: Env, ctx: ExecutionContext)
 
     // Versão é opcional; se passada, precisa existir (oráculo não deve validar
     // silenciosamente uma versão inexistente).
+    // Alias de versão que saiu da API devolve o slug efetivo, como nas rotas
+    // de conteúdo.
     let version: string | undefined;
     if (versionParam) {
-      const catalog = await getVersionCatalog(env);
-      if (!catalog.bySlug.has(versionParam)) {
+      const found = (await getVersionCatalog(env)).lookup(versionParam);
+      if (!found) {
         return errorResponse('VERSION_NOT_FOUND', `Version "${versionParam}" not found.`);
       }
-      version = versionParam;
+      version = found.slug;
     }
 
     const data = {

@@ -5,67 +5,37 @@
  *   - `serveWithCache(request, ctx, cacheKey, label, produce)` — todo o ciclo
  *     de cache de um handler: match → produce em miss → ETag/304 → put via
  *     waitUntil → HEAD. Handlers só produzem o corpo.
- *   - `normalizeCacheKey` / `buildCacheKey` — construção de chave.
+ *   - `normalizeCacheKey` (URL + params canônicos do handler) / `buildCacheKey`
+ *     (chave sintética) — construção de chave.
  *   - `etagFor` — ETag determinístico para conteúdo imutável.
+ *   - `contentHash` — hash de corpo pre-baked (versão de cache por conteúdo).
  *
  * As demais funções são implementação interna.
  */
 
-import { normalizeLocale } from './locale';
-import { parsePreviewParam } from './chapter';
-
 /**
- * Normaliza a URL da request para servir como cache key estável.
+ * Cache key estável a partir da URL da request.
  *
  * - Pathname em lowercase (evita fragmentação `/NVI/John/3` vs `/nvi/john/3`).
- * - Endpoints com `?locale` preservam o locale normalizado, descartam outros.
- * - Demais endpoints removem todos os query params.
  * - Trailing slash removido.
+ * - Query string descartada; só entram os `params` que o handler passar — já
+ *   canonizados pela MESMA regra que monta o corpo. Quem lê o param decide a
+ *   chave: um lugar só, sem duas cópias da regra que precisem concordar (se
+ *   discordassem, o edge cache fragmentaria ou colidiria variantes).
  */
-export function normalizeCacheKey(request: Request): Request {
+export function normalizeCacheKey(
+  request: Request,
+  params: Record<string, string | number | null | undefined> = {},
+): Request {
   const url = new URL(request.url);
   url.pathname = url.pathname.toLowerCase();
   if (url.pathname.endsWith('/') && url.pathname.length > 1) {
     url.pathname = url.pathname.slice(0, -1);
   }
-  const path = url.pathname;
-
-  // Endpoints com filtro `?locale` (legacy) — preserva o locale normalizado.
-  const isLegacyLocaleEndpoint =
-    path === '/characters' || path === '/dictionary' || path === '/versions';
-
-  if (isLegacyLocaleEndpoint) {
-    // Mesma regra de normalização do corpo (lib/locale) — se a chave e o corpo
-    // discordarem (ex.: pt-pt), o edge cache fragmenta em entradas duplicadas.
-    const normalizedLocale = normalizeLocale(url.searchParams.get('locale'));
-    url.search = `?locale=${normalizedLocale}`;
-    return new Request(url.toString(), { method: 'GET' });
-  }
-
-  // /v1/versions[?language=xx] — preserva language normalizado em lowercase.
-  if (path === '/v1/versions') {
-    const lang = (url.searchParams.get('language') ?? '').toLowerCase().trim();
-    url.search = lang ? `?language=${lang}` : '';
-    return new Request(url.toString(), { method: 'GET' });
-  }
-
-  // /v1/books[?testament=old|new] — preserva apenas testament válido.
-  if (path === '/v1/books') {
-    const testament = url.searchParams.get('testament');
-    url.search = testament === 'old' || testament === 'new' ? `?testament=${testament}` : '';
-    return new Request(url.toString(), { method: 'GET' });
-  }
-
-  // /v1/{version}/{book}/{chapter}[?preview=N] — capítulo inteiro (sem
-  // segmento de versículo) preserva o preview CANÔNICO (clampado). O clamp
-  // é o mesmo do handler; se divergissem, variantes colidiriam no edge.
-  if (/^\/v1\/[^/]+\/[^/]+\/\d+$/.test(path)) {
-    const preview = parsePreviewParam(url.searchParams.get('preview'));
-    url.search = preview ? `?preview=${preview}` : '';
-    return new Request(url.toString(), { method: 'GET' });
-  }
-
-  url.search = '';
+  url.search = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+    .join('&');
   return new Request(url.toString(), { method: 'GET' });
 }
 
@@ -116,6 +86,20 @@ function cachePut(
  */
 export function etagFor(parts: (string | number)[]): string {
   return `"${parts.join('-').toLowerCase()}"`;
+}
+
+/**
+ * Hash curto (FNV-1a, base36) de um corpo pre-baked — base de ETag/versão de
+ * cache para conteúdo que muda só em deploy (landing, OpenAPI, docs): mudou o
+ * corpo, muda a chave, sem purge manual nem bump de constante.
+ */
+export function contentHash(body: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < body.length; i++) {
+    h ^= body.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
 }
 
 /**

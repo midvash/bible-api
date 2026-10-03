@@ -21,9 +21,9 @@ import type { Env } from '../../env';
 import { CACHE_HEADERS } from '../../env';
 import { buildCacheKey, etagFor, serveWithCache } from '../../lib/cache';
 import { errorResponse } from '../../lib/response';
-import { getVersionCatalog, lookupVersion } from '../../versions';
+import { getVersionCatalog } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
-import { parseReference, verseParamFrom } from '../../lib/reference';
+import { parseReference } from '../../lib/reference';
 
 const MAX_REFS = 50;
 
@@ -108,7 +108,7 @@ export function handleV1Passages(
     try {
       const catalog = await getVersionCatalog(env);
       // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
-      const found = lookupVersion(catalog, versionParam);
+      const found = catalog.lookup(versionParam);
       if (!found) {
         return errorResponse('VERSION_NOT_FOUND', `Version "${versionParam}" not found.`, {
           availableVersions: catalog.versions.length,
@@ -117,7 +117,7 @@ export function handleV1Passages(
 
       const items: PassageItem[] = [];
       for (const ref of rawRefs) {
-        items.push(await resolveOne(env, versionParam, ref));
+        items.push(await resolveOne(env, found.slug, ref));
       }
 
       const failed = items.filter((it): it is PassageError => 'error' in it).length;
@@ -156,13 +156,11 @@ async function resolveOne(env: Env, version: string, ref: string): Promise<Passa
     return { ref, error: `Could not parse reference: "${ref}".` };
   }
 
-  const r = await resolveChapter(
-    env,
-    version,
-    parsed.bookQuery,
-    String(parsed.chapter),
-    verseParamFrom(parsed),
-  );
+  const range =
+    parsed.verseStart === null
+      ? null
+      : { start: parsed.verseStart, end: parsed.verseEnd ?? parsed.verseStart };
+  const r = await resolveChapter(env, version, parsed.bookQuery, parsed.chapter, range);
 
   switch (r.kind) {
     case 'version_not_found':

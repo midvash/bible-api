@@ -15,7 +15,7 @@ import type { Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
 import { resolveChapter } from '../../lib/resolve-chapter';
-import { parsePreviewParam, previewOfChapter } from '../../lib/chapter';
+import { parsePreviewParam, parseVerseParam, previewOfChapter } from '../../lib/chapter';
 
 export function handleV1Chapter(
   request: Request,
@@ -26,9 +26,17 @@ export function handleV1Chapter(
   chapter: string,
   verseParam: string | undefined,
 ): Promise<Response> {
-  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-chapter', async () => {
+  // `?preview` só vale para capítulo inteiro (sem segmento de versículo) e entra
+  // na chave já clampado — o mesmo N que trunca o corpo.
+  const preview =
+    verseParam === undefined
+      ? parsePreviewParam(new URL(request.url).searchParams.get('preview'))
+      : null;
+
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { preview }), 'v1-chapter', async () => {
     try {
-      const r = await resolveChapter(env, version, book, chapter, verseParam);
+      // Segmento de versículo inválido ("abc") serve o capítulo inteiro.
+      const r = await resolveChapter(env, version, book, parseInt(chapter, 10), parseVerseParam(verseParam));
 
       switch (r.kind) {
         case 'version_not_found':
@@ -43,8 +51,8 @@ export function handleV1Chapter(
           return errorResponse(
             'BOOK_NOT_FOUND',
             r.didYouMean
-              ? `Book "${book}" not found. Did you mean "${r.didYouMean}"?`
-              : `Book "${book}" not found.`,
+              ? `Book "${r.bookDecoded}" not found. Did you mean "${r.didYouMean}"?`
+              : `Book "${r.bookDecoded}" not found.`,
             r.didYouMean ? { didYouMean: r.didYouMean } : undefined,
           );
         case 'invalid_chapter':
@@ -73,7 +81,6 @@ export function handleV1Chapter(
 
       if (!r.selection) {
         const reference = `${r.book.names.en} ${r.chapterNum}`;
-        const preview = parsePreviewParam(new URL(request.url).searchParams.get('preview'));
 
         if (preview) {
           const p = previewOfChapter(r.verses, preview);

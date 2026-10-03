@@ -15,8 +15,8 @@
  * Cache: 24h (max-age=86400). Cache API key embute language+version+date UTC.
  */
 
-import { getVersionCatalog, lookupVersion } from '../versions';
-import { ERROR_5XX_HEADERS, type Env } from '../env';
+import { getVersionCatalog } from '../versions';
+import { ERROR_5XX_HEADERS, JSON_BASE_HEADERS, type Env } from '../env';
 import { normalizeLocale, type ApiLocale } from '../lib/locale';
 import { buildCacheKey, etagFor, serveWithCache } from '../lib/cache';
 import { legacyErrorResponse } from '../lib/response';
@@ -99,14 +99,6 @@ export function defaultVotdVersion(rawLanguage: string, locale: ApiLocale): stri
   );
 }
 
-const VOTD_BASE_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
-  'Content-Type': 'application/json',
-  'X-Robots-Tag': 'noindex, nofollow',
-} as const;
-
 /**
  * Segundos até a próxima meia-noite UTC (mínimo 60).
  *
@@ -143,7 +135,7 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
   return serveWithCache(request, ctx, cacheKey, 'votd', async () => {
     try {
       // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
-      const found = lookupVersion(await getVersionCatalog(env), versionSlug);
+      const found = (await getVersionCatalog(env)).lookup(versionSlug);
       if (!found) {
         return legacyErrorResponse('VERSION_NOT_FOUND', `Versão não encontrada: ${versionSlug}`);
       }
@@ -205,7 +197,7 @@ export function handleVotd(request: Request, env: Env, ctx: ExecutionContext): P
       const ttl = secondsUntilNextUtcDay(now);
       return {
         response: new Response(body, {
-          headers: { ...VOTD_BASE_HEADERS, 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` },
+          headers: { ...JSON_BASE_HEADERS, 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` },
         }),
         etag: etagFor([
           'votd',
