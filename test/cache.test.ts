@@ -48,6 +48,7 @@ describe('GET /versions (legado) — chave e corpo usam o mesmo locale', () => {
   const CATALOG = [
     { slug: 'kjv', name: 'KJV', shortName: 'KJV', language: 'en', hasOldTestament: true, hasNewTestament: true, totalBooks: 66, totalChapters: 1189 },
     { slug: 'almeida-livre', name: 'Almeida', shortName: 'AL', language: 'pt-br', hasOldTestament: true, hasNewTestament: true, totalBooks: 66, totalChapters: 1189 },
+    { slug: 'tr', name: 'Textus Receptus', shortName: 'TR', language: 'grc', hasOldTestament: false, hasNewTestament: true, totalBooks: 27, totalChapters: 260 },
   ];
   const env = {
     R2_BUCKET: {
@@ -67,12 +68,16 @@ describe('GET /versions (legado) — chave e corpo usam o mesmo locale', () => {
 
     const all = JSON.parse(await (await call('')).text());
     const en = JSON.parse(await (await call('?locale=en')).text());
-    expect(all.versions).toHaveLength(2);
-    expect(en.versions).toHaveLength(1);
+    expect(all.versions).toHaveLength(3);
+    // Idioma fora dos 9 locales de interface não cai em `en`.
+    expect(en.versions.map((v: { slug: string }) => v.slug)).toEqual(['kjv']);
+    const grc = JSON.parse(await (await call('?locale=GRC')).text());
+    expect(grc.versions.map((v: { slug: string }) => v.slug)).toEqual(['tr']);
 
     expect([...store.keys()].sort()).toEqual([
       'https://api.midvash.com/versions?gen=2',
       'https://api.midvash.com/versions?locale=en&gen=2',
+      'https://api.midvash.com/versions?locale=grc&gen=2',
       'https://api.midvash.com/versions?locale=pt-br&gen=2',
     ]);
   });

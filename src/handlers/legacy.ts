@@ -12,7 +12,6 @@
 import { getVersionCatalog, type VersionCatalog, type VersionDefinition } from '../versions';
 import { BOOKS, serializeBook } from '../books';
 import { CACHE_HEADERS, METADATA_HEADERS, ERROR_5XX_HEADERS, type Env } from '../env';
-import { normalizeLocale } from '../lib/locale';
 import { contentHash, etagFor, normalizeCacheKey, serveWithCache } from '../lib/cache';
 import { legacyErrorResponse } from '../lib/response';
 import { resolveChapter } from '../lib/resolve-chapter';
@@ -106,17 +105,28 @@ interface PrebakedLegacyVersions {
 }
 let prebakedVersions: PrebakedLegacyVersions | null = null;
 
+/**
+ * Idioma de versão para o filtro `?locale` de /versions — mesma regra no
+ * catálogo e no param. Só junta as variantes de português (pt, pt-pt → pt-br);
+ * o resto fica como está. `normalizeLocale` não serve aqui: ele joga todo
+ * idioma fora dos 9 locales de interface em `en`, e `?locale=en` devolvia
+ * grego, hebraico etc. junto com as versões em inglês.
+ */
+function versionLanguageKey(language: string): string {
+  const v = language.toLowerCase().trim();
+  return v === 'pt' || v === 'pt-pt' ? 'pt-br' : v;
+}
+
 function getPrebakedVersions(catalog: VersionCatalog): PrebakedLegacyVersions {
   if (prebakedVersions) return prebakedVersions;
 
   const allBody = JSON.stringify({ versions: catalog.versions.map(serializeVersionLegacy) });
 
   const byLocale: Record<string, string> = {};
-  // Agrupa pela mesma regra canônica de locale do resto da API (pt-pt → pt-br).
-  const langs = new Set(catalog.versions.map((v) => normalizeLocale(v.language)));
+  const langs = new Set(catalog.versions.map((v) => versionLanguageKey(v.language)));
   for (const lang of langs) {
     const filtered = catalog.versions
-      .filter((v) => normalizeLocale(v.language) === lang)
+      .filter((v) => versionLanguageKey(v.language) === lang)
       .map(serializeVersionLegacy);
     byLocale[lang] = JSON.stringify({ versions: filtered });
   }
@@ -160,7 +170,7 @@ export function handleVersions(
   // Sem `?locale` = lista inteira; com = filtrada pelo locale canônico (pt-pt →
   // pt-br). A chave usa o mesmo valor: antes `/versions` e `/versions?locale=en`
   // caíam na mesma entrada do edge com corpos diferentes.
-  const locale = localeParam ? normalizeLocale(localeParam) : undefined;
+  const locale = localeParam?.trim() ? versionLanguageKey(localeParam) : undefined;
 
   return serveWithCache(request, ctx, normalizeCacheKey(request, { locale, gen: VERSIONS_CACHE_GEN }), 'versions', async () => {
     const { allBody, byLocale, listEtag } = getPrebakedVersions(await getVersionCatalog(env));
