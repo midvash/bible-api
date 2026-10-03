@@ -82,8 +82,9 @@ describe('/v1/versions enriquecido', () => {
     expect(body.data.copyright).toBe('Public domain.');
   });
 
-  it('o ETag da lista mudou de shape (contém "enriched")', async () => {
+  it('lista é metadata (1 dia, não imutável) com ETag derivado do corpo', async () => {
     const res = await handleV1VersionsList(new Request('https://api.midvash.com/v1/versions'), env, ctx);
-    expect(res.headers.get('ETag')).toContain('enriched');
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=86400, s-maxage=86400');
+    expect(res.headers.get('ETag')).toMatch(/^"v1-versions-[0-9a-z]+"$/);
   });
 });

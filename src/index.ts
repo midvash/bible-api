@@ -50,7 +50,10 @@ import { buildCacheKey, contentHash, etagFor, serveWithCache } from './lib/cache
 const CORS_PREFLIGHT_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
+  // OPTIONS nunca passa pelo Workers Cache: sem Max-Age o browser repete o
+  // preflight a cada request e cada um invoca o worker. 1 dia = teto do Chrome.
+  'Access-Control-Max-Age': '86400',
   'X-Robots-Tag': 'noindex, nofollow',
 } as const;
 

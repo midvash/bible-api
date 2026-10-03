@@ -71,9 +71,9 @@ describe('GET /versions (legado) — chave e corpo usam o mesmo locale', () => {
     expect(en.versions).toHaveLength(1);
 
     expect([...store.keys()].sort()).toEqual([
-      'https://api.midvash.com/versions',
-      'https://api.midvash.com/versions?locale=en',
-      'https://api.midvash.com/versions?locale=pt-br',
+      'https://api.midvash.com/versions?gen=2',
+      'https://api.midvash.com/versions?locale=en&gen=2',
+      'https://api.midvash.com/versions?locale=pt-br&gen=2',
     ]);
   });
 });

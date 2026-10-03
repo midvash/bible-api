@@ -3,9 +3,19 @@ import {
   type VersionCatalog,
   type VersionDefinition,
 } from '../../versions';
-import { CACHE_HEADERS, type Env } from '../../env';
-import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
-import { errorResponse, okResponse } from '../../lib/response';
+import { METADATA_HEADERS, type Env } from '../../env';
+import { contentHash, etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
+import { errorResponse } from '../../lib/response';
+
+/**
+ * O catálogo muda sem deploy (o monorepo republica o JSON no R2), então lista e
+ * detalhe de versão são METADATA (1 dia), não imutáveis: versão nova aparece em
+ * até 24h. ETag vem do corpo — catálogo mudou, ETag muda, sem 304 velho.
+ *
+ * `gen` na cache key: entradas antigas foram gravadas com `immutable, 1 ano`
+ * no Cache API (que sobrevive a deploy); a geração nova não as enxerga.
+ */
+const CACHE_GEN = 2;
 
 function serializeVersion(v: VersionDefinition) {
   return {
@@ -55,10 +65,7 @@ function getPrebaked(catalog: VersionCatalog): PrebakedVersions {
   const result: PrebakedVersions = {
     allBody,
     byLanguage,
-    // 'enriched' no seed: o shape ganhou localizedNames/copyright, então o ETag
-    // precisa mudar mesmo com a mesma contagem de versões (senão clientes com o
-    // ETag antigo levariam 304 e não veriam os campos novos).
-    listEtag: etagFor(['v1', 'versions', 'list', 'enriched', catalog.versions.length]),
+    listEtag: etagFor(['v1', 'versions', contentHash(allBody)]),
   };
   if (catalog.versions.length > 0) prebaked = result;
   return result;
@@ -76,17 +83,17 @@ export function handleV1VersionsList(
   // lista inteira nem ganhar entrada própria no edge.
   const lang = (new URL(request.url).searchParams.get('language') ?? '').toLowerCase().trim();
 
-  return serveWithCache(request, ctx, normalizeCacheKey(request, { language: lang }), 'v1-versions-list', async () => {
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { language: lang, gen: CACHE_GEN }), 'v1-versions-list', async () => {
     const { allBody, byLanguage, listEtag } = getPrebaked(await getVersionCatalog(env));
 
     if (!lang) {
-      return { response: new Response(allBody, { headers: CACHE_HEADERS }), etag: listEtag };
+      return { response: new Response(allBody, { headers: METADATA_HEADERS }), etag: listEtag };
     }
 
     const body = byLanguage[lang] ?? JSON.stringify({ data: [], meta: { total: 0, language: lang } });
     return {
-      response: new Response(body, { headers: CACHE_HEADERS }),
-      etag: etagFor(['v1', 'versions', 'list', 'enriched', lang]),
+      response: new Response(body, { headers: METADATA_HEADERS }),
+      etag: etagFor(['v1', 'versions', lang, contentHash(body)]),
     };
   });
 }
@@ -100,7 +107,7 @@ export function handleV1VersionDetail(
   ctx: ExecutionContext,
   slug: string,
 ): Promise<Response> {
-  return serveWithCache(request, ctx, normalizeCacheKey(request), 'v1-version-detail', async () => {
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { gen: CACHE_GEN }), 'v1-version-detail', async () => {
     const catalog = await getVersionCatalog(env);
     const versionSlug = slug.toLowerCase().trim();
     // Versão que saiu da API (alias) responde com a livre que a substitui,
@@ -112,9 +119,10 @@ export function handleV1VersionDetail(
       });
     }
 
+    const body = JSON.stringify({ data: serializeVersion(found.version) });
     return {
-      response: okResponse(serializeVersion(found.version)),
-      etag: etagFor(['v1', 'version', 'enriched', versionSlug]),
+      response: new Response(body, { headers: METADATA_HEADERS }),
+      etag: etagFor(['v1', 'version', versionSlug, contentHash(body)]),
     };
   });
 }

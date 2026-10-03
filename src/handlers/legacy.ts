@@ -13,7 +13,7 @@ import { getVersionCatalog, type VersionCatalog, type VersionDefinition } from '
 import { BOOKS, serializeBook } from '../books';
 import { CACHE_HEADERS, METADATA_HEADERS, ERROR_5XX_HEADERS, type Env } from '../env';
 import { normalizeLocale } from '../lib/locale';
-import { etagFor, normalizeCacheKey, serveWithCache } from '../lib/cache';
+import { contentHash, etagFor, normalizeCacheKey, serveWithCache } from '../lib/cache';
 import { legacyErrorResponse } from '../lib/response';
 import { resolveChapter } from '../lib/resolve-chapter';
 import { parseVerseParam } from '../lib/chapter';
@@ -124,7 +124,7 @@ function getPrebakedVersions(catalog: VersionCatalog): PrebakedLegacyVersions {
   const result: PrebakedLegacyVersions = {
     allBody,
     byLocale,
-    listEtag: etagFor(['legacy', 'versions', catalog.versions.length]),
+    listEtag: etagFor(['legacy', 'versions', contentHash(allBody)]),
   };
   if (catalog.versions.length > 0) prebakedVersions = result;
   return result;
@@ -145,6 +145,11 @@ export function handleRoot(request: Request, env: Env, ctx: ExecutionContext): P
   });
 }
 
+// Lista de versões = METADATA (1 dia), não imutável: o catálogo muda no R2 sem
+// deploy. `gen` na chave pula as entradas antigas gravadas com 1 ano no Cache
+// API (ver CACHE_GEN em v1/versions.ts).
+const VERSIONS_CACHE_GEN = 2;
+
 // ─── GET /versions ────────────────────────────────────────────────────────
 export function handleVersions(
   request: Request,
@@ -157,17 +162,17 @@ export function handleVersions(
   // caíam na mesma entrada do edge com corpos diferentes.
   const locale = localeParam ? normalizeLocale(localeParam) : undefined;
 
-  return serveWithCache(request, ctx, normalizeCacheKey(request, { locale }), 'versions', async () => {
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { locale, gen: VERSIONS_CACHE_GEN }), 'versions', async () => {
     const { allBody, byLocale, listEtag } = getPrebakedVersions(await getVersionCatalog(env));
 
     if (!locale) {
-      return { response: new Response(allBody, { headers: CACHE_HEADERS }), etag: listEtag };
+      return { response: new Response(allBody, { headers: METADATA_HEADERS }), etag: listEtag };
     }
 
     const body = byLocale[locale] ?? JSON.stringify({ versions: [] });
     return {
-      response: new Response(body, { headers: CACHE_HEADERS }),
-      etag: etagFor(['legacy', 'versions', locale]),
+      response: new Response(body, { headers: METADATA_HEADERS }),
+      etag: etagFor(['legacy', 'versions', locale, contentHash(body)]),
     };
   });
 }

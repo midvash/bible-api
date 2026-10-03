@@ -68,10 +68,10 @@ const HTTP_STATUS_FOR_CODE: Record<ApiErrorCode, number> = {
  * o worker a cada minuto quando um cliente entrava em loop de 404
  * (issue midvash#1420). Ficam em 1 dia.
  *
- * VERSION_NOT_FOUND fica em 1h: versões novas são adicionadas de tempos
- * em tempos e o TTL limita quanto tempo uma URL já consultada demora a
- * enxergar o lançamento. CHAPTER_NOT_FOUND segue 60s: depende de dado no
- * R2, e um re-upload de correção deve aparecer rápido.
+ * VERSION_NOT_FOUND e CHAPTER_NOT_FOUND ficam em 1h: dependem de dado no
+ * R2 (versão nova, re-upload de correção) e o TTL limita quanto tempo uma
+ * URL já consultada demora a enxergar a mudança. 60s no capítulo fazia
+ * cliente em loop re-executar o worker a cada minuto em cada colo.
  */
 const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
   NOT_FOUND: 3600,
@@ -79,7 +79,7 @@ const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
   INTERNAL_ERROR: 0,
   VERSION_NOT_FOUND: 3600,
   BOOK_NOT_FOUND: 86400,
-  CHAPTER_NOT_FOUND: 60,
+  CHAPTER_NOT_FOUND: 3600,
   VERSE_NOT_FOUND: 86400,
 };
 
