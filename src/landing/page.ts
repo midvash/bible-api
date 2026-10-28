@@ -11,6 +11,7 @@ import { LOCALES, type ApiLocale } from '../lib/locale';
 import { DOCS_STRINGS, type DocsStrings } from './docs';
 import { BOOKS } from '../books';
 import { renderSiteFooter, SITE_FOOTER_CSS } from './site-footer';
+import { LANG_COOKIE_SCRIPT } from './locale-redirect';
 
 const SITE_URL = 'https://api.midvash.com';
 const MIDVASH_URL = 'https://midvash.com';
@@ -124,6 +125,7 @@ const LANG_SWITCHER_SCRIPT = `(function(){
       if(e.key === 'Escape') close();
     });
   });
+  ${LANG_COOKIE_SCRIPT}
 })();`;
 
 function escapeHtml(str: string): string {

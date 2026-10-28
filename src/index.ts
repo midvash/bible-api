@@ -46,6 +46,7 @@ import { getVersionCatalog } from './versions';
 import { localeFromPath, pathForLocale } from './landing/i18n';
 import { LOCALES } from './lib/locale';
 import { buildCacheKey, contentHash, etagFor, serveWithCache } from './lib/cache';
+import { ROOT_NEGOTIATED_HEADERS, rootRedirectLocale } from './landing/locale-redirect';
 
 const CORS_PREFLIGHT_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -183,22 +184,45 @@ export default {
       const isLocalizedRoute = landingLocale !== 'en';
 
       if (wantsHtml || isLocalizedRoute) {
+        // `/` no navegador: idioma do navegador (ou o cookie da escolha) manda
+        // pra /pt-br, /es… com 302. Ver landing/locale-redirect.ts.
+        const target = isLocalizedRoute ? null : rootRedirectLocale(request, LOCALES);
+        if (target) {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: `${url.origin}${pathForLocale(target)}${url.search}`,
+              ...ROOT_NEGOTIATED_HEADERS,
+              Vary: 'Accept, Accept-Language, Cookie',
+            },
+          });
+        }
+
         // Render (memoizado por isolate) antes do lookup pra derivar a versão
         // de cache do conteúdo — chave/ETag mudam quando o HTML muda.
         const { versions } = await getVersionCatalog(env);
         const html = getLandingHtml(landingLocale, versions);
+
+        // `/` em inglês também depende do pedido (quem não foi redirecionado):
+        // sai private, fora do Workers Cache e do Cache API.
+        if (!isLocalizedRoute) {
+          return new Response(html, {
+            status: 200,
+            headers: {
+              ...HTML_HEADERS,
+              'Content-Language': 'en',
+              ...ROOT_NEGOTIATED_HEADERS,
+              Vary: 'Accept, Accept-Language, Cookie',
+            },
+          });
+        }
         const version = landingVersion(landingLocale, html);
 
         const cacheKey = buildCacheKey({ endpoint: 'landing', locale: landingLocale, v: version });
         return serveWithCache(request, ctx, cacheKey, 'landing', () => ({
           response: new Response(html, {
             status: 200,
-            // Vary: Accept na raiz — o Workers Cache não inclui headers na
-            // cache key; sem isso, o HTML de `/` seria servido a clientes JSON.
-            headers:
-              landingLocale === 'en'
-                ? { ...HTML_HEADERS, 'Content-Language': landingLocale, Vary: 'Accept' }
-                : { ...HTML_HEADERS, 'Content-Language': landingLocale },
+            headers: { ...HTML_HEADERS, 'Content-Language': landingLocale },
           }),
           etag: etagFor(['landing', landingLocale, version]),
         }));
