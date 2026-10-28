@@ -15,7 +15,7 @@
 
 import type { Env } from '../env';
 import type { BookDefinition } from '../books';
-import { getVersionCatalog, type VersionDefinition } from '../versions';
+import { getVersionCatalog, type VersionCatalog, type VersionDefinition } from '../versions';
 import { lookupBook } from './book-lookup';
 import { extractVerses, fetchChapterFromR2, formatReference, type VerseRange } from './chapter';
 
@@ -63,8 +63,10 @@ export async function resolveChapter(
   chapterNum: number,
   /** null = capítulo inteiro. */
   range: VerseRange | null,
+  /** Catálogo a usar; padrão = o aberto. As rotas `/v1/embed` passam o de embed. */
+  catalogOverride?: VersionCatalog,
 ): Promise<ChapterResolution> {
-  const catalog = await getVersionCatalog(env);
+  const catalog = catalogOverride ?? (await getVersionCatalog(env));
   const found = catalog.lookup(versionParam);
   if (!found) {
     return { kind: 'version_not_found', didYouMean: catalog.suggest(versionParam) };

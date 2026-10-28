@@ -6,6 +6,7 @@ import { handleV1BooksList, handleV1BookDetail } from './books';
 import { handleV1Chapter } from './chapters';
 import { handleV1Passages } from './passages';
 import { handleV1Parse } from './parse';
+import { handleV1Embed } from './embed';
 import { handleVotd } from '../votd';
 
 /**
@@ -49,6 +50,12 @@ export async function handleV1(
   // /v1/parse?q=... — resolve referência em texto livre (oráculo, sem R2)
   if (path === '/parse') {
     return handleV1Parse(request, env, ctx);
+  }
+
+  // /v1/embed/... — rotas dos plugins (catálogo completo, com travas)
+  const embedMatch = path.match(/^\/embed(\/.*)$/);
+  if (embedMatch) {
+    return handleV1Embed(request, env, ctx, embedMatch[1]);
   }
 
   // /v1/books, /v1/books/{slug}

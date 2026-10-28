@@ -21,7 +21,7 @@ import type { Env } from '../../env';
 import { CACHE_HEADERS, contentHeaders } from '../../env';
 import { buildCacheKey, etagFor, serveWithCache } from '../../lib/cache';
 import { errorResponse } from '../../lib/response';
-import { getVersionCatalog } from '../../versions';
+import { getVersionCatalog, type VersionCatalog } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { parseReference } from '../../lib/reference';
 
@@ -58,10 +58,27 @@ interface PassageError {
 
 type PassageItem = PassageOk | PassageError;
 
+/** Variação das rotas `/v1/embed`: outro catálogo, menos refs, cache de 1 dia. */
+export interface PassagesVariant {
+  endpoint: string;
+  maxRefs: number;
+  catalog: (env: Env) => Promise<VersionCatalog>;
+  /** Sucesso imutável (1 ano)? false = 1 dia. */
+  immutable: boolean;
+}
+
+const OPEN_VARIANT: PassagesVariant = {
+  endpoint: 'v1-passages',
+  maxRefs: MAX_REFS,
+  catalog: getVersionCatalog,
+  immutable: true,
+};
+
 export function handleV1Passages(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
+  variant: PassagesVariant = OPEN_VARIANT,
 ): Promise<Response> {
   const url = new URL(request.url);
   const refsParam = (url.searchParams.get('refs') ?? '').trim();
@@ -86,10 +103,10 @@ export function handleV1Passages(
   if (rawRefs.length === 0) {
     return Promise.resolve(errorResponse('INVALID_PARAMS', 'No valid references in refs.'));
   }
-  if (rawRefs.length > MAX_REFS) {
+  if (rawRefs.length > variant.maxRefs) {
     return Promise.resolve(
-      errorResponse('INVALID_PARAMS', `Too many references: ${rawRefs.length}. Max is ${MAX_REFS}.`, {
-        max: MAX_REFS,
+      errorResponse('INVALID_PARAMS', `Too many references: ${rawRefs.length}. Max is ${variant.maxRefs}.`, {
+        max: variant.maxRefs,
         received: rawRefs.length,
       }),
     );
@@ -99,14 +116,14 @@ export function handleV1Passages(
   // só normaliza cada ref (lowercase + whitespace colapsado) para maximizar hits.
   const normalizedRefs = rawRefs.map((r) => r.toLowerCase().replace(/\s+/g, ' '));
   const cacheKey = buildCacheKey({
-    endpoint: 'v1-passages',
+    endpoint: variant.endpoint,
     version: versionParam,
     refs: normalizedRefs.join('|'),
   });
 
-  return serveWithCache(request, ctx, cacheKey, 'v1-passages', async () => {
+  return serveWithCache(request, ctx, cacheKey, variant.endpoint, async () => {
     try {
-      const catalog = await getVersionCatalog(env);
+      const catalog = await variant.catalog(env);
       // Versão que saiu da API (sem licença) vira a livre do mesmo idioma.
       const found = catalog.lookup(versionParam);
       if (!found) {
@@ -117,7 +134,7 @@ export function handleV1Passages(
 
       const items: PassageItem[] = [];
       for (const ref of rawRefs) {
-        items.push(await resolveOne(env, found.slug, ref));
+        items.push(await resolveOne(env, catalog, found.slug, ref));
       }
 
       const failed = items.filter((it): it is PassageError => 'error' in it).length;
@@ -136,12 +153,13 @@ export function handleV1Passages(
 
       // Batch imutável só quando tudo resolveu; senão TTL curto (ver PARTIAL_HEADERS).
       // Versão trocada por alias: 1 dia (ver contentHeaders).
-      const headers = failed > 0 ? PARTIAL_HEADERS : contentHeaders(found.aliased);
+      const headers = failed > 0 ? PARTIAL_HEADERS : contentHeaders(found.aliased || !variant.immutable);
       return {
         response: new Response(body, { headers }),
         // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro
         // ETag antigo não servir 304 do shape anterior.
-        etag: etagFor(['v1', 'passages', 'p2', 'cr', versionParam, failed, normalizedRefs.join('|')]),
+        // A aberta mantém a semente de sempre ('v1', 'passages'): ETag igual, sem 304 perdido.
+        etag: etagFor([...variant.endpoint.split('-'), 'p2', 'cr', versionParam, failed, normalizedRefs.join('|')]),
       };
     } catch (error) {
       console.error('[v1/passages] Error:', error);
@@ -151,7 +169,12 @@ export function handleV1Passages(
 }
 
 /** Resolve uma referência isolada para um item do batch (nunca lança). */
-async function resolveOne(env: Env, version: string, ref: string): Promise<PassageItem> {
+async function resolveOne(
+  env: Env,
+  catalog: VersionCatalog,
+  version: string,
+  ref: string,
+): Promise<PassageItem> {
   const parsed = parseReference(ref);
   if (!parsed) {
     return { ref, error: `Could not parse reference: "${ref}".` };
@@ -161,7 +184,7 @@ async function resolveOne(env: Env, version: string, ref: string): Promise<Passa
     parsed.verseStart === null
       ? null
       : { start: parsed.verseStart, end: parsed.verseEnd ?? parsed.verseStart };
-  const r = await resolveChapter(env, version, parsed.bookQuery, parsed.chapter, range);
+  const r = await resolveChapter(env, version, parsed.bookQuery, parsed.chapter, range, catalog);
 
   switch (r.kind) {
     case 'version_not_found':

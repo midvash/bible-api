@@ -10,6 +10,11 @@
  */
 export interface Env {
   R2_BUCKET: R2Bucket;
+  /**
+   * Rate-limit por IP das rotas `/v1/embed` (texto das versões com direitos).
+   * Opcional no tipo porque o binding é `unsafe`; sem ele (dev/teste) não trava.
+   */
+  RATE_LIMIT_EMBED?: RateLimit;
 }
 
 /**

@@ -40,6 +40,11 @@ export interface VersionDefinition {
    * Opcional e aditivo. Ver nota de sincronia acima.
    */
   copyright?: string;
+  /**
+   * Só no catálogo de embed: versão com direitos reservados (ou licença não
+   * comercial) que a API aberta não serve. Os plugins a mostram como citação.
+   */
+  restricted?: boolean;
 }
 
 export interface VersionCatalog {
@@ -61,6 +66,12 @@ export interface VersionCatalog {
 
 /** Chave do catálogo serializado no bucket R2 `bible`. */
 const R2_CATALOG_KEY = 'catalog/versions.json';
+/**
+ * Catálogo dos plugins (`/v1/embed`): todas as versões no ar no midvash.com,
+ * inclusive as com direitos que a API aberta não serve. Publicado pelo mesmo
+ * script do monorepo.
+ */
+const R2_EMBED_CATALOG_KEY = 'catalog/embed-versions.json';
 const R2_ALIASES_KEY = 'catalog/version-aliases.json';
 
 function makeCatalog(
@@ -91,22 +102,50 @@ const EMPTY_CATALOG: VersionCatalog = makeCatalog([], new Map(), new Map());
  * isolate num estado ruim.
  */
 let cached: VersionCatalog | null = null;
+let cachedEmbed: VersionCatalog | null = null;
 
 export async function getVersionCatalog(env: Env): Promise<VersionCatalog> {
   if (cached) return cached;
+  const catalog = await loadCatalog(env, R2_CATALOG_KEY);
+  if (catalog.versions.length > 0) cached = catalog;
+  return catalog;
+}
 
-  let object: R2ObjectBody | null = null;
-  try {
-    object = await env.R2_BUCKET.get(R2_CATALOG_KEY);
-  } catch (err) {
-    console.error(`[catalog] erro ao ler ${R2_CATALOG_KEY} do R2:`, err);
-    return EMPTY_CATALOG;
+/**
+ * Catálogo das rotas `/v1/embed` (plugins). Sem o JSON de embed no R2, cai no
+ * catálogo aberto: a rota funciona desde já, só que com as versões livres.
+ */
+export async function getEmbedCatalog(env: Env): Promise<VersionCatalog> {
+  if (cachedEmbed) return cachedEmbed;
+  const object = await env.R2_BUCKET.get(R2_EMBED_CATALOG_KEY).catch(() => null);
+  const catalog = object ? await loadCatalog(env, R2_EMBED_CATALOG_KEY, object) : null;
+  if (catalog && catalog.versions.length > 0) {
+    cachedEmbed = catalog;
+    return catalog;
+  }
+  // Memoiza o fallback também: o JSON de embed muda raro e o isolate recicla.
+  const open = await getVersionCatalog(env);
+  if (open.versions.length > 0) cachedEmbed = open;
+  return open;
+}
+
+async function loadCatalog(
+  env: Env,
+  key: string,
+  preloaded?: R2ObjectBody,
+): Promise<VersionCatalog> {
+  let object: R2ObjectBody | null = preloaded ?? null;
+  if (!object) {
+    try {
+      object = await env.R2_BUCKET.get(key);
+    } catch (err) {
+      console.error(`[catalog] erro ao ler ${key} do R2:`, err);
+      return EMPTY_CATALOG;
+    }
   }
 
   if (!object) {
-    console.error(
-      `[catalog] ${R2_CATALOG_KEY} ausente no bucket R2 — degradando para catálogo vazio`,
-    );
+    console.error(`[catalog] ${key} ausente no bucket R2 — degradando para catálogo vazio`);
     return EMPTY_CATALOG;
   }
 
@@ -114,18 +153,17 @@ export async function getVersionCatalog(env: Env): Promise<VersionCatalog> {
   try {
     versions = await object.json<VersionDefinition[]>();
   } catch (err) {
-    console.error(`[catalog] ${R2_CATALOG_KEY} é JSON inválido:`, err);
+    console.error(`[catalog] ${key} é JSON inválido:`, err);
     return EMPTY_CATALOG;
   }
 
   if (!Array.isArray(versions) || versions.length === 0) {
-    console.error(`[catalog] ${R2_CATALOG_KEY} vazio ou malformado`);
+    console.error(`[catalog] ${key} vazio ou malformado`);
     return EMPTY_CATALOG;
   }
 
   const bySlug = new Map<string, VersionDefinition>(versions.map((v) => [v.slug, v]));
-  cached = makeCatalog(versions, bySlug, await loadAliases(env, bySlug));
-  return cached;
+  return makeCatalog(versions, bySlug, await loadAliases(env, bySlug));
 }
 
 /**

@@ -15,6 +15,7 @@ import type { Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
 import { resolveChapter } from '../../lib/resolve-chapter';
+import type { VersionCatalog } from '../../versions';
 import { parsePreviewParam, parseVerseParam, previewOfChapter } from '../../lib/chapter';
 
 export function handleV1Chapter(
@@ -25,6 +26,8 @@ export function handleV1Chapter(
   book: string,
   chapter: string,
   verseParam: string | undefined,
+  /** Rotas `/v1/embed`: catálogo completo dos plugins e cache de 1 dia. */
+  embed?: { catalog: () => Promise<VersionCatalog> },
 ): Promise<Response> {
   // `?preview` só vale para capítulo inteiro (sem segmento de versículo) e entra
   // na chave já clampado — o mesmo N que trunca o corpo.
@@ -33,10 +36,18 @@ export function handleV1Chapter(
       ? parsePreviewParam(new URL(request.url).searchParams.get('preview'))
       : null;
 
-  return serveWithCache(request, ctx, normalizeCacheKey(request, { preview }), 'v1-chapter', async () => {
+  const endpoint = embed ? 'v1-embed-chapter' : 'v1-chapter';
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { preview }), endpoint, async () => {
     try {
       // Segmento de versículo inválido ("abc") serve o capítulo inteiro.
-      const r = await resolveChapter(env, version, book, parseInt(chapter, 10), parseVerseParam(verseParam));
+      const r = await resolveChapter(
+        env,
+        version,
+        book,
+        parseInt(chapter, 10),
+        parseVerseParam(verseParam),
+        embed ? await embed.catalog() : undefined,
+      );
 
       switch (r.kind) {
         case 'version_not_found':
@@ -96,7 +107,7 @@ export function handleV1Chapter(
                 text: p.text,
               },
               { total: r.verses.length, reference, truncated: p.truncated, copyright: r.version.copyright },
-              { aliased: r.aliased },
+              { aliased: r.aliased || !!embed },
             ),
             etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr']),
           };
@@ -115,7 +126,7 @@ export function handleV1Chapter(
               verses: r.verses,
             },
             { total: r.verses.length, reference, copyright: r.version.copyright },
-            { aliased: r.aliased },
+            { aliased: r.aliased || !!embed },
           ),
           // 'c2': o shape ganhou text/verse/verseEnd — com o ETag antigo,
           // clientes revalidando levariam 304 e nunca veriam os campos novos.
@@ -140,7 +151,7 @@ export function handleV1Chapter(
             total: r.selection.verses.length,
             copyright: r.version.copyright,
           },
-          { aliased: r.aliased },
+          { aliased: r.aliased || !!embed },
         ),
         etag: etagFor([
           'v1',

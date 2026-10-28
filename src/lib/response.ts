@@ -48,7 +48,8 @@ export type ApiErrorCode =
   | 'VERSION_NOT_FOUND'
   | 'BOOK_NOT_FOUND'
   | 'CHAPTER_NOT_FOUND'
-  | 'VERSE_NOT_FOUND';
+  | 'VERSE_NOT_FOUND'
+  | 'RATE_LIMITED';
 
 const HTTP_STATUS_FOR_CODE: Record<ApiErrorCode, number> = {
   NOT_FOUND: 404,
@@ -58,6 +59,7 @@ const HTTP_STATUS_FOR_CODE: Record<ApiErrorCode, number> = {
   BOOK_NOT_FOUND: 404,
   CHAPTER_NOT_FOUND: 404,
   VERSE_NOT_FOUND: 404,
+  RATE_LIMITED: 429,
 };
 
 /**
@@ -81,6 +83,7 @@ const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
   BOOK_NOT_FOUND: 86400,
   CHAPTER_NOT_FOUND: 3600,
   VERSE_NOT_FOUND: 86400,
+  RATE_LIMITED: 0,
 };
 
 /**
@@ -88,6 +91,8 @@ const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
  * menos quando a versão foi trocada por alias (`contentHeaders`).
  */
 export function okResponse<T>(data: T, meta?: ResponseMeta, opts: { aliased?: boolean } = {}): Response {
+  // `aliased` aqui quer dizer "não imutável": versão trocada por alias ou rota
+  // de embed (versão com direitos pode sair do ar). Os dois ficam em 1 dia.
   const body: ApiSuccess<T> = meta ? { data, meta } : { data };
   return new Response(JSON.stringify(body), { headers: contentHeaders(opts.aliased ?? false) });
 }
@@ -111,7 +116,8 @@ export function errorResponse(
 }
 
 function errorHeaders(code: ApiErrorCode): HeadersInit {
-  return HTTP_STATUS_FOR_CODE[code] >= 500
+  // TTL 0 (5xx e 429) = no-store: nunca entra no cache.
+  return HTTP_STATUS_FOR_CODE[code] >= 500 || CACHE_TTL_FOR_CODE[code] === 0
     ? ERROR_5XX_HEADERS
     : { ...JSON_BASE_HEADERS, 'Cache-Control': `public, max-age=${CACHE_TTL_FOR_CODE[code]}` };
 }

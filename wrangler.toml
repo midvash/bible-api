@@ -23,6 +23,16 @@ enabled = true
 binding = "R2_BUCKET"
 bucket_name = "bible"
 
+# Rate limit por IP das rotas /v1/embed (plugins). Elas servem o catálogo
+# completo, inclusive versões com direitos: a trava impede baixar a Bíblia
+# inteira. namespace_id distinto do apps/web (1001-1003) e do MCP (2001-2002).
+# Em hit do Workers Cache o worker nem roda, então só conta o que é novo.
+[[unsafe.bindings]]
+name = "RATE_LIMIT_EMBED"
+type = "ratelimit"
+namespace_id = "3001"
+simple = { limit = 30, period = 60 }
+
 # Observability - Logs e traces para debug
 # Amostragem: log e trace são cobrados por evento (logs acima de 20M/mês;
 # traces entram no Observability pricing a partir de 1/dez/2026). 10% de log
