@@ -43,6 +43,15 @@ export const METADATA_HEADERS = {
   'Cache-Control': 'public, max-age=86400, s-maxage=86400',
 } as const;
 
+/**
+ * Headers de conteúdo bíblico: imutável (1 ano), menos quando a versão pedida
+ * saiu da API e respondeu a livre no lugar (alias). Aí 1 dia: o alias pode
+ * mudar (licença nova, outra substituta) e a URL `/esv/...` não carrega isso.
+ */
+export function contentHeaders(aliased: boolean) {
+  return aliased ? METADATA_HEADERS : CACHE_HEADERS;
+}
+
 /** Erros 5xx — não cachear, deixar retry funcionar. */
 export const ERROR_5XX_HEADERS = {
   ...JSON_BASE_HEADERS,

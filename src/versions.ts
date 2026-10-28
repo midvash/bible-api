@@ -50,10 +50,11 @@ export interface VersionCatalog {
    * seguindo alias de versão que saiu da API (direitos reservados → versão
    * livre do mesmo idioma, `catalog/version-aliases.json`; existe pra cliente
    * antigo — plugin WordPress com NVT salva — não quebrar). Devolve o slug
-   * efetivo (o que vai na resposta) e a definição. Único caminho slug → versão:
+   * efetivo (o que vai na resposta), a definição e se houve troca (`aliased`,
+   * que encurta o cache: ver `contentHeaders`). Único caminho slug → versão:
    * toda rota enxerga os mesmos aliases.
    */
-  lookup(slug: string): { slug: string; version: VersionDefinition } | null;
+  lookup(slug: string): { slug: string; version: VersionDefinition; aliased: boolean } | null;
   /** Slug do catálogo mais próximo ("did you mean"), ou null. */
   suggest(slug: string): string | null;
 }
@@ -73,7 +74,7 @@ function makeCatalog(
       const requested = slug.toLowerCase().trim();
       const effective = aliases.get(requested) ?? requested;
       const version = bySlug.get(effective);
-      return version ? { slug: effective, version } : null;
+      return version ? { slug: effective, version, aliased: effective !== requested } : null;
     },
     suggest(slug) {
       return closestString(slug.toLowerCase().trim(), bySlug.keys());

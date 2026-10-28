@@ -30,9 +30,9 @@ describe('lookupBook', () => {
   it('sugere vizinho por distância de edição para typo', () => {
     const r = lookupBook('2-samule');
     expect(r.book).toBeNull();
-    // Vizinho mais próximo em qualquer locale: '2-samuele' (italiano) está a
-    // 1 edição, mais perto que '2-samuel' (2 edições).
-    expect(r.didYouMean).toBe('2-samuele');
+    // '2-samuel' e '2-samuele' (italiano) ficam a 1 edição (a troca "le" → "el"
+    // conta 1); o desempate pelo tamanho fica com o do mesmo tamanho do pedido.
+    expect(r.didYouMean).toBe('2-samuel');
   });
 
   it('devolve didYouMean null quando nada é plausível', () => {

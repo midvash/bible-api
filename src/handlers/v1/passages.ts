@@ -18,7 +18,7 @@
  */
 
 import type { Env } from '../../env';
-import { CACHE_HEADERS } from '../../env';
+import { CACHE_HEADERS, contentHeaders } from '../../env';
 import { buildCacheKey, etagFor, serveWithCache } from '../../lib/cache';
 import { errorResponse } from '../../lib/response';
 import { getVersionCatalog } from '../../versions';
@@ -135,7 +135,8 @@ export function handleV1Passages(
       });
 
       // Batch imutável só quando tudo resolveu; senão TTL curto (ver PARTIAL_HEADERS).
-      const headers = failed === 0 ? CACHE_HEADERS : PARTIAL_HEADERS;
+      // Versão trocada por alias: 1 dia (ver contentHeaders).
+      const headers = failed > 0 ? PARTIAL_HEADERS : contentHeaders(found.aliased);
       return {
         response: new Response(body, { headers }),
         // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro

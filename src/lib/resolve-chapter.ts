@@ -24,6 +24,8 @@ export type ChapterResolution =
       kind: 'ok';
       versionSlug: string;
       version: VersionDefinition;
+      /** A versão pedida saiu da API e a livre respondeu no lugar. */
+      aliased: boolean;
       book: BookDefinition;
       chapterNum: number;
       /** Todos os versículos do capítulo. */
@@ -68,7 +70,7 @@ export async function resolveChapter(
     return { kind: 'version_not_found', didYouMean: catalog.suggest(versionParam) };
   }
   // Slug efetivo: versão que saiu da API chega aqui já trocada pela livre.
-  const { slug: versionSlug, version } = found;
+  const { slug: versionSlug, version, aliased } = found;
 
   const lookup = lookupBook(bookParam);
   if (!lookup.book) {
@@ -86,7 +88,7 @@ export async function resolveChapter(
   }
 
   if (!range) {
-    return { kind: 'ok', versionSlug, version, book, chapterNum, verses, selection: null };
+    return { kind: 'ok', versionSlug, version, aliased, book, chapterNum, verses, selection: null };
   }
 
   const selected = extractVerses(verses, range.start, range.end);
@@ -104,6 +106,7 @@ export async function resolveChapter(
     kind: 'ok',
     versionSlug,
     version,
+    aliased,
     book,
     chapterNum,
     verses,
