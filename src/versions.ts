@@ -40,6 +40,11 @@ export interface VersionDefinition {
    * Opcional e aditivo. Ver nota de sincronia acima.
    */
   copyright?: string;
+  /**
+   * Só no catálogo dos plugins: versão com direitos reservados (ou licença não
+   * comercial) que a API sem chave troca pela livre.
+   */
+  restricted?: boolean;
 }
 
 export interface VersionCatalog {
@@ -61,6 +66,12 @@ export interface VersionCatalog {
 
 /** Chave do catálogo serializado no bucket R2 `bible`. */
 const R2_CATALOG_KEY = 'catalog/versions.json';
+/**
+ * Catálogo dos plugins (pedido com a chave certa, `env.PLUGIN_MODE`): todas as
+ * versões no ar no midvash.com, inclusive as com direitos. Publicado pelo
+ * mesmo script do monorepo.
+ */
+const R2_PLUGIN_CATALOG_KEY = 'catalog/plugin-versions.json';
 const R2_ALIASES_KEY = 'catalog/version-aliases.json';
 
 function makeCatalog(
@@ -91,22 +102,49 @@ const EMPTY_CATALOG: VersionCatalog = makeCatalog([], new Map(), new Map());
  * isolate num estado ruim.
  */
 let cached: VersionCatalog | null = null;
+let cachedPlugin: VersionCatalog | null = null;
 
+/**
+ * Catálogo do pedido. Com a chave do plugin (`env.PLUGIN_MODE`), o completo;
+ * sem ela, o aberto (só livres, com troca pela livre). Sem o JSON dos plugins
+ * no R2, o modo plugin cai no aberto.
+ */
 export async function getVersionCatalog(env: Env): Promise<VersionCatalog> {
+  if (env.PLUGIN_MODE) return getPluginCatalog(env);
   if (cached) return cached;
+  const catalog = await loadCatalog(env, R2_CATALOG_KEY);
+  if (catalog.versions.length > 0) cached = catalog;
+  return catalog;
+}
 
-  let object: R2ObjectBody | null = null;
-  try {
-    object = await env.R2_BUCKET.get(R2_CATALOG_KEY);
-  } catch (err) {
-    console.error(`[catalog] erro ao ler ${R2_CATALOG_KEY} do R2:`, err);
-    return EMPTY_CATALOG;
+async function getPluginCatalog(env: Env): Promise<VersionCatalog> {
+  if (cachedPlugin) return cachedPlugin;
+  const object = await env.R2_BUCKET.get(R2_PLUGIN_CATALOG_KEY).catch(() => null);
+  const catalog = object ? await loadCatalog(env, R2_PLUGIN_CATALOG_KEY, object) : null;
+  if (catalog && catalog.versions.length > 0) {
+    cachedPlugin = catalog;
+    return catalog;
+  }
+  return getVersionCatalog({ ...env, PLUGIN_MODE: false });
+}
+
+async function loadCatalog(
+  env: Env,
+  key: string,
+  preloaded?: R2ObjectBody,
+): Promise<VersionCatalog> {
+  let object: R2ObjectBody | null = preloaded ?? null;
+  if (!object) {
+    try {
+      object = await env.R2_BUCKET.get(key);
+    } catch (err) {
+      console.error(`[catalog] erro ao ler ${key} do R2:`, err);
+      return EMPTY_CATALOG;
+    }
   }
 
   if (!object) {
-    console.error(
-      `[catalog] ${R2_CATALOG_KEY} ausente no bucket R2 — degradando para catálogo vazio`,
-    );
+    console.error(`[catalog] ${key} ausente no bucket R2 — degradando para catálogo vazio`);
     return EMPTY_CATALOG;
   }
 
@@ -114,18 +152,17 @@ export async function getVersionCatalog(env: Env): Promise<VersionCatalog> {
   try {
     versions = await object.json<VersionDefinition[]>();
   } catch (err) {
-    console.error(`[catalog] ${R2_CATALOG_KEY} é JSON inválido:`, err);
+    console.error(`[catalog] ${key} é JSON inválido:`, err);
     return EMPTY_CATALOG;
   }
 
   if (!Array.isArray(versions) || versions.length === 0) {
-    console.error(`[catalog] ${R2_CATALOG_KEY} vazio ou malformado`);
+    console.error(`[catalog] ${key} vazio ou malformado`);
     return EMPTY_CATALOG;
   }
 
   const bySlug = new Map<string, VersionDefinition>(versions.map((v) => [v.slug, v]));
-  cached = makeCatalog(versions, bySlug, await loadAliases(env, bySlug));
-  return cached;
+  return makeCatalog(versions, bySlug, await loadAliases(env, bySlug));
 }
 
 /**

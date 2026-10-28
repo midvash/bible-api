@@ -52,6 +52,20 @@ export function buildCacheKey(parts: Record<string, string | number | undefined>
 }
 
 /**
+ * Header interno que o `fetch` põe no pedido validado com a chave do plugin
+ * (e arranca de qualquer pedido de fora). Com ele, a resposta mora noutra
+ * entrada do Cache API: plugin e público nunca dividem cache.
+ */
+export const PLUGIN_VARIANT_HEADER = 'X-Midvash-Plugin-Variant';
+
+function withPluginVariant(request: Request, cacheKey: Request): Request {
+  if (request.headers.get(PLUGIN_VARIANT_HEADER) !== '1') return cacheKey;
+  const url = new URL(cacheKey.url);
+  url.searchParams.set('__plugin', '1');
+  return new Request(url.toString(), { method: 'GET' });
+}
+
+/**
  * Tenta recuperar uma resposta cacheada. Falhas são silenciosas.
  */
 async function cacheGet(cacheKey: Request): Promise<Response | null> {
@@ -187,6 +201,7 @@ export async function serveWithCache(
   label: string,
   produce: () => Response | Produced | Promise<Response | Produced>,
 ): Promise<Response> {
+  cacheKey = withPluginVariant(request, cacheKey);
   const cached = await cacheGet(cacheKey);
   if (cached) return serveFromCache(request, cached);
 

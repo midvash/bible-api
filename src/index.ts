@@ -45,12 +45,13 @@ import { getLandingHtml } from './landing/page';
 import { getVersionCatalog } from './versions';
 import { localeFromPath, pathForLocale } from './landing/i18n';
 import { LOCALES } from './lib/locale';
-import { buildCacheKey, contentHash, etagFor, serveWithCache } from './lib/cache';
+import { buildCacheKey, contentHash, etagFor, PLUGIN_VARIANT_HEADER, serveWithCache } from './lib/cache';
+import { applyPluginHeaders, isPluginKey, PLUGIN_KEY_HEADER } from './lib/plugin-key';
 
 const CORS_PREFLIGHT_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
+  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match, X-Midvash-Plugin-Key',
   // OPTIONS nunca passa pelo Workers Cache: sem Max-Age o browser repete o
   // preflight a cada request e cada um invoca o worker. 1 dia = teto do Chrome.
   'Access-Control-Max-Age': '86400',
@@ -121,7 +122,33 @@ function landingVersion(locale: string, html: string): string {
 }
 
 export default {
+  /**
+   * Porta de entrada. Com `X-Midvash-Plugin-Key` igual ao secret `PLUGIN_KEY`,
+   * o pedido segue em modo plugin: catálogo completo (versões com direitos
+   * servem o próprio texto), cache separado e 1 dia no lugar de 1 ano. Sem a
+   * chave (ou com chave errada), nada muda.
+   */
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const plugin = isPluginKey(request.headers.get(PLUGIN_KEY_HEADER), env.PLUGIN_KEY);
+    let routed = request;
+    // O marcador interno nunca vem de fora: só o liga quem validou a chave.
+    if (plugin || request.headers.has(PLUGIN_VARIANT_HEADER)) {
+      routed = new Request(request);
+      routed.headers.delete(PLUGIN_VARIANT_HEADER);
+      if (plugin) routed.headers.set(PLUGIN_VARIANT_HEADER, '1');
+    }
+    const response = await route(routed, plugin ? { ...env, PLUGIN_MODE: true } : env, ctx, env);
+    return applyPluginHeaders(response, plugin);
+  },
+};
+
+/** `openEnv` = env sem modo plugin, pra landing (HTML memoizado por locale). */
+async function route(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  openEnv: Env,
+): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -185,7 +212,7 @@ export default {
       if (wantsHtml || isLocalizedRoute) {
         // Render (memoizado por isolate) antes do lookup pra derivar a versão
         // de cache do conteúdo — chave/ETag mudam quando o HTML muda.
-        const { versions } = await getVersionCatalog(env);
+        const { versions } = await getVersionCatalog(openEnv);
         const html = getLandingHtml(landingLocale, versions);
         const version = landingVersion(landingLocale, html);
 
@@ -235,5 +262,4 @@ export default {
       response: new Response(NOT_FOUND_BODY, { status: 404, headers: NOT_FOUND_HEADERS }),
       etag: NOT_FOUND_ETAG,
     }));
-  },
-};
+}
