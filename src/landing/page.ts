@@ -116,9 +116,6 @@ const SELECT_LANGUAGE_LABEL: Record<ApiLocale, string> = {
 const GLOBE_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm88,104a87.61,87.61,0,0,1-3.33,24H174.16a157.44,157.44,0,0,0,0-48h38.51A87.61,87.61,0,0,1,216,128ZM102,168H154a112.1,112.1,0,0,1-26,45A112,112,0,0,1,102,168Zm-3.9-16a140.84,140.84,0,0,1,0-48h59.88a140.84,140.84,0,0,1,0,48ZM40,128a87.61,87.61,0,0,1,3.33-24H81.84a157.44,157.44,0,0,0,0,48H43.33A87.61,87.61,0,0,1,40,128ZM154,88H102a112.1,112.1,0,0,1,26-45A112,112,0,0,1,154,88Zm52.33,0H170.71a135.28,135.28,0,0,0-22.3-45.6A88.29,88.29,0,0,1,206.37,88ZM107.59,42.4A135.28,135.28,0,0,0,85.29,88H49.63A88.29,88.29,0,0,1,107.59,42.4ZM49.63,168H85.29a135.28,135.28,0,0,0,22.3,45.6A88.29,88.29,0,0,1,49.63,168Zm98.78,45.6a135.28,135.28,0,0,0,22.3-45.6h35.66A88.29,88.29,0,0,1,148.41,213.6Z"/></svg>';
 
-const CARET_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
-
 function langSwitcherMarkup(currentLocale: ApiLocale, ariaLabel: string): string {
   const items = LOCALES.map((l) => {
     const isActive = l === currentLocale;
@@ -128,8 +125,6 @@ function langSwitcherMarkup(currentLocale: ApiLocale, ariaLabel: string): string
   return `<div class="lang-switcher" data-lang-switcher>
     <button type="button" class="lang-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="${escapeHtml(ariaLabel)}">
       <span class="lang-trigger-icon">${GLOBE_ICON}</span>
-      <span class="lang-trigger-label">${escapeHtml(LOCALE_NATIVE_NAMES[currentLocale])}</span>
-      <span class="lang-trigger-caret">${CARET_ICON}</span>
     </button>
     <ul id="lang-menu" class="lang-menu" role="menu" hidden>
       ${items}
@@ -429,22 +424,12 @@ function renderVersionsSection(
   const groups = groupVersionsByLanguage(versions, locale);
   const langNames = t.versions.languageNames;
 
-  // Tabs (uma por idioma) — a primeira fica ativa por padrão (idioma da página)
-  const tabs = groups
+  // Um seletor no lugar de uma aba por idioma: com quase 70 idiomas, as abas
+  // viravam um paredão. A primeira opção é o idioma da página.
+  const options = groups
     .map((g, idx) => {
       const langLabel = langNames[g.language] ?? g.language;
-      return `
-        <button
-          type="button"
-          class="lang-tab${idx === 0 ? ' is-active' : ''}"
-          role="tab"
-          aria-selected="${idx === 0 ? 'true' : 'false'}"
-          aria-controls="lang-panel-${escapeHtml(g.language)}"
-          data-tab="${escapeHtml(g.language)}"
-        >
-          <span class="lang-tab-name">${escapeHtml(langLabel)}</span>
-          <span class="lang-tab-count">${g.items.length}</span>
-        </button>`;
+      return `<option value="${escapeHtml(g.language)}"${idx === 0 ? ' selected' : ''}>${escapeHtml(langLabel)} (${g.items.length})</option>`;
     })
     .join('');
 
@@ -483,7 +468,6 @@ function renderVersionsSection(
       return `
         <div
           class="lang-panel${idx === 0 ? ' is-active' : ''}"
-          role="tabpanel"
           id="lang-panel-${escapeHtml(g.language)}"
           data-panel="${escapeHtml(g.language)}"
           ${idx === 0 ? '' : 'hidden'}
@@ -517,8 +501,9 @@ function renderVersionsSection(
           </div>
         </div>
         <div class="lang-tabs-wrapper">
-          <div class="lang-tabs" role="tablist">
-            ${tabs}
+          <div class="lang-picker">
+            <label for="lang-select">${escapeHtml(t.versions.languageLabel)}</label>
+            <select id="lang-select" class="lang-select">${options}</select>
           </div>
           <div class="lang-panels">
             ${panels}
@@ -1013,24 +998,15 @@ body {
 @media (max-width: 480px) { .brand-logo { height: 32px; } }
 .lang-switcher { position: relative; }
 .lang-trigger {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 10px; height: 36px;
-  background: transparent; border: 1px solid transparent;
-  border-radius: 6px; color: var(--text);
-  font: inherit; font-size: 14px; font-weight: 500;
-  cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0;
+  background: transparent; border: none; border-radius: 8px;
+  color: var(--text-soft); cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
-.lang-trigger:hover, .lang-trigger[aria-expanded="true"] { background: var(--bg-soft); border-color: var(--border); }
+.lang-trigger:hover, .lang-trigger[aria-expanded="true"] { background: var(--bg-soft); color: var(--text); }
 .lang-trigger-icon { display: inline-flex; }
-.lang-trigger-icon svg { width: 20px; height: 20px; color: var(--text); }
-.lang-trigger-caret { display: inline-flex; transition: transform 0.15s ease; }
-.lang-trigger-caret svg { width: 14px; height: 14px; color: var(--text-muted); }
-.lang-trigger[aria-expanded="true"] .lang-trigger-caret { transform: rotate(180deg); }
-.lang-trigger-label { line-height: 1; }
-@media (max-width: 480px) {
-  .lang-trigger-label { display: none; }
-  .lang-trigger { padding: 6px; }
-}
+.lang-trigger-icon svg { width: 22px; height: 22px; }
 .lang-menu {
   position: absolute; top: calc(100% + 6px); right: 0;
   min-width: 200px; max-height: 70vh; overflow-y: auto;
@@ -1143,45 +1119,22 @@ body {
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
-.lang-tabs {
-  display: flex; flex-wrap: wrap;
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-soft);
-  padding: 8px 8px 0;
+.lang-picker {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
 }
-.lang-tab {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent; color: var(--text-soft);
-  border: none; cursor: pointer;
-  font-family: inherit; font-size: 0.875rem; font-weight: 500;
-  padding: 12px 16px;
-  border-radius: 6px 6px 0 0;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
+.lang-picker label { font-size: 0.875rem; font-weight: 600; color: var(--text-soft); }
+.lang-select {
+  appearance: none; -webkit-appearance: none;
+  min-width: 220px; max-width: 100%; height: 40px; padding: 0 36px 0 12px;
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23857a6b'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font: inherit; font-size: 0.95rem; cursor: pointer;
 }
-.lang-tab:hover { color: var(--text); }
-.lang-tab.is-active {
-  background: var(--bg-card);
-  color: var(--text);
-  border-bottom-color: var(--text);
-  font-weight: 600;
-}
-.lang-tab-name { font-size: 0.875rem; }
-.lang-tab-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 22px; height: 20px; padding: 0 6px;
-  background: var(--bg); color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.7rem; font-weight: 600;
-}
-.lang-tab.is-active .lang-tab-count {
-  background: var(--control); color: var(--on-control);
-  border-color: var(--control);
-}
+.lang-select:hover { border-color: var(--border-strong); }
+.lang-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .lang-panels { padding: 28px; }
 .lang-panel { display: none; }
 .lang-panel.is-active { display: block; animation: fadeInPanel 0.18s ease; }
@@ -1581,8 +1534,7 @@ a.footer-link:hover .footer-link-icon { color: var(--primary); }
   .run-call { display: none; }
   .lang-panels { padding: 20px; }
   .version-grid { grid-template-columns: 1fr; }
-  .lang-tab { padding: 10px 12px; font-size: 0.8rem; }
-  .lang-tab-name { display: none; }
+  .lang-select { flex: 1; min-width: 0; }
   .kv-table td, .err-table td, .err-table th { padding: 10px 12px; }
   .docs-code, .code-view { font-size: 0.72rem; }
 }
@@ -1822,16 +1774,11 @@ document.querySelectorAll('.copy-btn').forEach(function (btn) {
   });
 });
 
-// Tabs de idiomas na seção de versões
-document.querySelectorAll('.lang-tab').forEach(function (tab) {
-  tab.addEventListener('click', function () {
-    const target = tab.dataset.tab;
-    if (!target) return;
-    document.querySelectorAll('.lang-tab').forEach(function (t) {
-      const isActive = t.dataset.tab === target;
-      t.classList.toggle('is-active', isActive);
-      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
+// Seletor de idioma na seção de versões
+const langSelect = document.getElementById('lang-select');
+if (langSelect) {
+  langSelect.addEventListener('change', function () {
+    const target = langSelect.value;
     document.querySelectorAll('.lang-panel').forEach(function (p) {
       const isActive = p.dataset.panel === target;
       p.classList.toggle('is-active', isActive);
@@ -1839,7 +1786,7 @@ document.querySelectorAll('.lang-tab').forEach(function (tab) {
       else p.setAttribute('hidden', '');
     });
   });
-});
+}
 
 // Code tabs (cURL / JavaScript / Python) na seção de guias
 document.querySelectorAll('[data-code-tabs]').forEach(function (group) {
