@@ -30,6 +30,8 @@ function serializeVersion(v: VersionDefinition) {
     // Aditivos — só saem quando o catálogo do R2 os traz (monorepo enriquecido).
     ...(v.localizedNames ? { localizedNames: v.localizedNames } : {}),
     ...(v.copyright ? { copyright: v.copyright } : {}),
+    // Só no catálogo dos plugins (pedido com a chave).
+    ...(v.restricted ? { restricted: true } : {}),
   };
 }
 
@@ -44,10 +46,12 @@ interface PrebakedVersions {
   byLanguage: Record<string, string>;
   listEtag: string;
 }
-let prebaked: PrebakedVersions | null = null;
+// Memo por catálogo (WeakMap): o aberto e o dos plugins geram corpos diferentes.
+const prebaked = new WeakMap<VersionCatalog, PrebakedVersions>();
 
 function getPrebaked(catalog: VersionCatalog): PrebakedVersions {
-  if (prebaked) return prebaked;
+  const memo = prebaked.get(catalog);
+  if (memo) return memo;
 
   const allData = catalog.versions.map(serializeVersion);
   const allBody = JSON.stringify({ data: allData, meta: { total: allData.length } });
@@ -67,7 +71,7 @@ function getPrebaked(catalog: VersionCatalog): PrebakedVersions {
     byLanguage,
     listEtag: etagFor(['v1', 'versions', contentHash(allBody)]),
   };
-  if (catalog.versions.length > 0) prebaked = result;
+  if (catalog.versions.length > 0) prebaked.set(catalog, result);
   return result;
 }
 

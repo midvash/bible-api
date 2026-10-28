@@ -28,10 +28,12 @@ interface PrebakedRoot {
   body: string;
   etag: string;
 }
-let prebakedRoot: PrebakedRoot | null = null;
+// Memo por catálogo (WeakMap): o aberto e o dos plugins geram corpos diferentes.
+const prebakedRoot = new WeakMap<VersionCatalog, PrebakedRoot>();
 
 function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
-  if (prebakedRoot) return prebakedRoot;
+  const memo = prebakedRoot.get(catalog);
+  if (memo) return memo;
 
   const versionCount = catalog.versions.length;
   const languageCount = new Set(catalog.versions.map((v) => v.language)).size;
@@ -89,7 +91,7 @@ function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
     // cliente com ETag antigo fica preso num 304 do texto anterior.
     etag: etagFor(['legacy', 'root', 'en-v1', versionCount, languageCount]),
   };
-  if (versionCount > 0) prebakedRoot = result;
+  if (versionCount > 0) prebakedRoot.set(catalog, result);
   return result;
 }
 
@@ -115,7 +117,7 @@ interface PrebakedLegacyVersions {
   byLocale: Record<string, string>;
   listEtag: string;
 }
-let prebakedVersions: PrebakedLegacyVersions | null = null;
+const prebakedVersions = new WeakMap<VersionCatalog, PrebakedLegacyVersions>();
 
 /**
  * Idioma de versão para o filtro `?locale` de /versions — mesma regra no
@@ -130,7 +132,8 @@ function versionLanguageKey(language: string): string {
 }
 
 function getPrebakedVersions(catalog: VersionCatalog): PrebakedLegacyVersions {
-  if (prebakedVersions) return prebakedVersions;
+  const memo = prebakedVersions.get(catalog);
+  if (memo) return memo;
 
   const allBody = JSON.stringify({ versions: catalog.versions.map(serializeVersionLegacy) });
 
@@ -148,7 +151,7 @@ function getPrebakedVersions(catalog: VersionCatalog): PrebakedLegacyVersions {
     byLocale,
     listEtag: etagFor(['legacy', 'versions', contentHash(allBody)]),
   };
-  if (catalog.versions.length > 0) prebakedVersions = result;
+  if (catalog.versions.length > 0) prebakedVersions.set(catalog, result);
   return result;
 }
 

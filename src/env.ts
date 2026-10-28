@@ -10,6 +10,16 @@
  */
 export interface Env {
   R2_BUCKET: R2Bucket;
+  /**
+   * Secret (`wrangler secret put PLUGIN_KEY`): a chave que os plugins mandam
+   * em `X-Midvash-Plugin-Key`. Ausente = modo plugin desligado.
+   */
+  PLUGIN_KEY?: string;
+  /**
+   * Não é binding: o `fetch` liga quando o pedido trouxe a chave certa. Aí o
+   * catálogo é o completo (versões com direitos servem o próprio texto).
+   */
+  PLUGIN_MODE?: boolean;
 }
 
 /**
@@ -19,7 +29,7 @@ export interface Env {
 export const JSON_BASE_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
+  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match, X-Midvash-Plugin-Key',
   'Content-Type': 'application/json',
   'X-Robots-Tag': 'noindex, nofollow',
 } as const;
@@ -69,5 +79,5 @@ export const HTML_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
   'Cache-Control': 'public, max-age=86400, s-maxage=86400',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
+  'Access-Control-Allow-Headers': 'Content-Type, If-None-Match, X-Midvash-Plugin-Key',
 } as const;
