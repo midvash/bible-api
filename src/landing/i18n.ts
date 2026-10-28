@@ -62,6 +62,8 @@ export interface Translations {
     scopeFull: string;
     scopeOt: string;
     scopeNt: string;
+    /** Rótulo do seletor de idioma da lista de versões. */
+    languageLabel: string;
     languageNames: Record<string, string>;
   };
   endpoints: {
@@ -684,6 +686,7 @@ const en: Translations = {
     scopeFull: "OT + NT",
     scopeOt: "OT only",
     scopeNt: "NT only",
+    languageLabel: 'Language',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.en,
   },
   endpoints: {
@@ -785,6 +788,7 @@ const es: Translations = {
     scopeFull: "AT + NT",
     scopeOt: "Solo AT",
     scopeNt: "Solo NT",
+    languageLabel: 'Idioma',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.es,
   },
   endpoints: {
@@ -886,6 +890,7 @@ const ptBr: Translations = {
     scopeFull: "AT + NT",
     scopeOt: "Só AT",
     scopeNt: "Só NT",
+    languageLabel: 'Idioma',
     languageNames: LANGUAGE_NAMES_BY_LOCALE['pt-br'],
   },
   endpoints: {
@@ -987,6 +992,7 @@ const fr: Translations = {
     scopeFull: "AT + NT",
     scopeOt: "AT seul",
     scopeNt: "NT seul",
+    languageLabel: 'Langue',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.fr,
   },
   endpoints: {
@@ -1088,6 +1094,7 @@ const de: Translations = {
     scopeFull: "AT + NT",
     scopeOt: "Nur AT",
     scopeNt: "Nur NT",
+    languageLabel: 'Sprache',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.de,
   },
   endpoints: {
@@ -1189,6 +1196,7 @@ const it: Translations = {
     scopeFull: "AT + NT",
     scopeOt: "Solo AT",
     scopeNt: "Solo NT",
+    languageLabel: 'Lingua',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.it,
   },
   endpoints: {
@@ -1290,6 +1298,7 @@ const zh: Translations = {
     scopeFull: "旧约 + 新约",
     scopeOt: "仅旧约",
     scopeNt: "仅新约",
+    languageLabel: '语言',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.zh,
   },
   endpoints: {
@@ -1391,6 +1400,7 @@ const ru: Translations = {
     scopeFull: "ВЗ + НЗ",
     scopeOt: "Только ВЗ",
     scopeNt: "Только НЗ",
+    languageLabel: 'Язык',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.ru,
   },
   endpoints: {
@@ -1492,6 +1502,7 @@ const ko: Translations = {
     scopeFull: "구약 + 신약",
     scopeOt: "구약만",
     scopeNt: "신약만",
+    languageLabel: '언어',
     languageNames: LANGUAGE_NAMES_BY_LOCALE.ko,
   },
   endpoints: {

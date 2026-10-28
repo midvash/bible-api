@@ -10,43 +10,18 @@ import { licenseOf } from './license';
 import { LOCALES, type ApiLocale } from '../lib/locale';
 import { DOCS_STRINGS, type DocsStrings } from './docs';
 import { BOOKS } from '../books';
+import { renderSiteFooter, SITE_FOOTER_CSS } from './site-footer';
+import { LANG_COOKIE_SCRIPT } from './locale-redirect';
 
 const SITE_URL = 'https://api.midvash.com';
 const MIDVASH_URL = 'https://midvash.com';
 const MCP_URL = 'https://mcp.midvash.com';
-const IOS_URL = 'https://apps.apple.com/app/id6775930176';
-const ANDROID_URL = 'https://play.google.com/store/apps/details?id=com.midvash.mobile';
 // OG genérica da marca (2400x1260). A antiga midvash.com/brand/og-api.jpg dá 404.
 const OG_IMAGE = 'https://assets.midvash.com/seo-images/og-image-default.png';
 
 /** URL de midvash.com no locale (inglês sem prefixo, demais com /<locale>). */
 function midvashUrl(locale: ApiLocale, path = ''): string {
   return `${MIDVASH_URL}${locale === 'en' ? '' : `/${locale}`}${path}`;
-}
-
-// Slug da página da extensão Chrome em midvash.com (ROUTES.chromeExtension do monorepo).
-const CHROME_SLUG: Record<ApiLocale, string> = {
-  en: '/chrome-extension',
-  'pt-br': '/extensao-chrome',
-  es: '/extension-chrome',
-  fr: '/extension-chrome',
-  de: '/chrome-erweiterung',
-  it: '/estensione-chrome',
-  zh: '/chrome-extension',
-  ru: '/chrome-extension',
-  ko: '/chrome-extension',
-};
-
-function ecosystemLinks(locale: ApiLocale): Array<{ key: EcosystemKey; href: string; external?: boolean }> {
-  return [
-    { key: 'reader', href: midvashUrl(locale) },
-    { key: 'api', href: `${SITE_URL}${pathForLocale(locale)}` },
-    { key: 'mcp', href: `${MCP_URL}${locale === 'en' ? '' : `/${locale}`}` },
-    { key: 'wordpress', href: midvashUrl(locale, '/wordpress-plugin') },
-    { key: 'chrome', href: midvashUrl(locale, CHROME_SLUG[locale]) },
-    { key: 'ios', href: IOS_URL, external: true },
-    { key: 'android', href: ANDROID_URL, external: true },
-  ];
 }
 
 const ALTERNATE_NAMES: Partial<Record<ApiLocale, string>> = {
@@ -116,9 +91,6 @@ const SELECT_LANGUAGE_LABEL: Record<ApiLocale, string> = {
 const GLOBE_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm88,104a87.61,87.61,0,0,1-3.33,24H174.16a157.44,157.44,0,0,0,0-48h38.51A87.61,87.61,0,0,1,216,128ZM102,168H154a112.1,112.1,0,0,1-26,45A112,112,0,0,1,102,168Zm-3.9-16a140.84,140.84,0,0,1,0-48h59.88a140.84,140.84,0,0,1,0,48ZM40,128a87.61,87.61,0,0,1,3.33-24H81.84a157.44,157.44,0,0,0,0,48H43.33A87.61,87.61,0,0,1,40,128ZM154,88H102a112.1,112.1,0,0,1,26-45A112,112,0,0,1,154,88Zm52.33,0H170.71a135.28,135.28,0,0,0-22.3-45.6A88.29,88.29,0,0,1,206.37,88ZM107.59,42.4A135.28,135.28,0,0,0,85.29,88H49.63A88.29,88.29,0,0,1,107.59,42.4ZM49.63,168H85.29a135.28,135.28,0,0,0,22.3,45.6A88.29,88.29,0,0,1,49.63,168Zm98.78,45.6a135.28,135.28,0,0,0,22.3-45.6h35.66A88.29,88.29,0,0,1,148.41,213.6Z"/></svg>';
 
-const CARET_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
-
 function langSwitcherMarkup(currentLocale: ApiLocale, ariaLabel: string): string {
   const items = LOCALES.map((l) => {
     const isActive = l === currentLocale;
@@ -128,8 +100,6 @@ function langSwitcherMarkup(currentLocale: ApiLocale, ariaLabel: string): string
   return `<div class="lang-switcher" data-lang-switcher>
     <button type="button" class="lang-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="${escapeHtml(ariaLabel)}">
       <span class="lang-trigger-icon">${GLOBE_ICON}</span>
-      <span class="lang-trigger-label">${escapeHtml(LOCALE_NATIVE_NAMES[currentLocale])}</span>
-      <span class="lang-trigger-caret">${CARET_ICON}</span>
     </button>
     <ul id="lang-menu" class="lang-menu" role="menu" hidden>
       ${items}
@@ -155,6 +125,7 @@ const LANG_SWITCHER_SCRIPT = `(function(){
       if(e.key === 'Escape') close();
     });
   });
+  ${LANG_COOKIE_SCRIPT}
 })();`;
 
 function escapeHtml(str: string): string {
@@ -195,24 +166,7 @@ const ECOSYSTEM_ICONS: Record<
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M176,148a12,12,0,1,1-12-12A12,12,0,0,1,176,148ZM92,136a12,12,0,1,0,12,12A12,12,0,0,0,92,136Zm148,24v24a16,16,0,0,1-16,16H32a16,16,0,0,1-16-16V161.13A113.38,113.38,0,0,1,51.4,78.72L26.34,53.66A8,8,0,0,1,37.66,42.34L63.82,68.5a111.43,111.43,0,0,1,128.55-.19l26-26a8,8,0,0,1,11.32,11.32L204.82,78.5c.75.71,1.5,1.43,2.24,2.17A111.25,111.25,0,0,1,240,160Zm-16,0a96,96,0,0,0-96-96h-.34C74.91,64.18,32,107.75,32,161.13V184H224Z"/></svg>',
 };
 
-// Repositórios open source do Midvash (globais — não localizados). Ordem:
-// este projeto primeiro, depois os datasets/SDK e plugins.
 const GITHUB_ORG_URL = 'https://github.com/midvash';
-const OSS_REPOS: ReadonlyArray<{ name: string; url: string; current?: boolean }> = [
-  { name: 'bible-api', url: 'https://github.com/midvash/bible-api', current: true },
-  { name: 'bible-data', url: 'https://github.com/midvash/bible-data' },
-  { name: 'bible-data-js', url: 'https://github.com/midvash/bible-data-js' },
-  { name: 'bible-cross-references', url: 'https://github.com/midvash/bible-cross-references' },
-  { name: 'bible-mcp', url: 'https://github.com/midvash/bible-mcp' },
-  { name: 'bible-wordpress-plugin', url: 'https://github.com/midvash/bible-wordpress-plugin' },
-  { name: 'bible-emdash-plugin', url: 'https://github.com/midvash/bible-emdash-plugin' },
-];
-
-const INSTAGRAM_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></svg>';
-
-const GITHUB_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68Z"/></svg>';
 
 // JSON de exemplo (constante) das seções de formato/erros — escapados no render.
 const SUCCESS_ENVELOPE_JSON = `{
@@ -429,22 +383,12 @@ function renderVersionsSection(
   const groups = groupVersionsByLanguage(versions, locale);
   const langNames = t.versions.languageNames;
 
-  // Tabs (uma por idioma) — a primeira fica ativa por padrão (idioma da página)
-  const tabs = groups
+  // Um seletor no lugar de uma aba por idioma: com quase 70 idiomas, as abas
+  // viravam um paredão. A primeira opção é o idioma da página.
+  const options = groups
     .map((g, idx) => {
       const langLabel = langNames[g.language] ?? g.language;
-      return `
-        <button
-          type="button"
-          class="lang-tab${idx === 0 ? ' is-active' : ''}"
-          role="tab"
-          aria-selected="${idx === 0 ? 'true' : 'false'}"
-          aria-controls="lang-panel-${escapeHtml(g.language)}"
-          data-tab="${escapeHtml(g.language)}"
-        >
-          <span class="lang-tab-name">${escapeHtml(langLabel)}</span>
-          <span class="lang-tab-count">${g.items.length}</span>
-        </button>`;
+      return `<option value="${escapeHtml(g.language)}"${idx === 0 ? ' selected' : ''}>${escapeHtml(langLabel)} (${g.items.length})</option>`;
     })
     .join('');
 
@@ -483,7 +427,6 @@ function renderVersionsSection(
       return `
         <div
           class="lang-panel${idx === 0 ? ' is-active' : ''}"
-          role="tabpanel"
           id="lang-panel-${escapeHtml(g.language)}"
           data-panel="${escapeHtml(g.language)}"
           ${idx === 0 ? '' : 'hidden'}
@@ -517,8 +460,9 @@ function renderVersionsSection(
           </div>
         </div>
         <div class="lang-tabs-wrapper">
-          <div class="lang-tabs" role="tablist">
-            ${tabs}
+          <div class="lang-picker">
+            <label for="lang-select">${escapeHtml(t.versions.languageLabel)}</label>
+            <select id="lang-select" class="lang-select">${options}</select>
           </div>
           <div class="lang-panels">
             ${panels}
@@ -1013,24 +957,15 @@ body {
 @media (max-width: 480px) { .brand-logo { height: 32px; } }
 .lang-switcher { position: relative; }
 .lang-trigger {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 10px; height: 36px;
-  background: transparent; border: 1px solid transparent;
-  border-radius: 6px; color: var(--text);
-  font: inherit; font-size: 14px; font-weight: 500;
-  cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0;
+  background: transparent; border: none; border-radius: 8px;
+  color: var(--text-soft); cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
-.lang-trigger:hover, .lang-trigger[aria-expanded="true"] { background: var(--bg-soft); border-color: var(--border); }
+.lang-trigger:hover, .lang-trigger[aria-expanded="true"] { background: var(--bg-soft); color: var(--text); }
 .lang-trigger-icon { display: inline-flex; }
-.lang-trigger-icon svg { width: 20px; height: 20px; color: var(--text); }
-.lang-trigger-caret { display: inline-flex; transition: transform 0.15s ease; }
-.lang-trigger-caret svg { width: 14px; height: 14px; color: var(--text-muted); }
-.lang-trigger[aria-expanded="true"] .lang-trigger-caret { transform: rotate(180deg); }
-.lang-trigger-label { line-height: 1; }
-@media (max-width: 480px) {
-  .lang-trigger-label { display: none; }
-  .lang-trigger { padding: 6px; }
-}
+.lang-trigger-icon svg { width: 22px; height: 22px; }
 .lang-menu {
   position: absolute; top: calc(100% + 6px); right: 0;
   min-width: 200px; max-height: 70vh; overflow-y: auto;
@@ -1143,45 +1078,22 @@ body {
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
-.lang-tabs {
-  display: flex; flex-wrap: wrap;
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-soft);
-  padding: 8px 8px 0;
+.lang-picker {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
 }
-.lang-tab {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent; color: var(--text-soft);
-  border: none; cursor: pointer;
-  font-family: inherit; font-size: 0.875rem; font-weight: 500;
-  padding: 12px 16px;
-  border-radius: 6px 6px 0 0;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
+.lang-picker label { font-size: 0.875rem; font-weight: 600; color: var(--text-soft); }
+.lang-select {
+  appearance: none; -webkit-appearance: none;
+  min-width: 220px; max-width: 100%; height: 40px; padding: 0 36px 0 12px;
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23857a6b'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font: inherit; font-size: 0.95rem; cursor: pointer;
 }
-.lang-tab:hover { color: var(--text); }
-.lang-tab.is-active {
-  background: var(--bg-card);
-  color: var(--text);
-  border-bottom-color: var(--text);
-  font-weight: 600;
-}
-.lang-tab-name { font-size: 0.875rem; }
-.lang-tab-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 22px; height: 20px; padding: 0 6px;
-  background: var(--bg); color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.7rem; font-weight: 600;
-}
-.lang-tab.is-active .lang-tab-count {
-  background: var(--control); color: var(--on-control);
-  border-color: var(--control);
-}
+.lang-select:hover { border-color: var(--border-strong); }
+.lang-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .lang-panels { padding: 28px; }
 .lang-panel { display: none; }
 .lang-panel.is-active { display: block; animation: fadeInPanel 0.18s ease; }
@@ -1369,72 +1281,7 @@ body {
 .resp-code .json-bool { color: oklch(0.80 0.08 30); }
 .resp-code .json-null { color: oklch(0.66 0.018 80); }
 
-/* FOOTER */
-footer {
-  padding: 56px 0 40px; border-top: 1px solid var(--border);
-  background: var(--bg-card); text-align: left;
-}
-footer p { color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; }
-footer a { color: var(--text); text-decoration: none; font-weight: 600; }
-footer a:hover { text-decoration: underline; }
-/* Footer multi-coluna (marca + produtos + open source) */
-.footer-top { display: grid; grid-template-columns: 1fr; gap: 40px; }
-@media (min-width: 768px) {
-  .footer-top { grid-template-columns: minmax(190px, 240px) 1fr; gap: 56px; align-items: start; }
-}
-.footer-brand { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.footer-brand .brand-logo { height: 36px; }
-.footer-brand .brand-product { font-size: 13px; }
-
-.footer-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 28px 40px; }
-.footer-col-title {
-  font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--text-muted); margin-bottom: 12px;
-}
-.footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.footer-link {
-  display: inline-flex; align-items: center; gap: 9px; width: 100%;
-  padding: 6px 0; color: var(--text-soft) !important; font-weight: 500 !important;
-  font-size: 0.875rem; text-decoration: none !important; transition: color 0.14s ease;
-}
-a.footer-link:hover { color: var(--primary) !important; text-decoration: none !important; }
-a.footer-link:hover .footer-link-icon { color: var(--primary); }
-.footer-link.is-current { color: var(--text) !important; font-weight: 600 !important; }
-.footer-link.is-current .footer-link-icon { color: var(--primary); }
-.footer-link.is-soon { color: var(--text-muted) !important; cursor: default; }
-.footer-link-icon { width: 18px; height: 18px; flex-shrink: 0; display: inline-flex; opacity: 0.9; transition: color 0.14s ease; }
-.footer-link-icon svg { width: 100%; height: 100%; }
-.footer-link-text { line-height: 1.3; }
-.footer-repo-name { font-family: var(--font-mono); font-size: 0.82rem; }
-.footer-all-repos { color: var(--text) !important; font-weight: 600 !important; font-size: 0.82rem; }
-.soon-badge {
-  margin-left: auto; font-size: 0.6rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px;
-  border-radius: 999px; background: var(--bg-card); color: var(--text-muted);
-  border: 1px solid var(--border); white-space: nowrap;
-}
-
-.footer-social { display: flex; gap: 16px; width: 100%; margin-top: 4px; }
-.footer-social-icon {
-  display: inline-flex; width: 22px; height: 22px;
-  color: var(--text-muted) !important; text-decoration: none !important;
-  transition: color 0.15s ease;
-}
-.footer-social-icon:hover { color: var(--primary) !important; text-decoration: none !important; }
-.footer-social-icon svg { width: 100%; height: 100%; }
-
-.footer-bottom {
-  margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--border);
-}
-.footer-tagline { font-size: 0.8125rem; color: var(--text-soft); }
-.footer-copyright { margin-top: 6px; font-size: 0.75rem; opacity: 0.85; }
-.footer-credit { margin-top: 2px; font-size: 0.75rem; opacity: 0.85; }
-.footer-credit a { font-weight: 600; }
-
-@media (max-width: 640px) {
-  .footer-cols { gap: 24px 28px; }
-}
+${SITE_FOOTER_CSS}
 
 /* DOCS SECTIONS — format / errors / books / guides */
 .docs-section { padding: 72px 0; border-top: 1px solid var(--border); }
@@ -1581,8 +1428,7 @@ a.footer-link:hover .footer-link-icon { color: var(--primary); }
   .run-call { display: none; }
   .lang-panels { padding: 20px; }
   .version-grid { grid-template-columns: 1fr; }
-  .lang-tab { padding: 10px 12px; font-size: 0.8rem; }
-  .lang-tab-name { display: none; }
+  .lang-select { flex: 1; min-width: 0; }
   .kv-table td, .err-table td, .err-table th { padding: 10px 12px; }
   .docs-code, .code-view { font-size: 0.72rem; }
 }
@@ -1694,55 +1540,7 @@ ${renderFaqSection(t)}
 
 </main>
 
-<footer>
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <img class="brand-logo brand-logo-light" src="https://midvash.com/brand/logo-midvash.svg" alt="Midvash" width="120" height="36" loading="lazy">
-        <img class="brand-logo brand-logo-dark" src="https://midvash.com/brand/logo-midvash-dark.svg" alt="" width="120" height="36" loading="lazy">
-        <span class="brand-product">Bible API</span>
-        <div class="footer-social" aria-label="${escapeHtml(t.footer.socialLabel)}">
-          <a href="https://www.instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
-          <a href="${GITHUB_ORG_URL}" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="footer-social-icon">${GITHUB_ICON}</a>
-        </div>
-      </div>
-      <nav class="footer-cols" aria-label="${escapeHtml(t.footer.ecosystemLabel)}">
-        <div class="footer-col">
-          <h2 class="footer-col-title">${escapeHtml(t.footer.productsLabel)}</h2>
-          <ul>
-            ${ecosystemLinks(locale)
-              .map((l) => {
-                const icon = `<span class="footer-link-icon" aria-hidden="true">${ECOSYSTEM_ICONS[l.key]}</span>`;
-                const text = `<span class="footer-link-text">${escapeHtml(t.footer.ecosystem[l.key])}</span>`;
-                const isCurrent = l.key === 'api';
-                const cur = isCurrent ? ' is-current' : '';
-                const aria = isCurrent ? ' aria-current="page"' : '';
-                const ext = l.external ? ' target="_blank" rel="noopener"' : '';
-                return `<li><a class="footer-link${cur}" href="${escapeHtml(l.href)}"${aria}${ext}>${icon}${text}</a></li>`;
-              })
-              .join('')}
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2 class="footer-col-title">${escapeHtml(t.footer.openSourceLabel)}</h2>
-          <ul>
-            ${OSS_REPOS.map((r) => {
-              const cur = r.current ? ' is-current' : '';
-              const aria = r.current ? ' aria-current="page"' : '';
-              return `<li><a class="footer-link footer-repo${cur}" href="${r.url}" target="_blank" rel="noopener"${aria}><span class="footer-repo-name">${escapeHtml(r.name)}</span></a></li>`;
-            }).join('')}
-            <li><a class="footer-link footer-all-repos" href="${GITHUB_ORG_URL}" target="_blank" rel="noopener">${escapeHtml(t.footer.allReposLabel)} →</a></li>
-          </ul>
-        </div>
-      </nav>
-    </div>
-    <div class="footer-bottom">
-      <p class="footer-tagline">${escapeHtml(t.footer.tagline)}</p>
-      <p class="footer-copyright">${escapeHtml(t.footer.copyright)}</p>
-      <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://netogregorio.com" target="_blank" rel="noopener">Neto Gregório</a></p>
-    </div>
-  </div>
-</footer>
+${renderSiteFooter(locale)}
 
 <script>
 const UI = ${uiStrings};
@@ -1822,16 +1620,11 @@ document.querySelectorAll('.copy-btn').forEach(function (btn) {
   });
 });
 
-// Tabs de idiomas na seção de versões
-document.querySelectorAll('.lang-tab').forEach(function (tab) {
-  tab.addEventListener('click', function () {
-    const target = tab.dataset.tab;
-    if (!target) return;
-    document.querySelectorAll('.lang-tab').forEach(function (t) {
-      const isActive = t.dataset.tab === target;
-      t.classList.toggle('is-active', isActive);
-      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
+// Seletor de idioma na seção de versões
+const langSelect = document.getElementById('lang-select');
+if (langSelect) {
+  langSelect.addEventListener('change', function () {
+    const target = langSelect.value;
     document.querySelectorAll('.lang-panel').forEach(function (p) {
       const isActive = p.dataset.panel === target;
       p.classList.toggle('is-active', isActive);
@@ -1839,7 +1632,7 @@ document.querySelectorAll('.lang-tab').forEach(function (tab) {
       else p.setAttribute('hidden', '');
     });
   });
-});
+}
 
 // Code tabs (cURL / JavaScript / Python) na seção de guias
 document.querySelectorAll('[data-code-tabs]').forEach(function (group) {
