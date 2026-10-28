@@ -10,43 +10,17 @@ import { licenseOf } from './license';
 import { LOCALES, type ApiLocale } from '../lib/locale';
 import { DOCS_STRINGS, type DocsStrings } from './docs';
 import { BOOKS } from '../books';
+import { renderSiteFooter, SITE_FOOTER_CSS } from './site-footer';
 
 const SITE_URL = 'https://api.midvash.com';
 const MIDVASH_URL = 'https://midvash.com';
 const MCP_URL = 'https://mcp.midvash.com';
-const IOS_URL = 'https://apps.apple.com/app/id6775930176';
-const ANDROID_URL = 'https://play.google.com/store/apps/details?id=com.midvash.mobile';
 // OG genérica da marca (2400x1260). A antiga midvash.com/brand/og-api.jpg dá 404.
 const OG_IMAGE = 'https://assets.midvash.com/seo-images/og-image-default.png';
 
 /** URL de midvash.com no locale (inglês sem prefixo, demais com /<locale>). */
 function midvashUrl(locale: ApiLocale, path = ''): string {
   return `${MIDVASH_URL}${locale === 'en' ? '' : `/${locale}`}${path}`;
-}
-
-// Slug da página da extensão Chrome em midvash.com (ROUTES.chromeExtension do monorepo).
-const CHROME_SLUG: Record<ApiLocale, string> = {
-  en: '/chrome-extension',
-  'pt-br': '/extensao-chrome',
-  es: '/extension-chrome',
-  fr: '/extension-chrome',
-  de: '/chrome-erweiterung',
-  it: '/estensione-chrome',
-  zh: '/chrome-extension',
-  ru: '/chrome-extension',
-  ko: '/chrome-extension',
-};
-
-function ecosystemLinks(locale: ApiLocale): Array<{ key: EcosystemKey; href: string; external?: boolean }> {
-  return [
-    { key: 'reader', href: midvashUrl(locale) },
-    { key: 'api', href: `${SITE_URL}${pathForLocale(locale)}` },
-    { key: 'mcp', href: `${MCP_URL}${locale === 'en' ? '' : `/${locale}`}` },
-    { key: 'wordpress', href: midvashUrl(locale, '/wordpress-plugin') },
-    { key: 'chrome', href: midvashUrl(locale, CHROME_SLUG[locale]) },
-    { key: 'ios', href: IOS_URL, external: true },
-    { key: 'android', href: ANDROID_URL, external: true },
-  ];
 }
 
 const ALTERNATE_NAMES: Partial<Record<ApiLocale, string>> = {
@@ -190,24 +164,7 @@ const ECOSYSTEM_ICONS: Record<
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M176,148a12,12,0,1,1-12-12A12,12,0,0,1,176,148ZM92,136a12,12,0,1,0,12,12A12,12,0,0,0,92,136Zm148,24v24a16,16,0,0,1-16,16H32a16,16,0,0,1-16-16V161.13A113.38,113.38,0,0,1,51.4,78.72L26.34,53.66A8,8,0,0,1,37.66,42.34L63.82,68.5a111.43,111.43,0,0,1,128.55-.19l26-26a8,8,0,0,1,11.32,11.32L204.82,78.5c.75.71,1.5,1.43,2.24,2.17A111.25,111.25,0,0,1,240,160Zm-16,0a96,96,0,0,0-96-96h-.34C74.91,64.18,32,107.75,32,161.13V184H224Z"/></svg>',
 };
 
-// Repositórios open source do Midvash (globais — não localizados). Ordem:
-// este projeto primeiro, depois os datasets/SDK e plugins.
 const GITHUB_ORG_URL = 'https://github.com/midvash';
-const OSS_REPOS: ReadonlyArray<{ name: string; url: string; current?: boolean }> = [
-  { name: 'bible-api', url: 'https://github.com/midvash/bible-api', current: true },
-  { name: 'bible-data', url: 'https://github.com/midvash/bible-data' },
-  { name: 'bible-data-js', url: 'https://github.com/midvash/bible-data-js' },
-  { name: 'bible-cross-references', url: 'https://github.com/midvash/bible-cross-references' },
-  { name: 'bible-mcp', url: 'https://github.com/midvash/bible-mcp' },
-  { name: 'bible-wordpress-plugin', url: 'https://github.com/midvash/bible-wordpress-plugin' },
-  { name: 'bible-emdash-plugin', url: 'https://github.com/midvash/bible-emdash-plugin' },
-];
-
-const INSTAGRAM_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></svg>';
-
-const GITHUB_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68Z"/></svg>';
 
 // JSON de exemplo (constante) das seções de formato/erros — escapados no render.
 const SUCCESS_ENVELOPE_JSON = `{
@@ -1322,72 +1279,7 @@ body {
 .resp-code .json-bool { color: oklch(0.80 0.08 30); }
 .resp-code .json-null { color: oklch(0.66 0.018 80); }
 
-/* FOOTER */
-footer {
-  padding: 56px 0 40px; border-top: 1px solid var(--border);
-  background: var(--bg-card); text-align: left;
-}
-footer p { color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; }
-footer a { color: var(--text); text-decoration: none; font-weight: 600; }
-footer a:hover { text-decoration: underline; }
-/* Footer multi-coluna (marca + produtos + open source) */
-.footer-top { display: grid; grid-template-columns: 1fr; gap: 40px; }
-@media (min-width: 768px) {
-  .footer-top { grid-template-columns: minmax(190px, 240px) 1fr; gap: 56px; align-items: start; }
-}
-.footer-brand { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.footer-brand .brand-logo { height: 36px; }
-.footer-brand .brand-product { font-size: 13px; }
-
-.footer-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 28px 40px; }
-.footer-col-title {
-  font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--text-muted); margin-bottom: 12px;
-}
-.footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.footer-link {
-  display: inline-flex; align-items: center; gap: 9px; width: 100%;
-  padding: 6px 0; color: var(--text-soft) !important; font-weight: 500 !important;
-  font-size: 0.875rem; text-decoration: none !important; transition: color 0.14s ease;
-}
-a.footer-link:hover { color: var(--primary) !important; text-decoration: none !important; }
-a.footer-link:hover .footer-link-icon { color: var(--primary); }
-.footer-link.is-current { color: var(--text) !important; font-weight: 600 !important; }
-.footer-link.is-current .footer-link-icon { color: var(--primary); }
-.footer-link.is-soon { color: var(--text-muted) !important; cursor: default; }
-.footer-link-icon { width: 18px; height: 18px; flex-shrink: 0; display: inline-flex; opacity: 0.9; transition: color 0.14s ease; }
-.footer-link-icon svg { width: 100%; height: 100%; }
-.footer-link-text { line-height: 1.3; }
-.footer-repo-name { font-family: var(--font-mono); font-size: 0.82rem; }
-.footer-all-repos { color: var(--text) !important; font-weight: 600 !important; font-size: 0.82rem; }
-.soon-badge {
-  margin-left: auto; font-size: 0.6rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px;
-  border-radius: 999px; background: var(--bg-card); color: var(--text-muted);
-  border: 1px solid var(--border); white-space: nowrap;
-}
-
-.footer-social { display: flex; gap: 16px; width: 100%; margin-top: 4px; }
-.footer-social-icon {
-  display: inline-flex; width: 22px; height: 22px;
-  color: var(--text-muted) !important; text-decoration: none !important;
-  transition: color 0.15s ease;
-}
-.footer-social-icon:hover { color: var(--primary) !important; text-decoration: none !important; }
-.footer-social-icon svg { width: 100%; height: 100%; }
-
-.footer-bottom {
-  margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--border);
-}
-.footer-tagline { font-size: 0.8125rem; color: var(--text-soft); }
-.footer-copyright { margin-top: 6px; font-size: 0.75rem; opacity: 0.85; }
-.footer-credit { margin-top: 2px; font-size: 0.75rem; opacity: 0.85; }
-.footer-credit a { font-weight: 600; }
-
-@media (max-width: 640px) {
-  .footer-cols { gap: 24px 28px; }
-}
+${SITE_FOOTER_CSS}
 
 /* DOCS SECTIONS — format / errors / books / guides */
 .docs-section { padding: 72px 0; border-top: 1px solid var(--border); }
@@ -1646,55 +1538,7 @@ ${renderFaqSection(t)}
 
 </main>
 
-<footer>
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <img class="brand-logo brand-logo-light" src="https://midvash.com/brand/logo-midvash.svg" alt="Midvash" width="120" height="36" loading="lazy">
-        <img class="brand-logo brand-logo-dark" src="https://midvash.com/brand/logo-midvash-dark.svg" alt="" width="120" height="36" loading="lazy">
-        <span class="brand-product">Bible API</span>
-        <div class="footer-social" aria-label="${escapeHtml(t.footer.socialLabel)}">
-          <a href="https://www.instagram.com/midvash" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t.footer.instagramLabel)}" class="footer-social-icon">${INSTAGRAM_ICON}</a>
-          <a href="${GITHUB_ORG_URL}" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="footer-social-icon">${GITHUB_ICON}</a>
-        </div>
-      </div>
-      <nav class="footer-cols" aria-label="${escapeHtml(t.footer.ecosystemLabel)}">
-        <div class="footer-col">
-          <h2 class="footer-col-title">${escapeHtml(t.footer.productsLabel)}</h2>
-          <ul>
-            ${ecosystemLinks(locale)
-              .map((l) => {
-                const icon = `<span class="footer-link-icon" aria-hidden="true">${ECOSYSTEM_ICONS[l.key]}</span>`;
-                const text = `<span class="footer-link-text">${escapeHtml(t.footer.ecosystem[l.key])}</span>`;
-                const isCurrent = l.key === 'api';
-                const cur = isCurrent ? ' is-current' : '';
-                const aria = isCurrent ? ' aria-current="page"' : '';
-                const ext = l.external ? ' target="_blank" rel="noopener"' : '';
-                return `<li><a class="footer-link${cur}" href="${escapeHtml(l.href)}"${aria}${ext}>${icon}${text}</a></li>`;
-              })
-              .join('')}
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h2 class="footer-col-title">${escapeHtml(t.footer.openSourceLabel)}</h2>
-          <ul>
-            ${OSS_REPOS.map((r) => {
-              const cur = r.current ? ' is-current' : '';
-              const aria = r.current ? ' aria-current="page"' : '';
-              return `<li><a class="footer-link footer-repo${cur}" href="${r.url}" target="_blank" rel="noopener"${aria}><span class="footer-repo-name">${escapeHtml(r.name)}</span></a></li>`;
-            }).join('')}
-            <li><a class="footer-link footer-all-repos" href="${GITHUB_ORG_URL}" target="_blank" rel="noopener">${escapeHtml(t.footer.allReposLabel)} →</a></li>
-          </ul>
-        </div>
-      </nav>
-    </div>
-    <div class="footer-bottom">
-      <p class="footer-tagline">${escapeHtml(t.footer.tagline)}</p>
-      <p class="footer-copyright">${escapeHtml(t.footer.copyright)}</p>
-      <p class="footer-credit">${escapeHtml(t.footer.builtBy)} <a href="https://netogregorio.com" target="_blank" rel="noopener">Neto Gregório</a></p>
-    </div>
-  </div>
-</footer>
+${renderSiteFooter(locale)}
 
 <script>
 const UI = ${uiStrings};
