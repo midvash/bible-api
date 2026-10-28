@@ -19,19 +19,32 @@ export function normalizeLoose(value: string): string {
     .replace(/[^\p{L}\p{N}]/gu, '');
 }
 
-/** Distância de Levenshtein com corte: devolve Infinity se passar de `max`. */
+/**
+ * Distância de edição OSA (Damerau restrita: Levenshtein + troca de duas
+ * letras vizinhas custando 1) com corte: devolve Infinity se passar de `max`.
+ * Sem a troca, "jhon" ficava a 2 de "john" e de "job", e o empate dava "job".
+ */
 function editDistance(a: string, b: string, max: number): number {
   if (Math.abs(a.length - b.length) > max) return Infinity;
+  let prev2: number[] = [];
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  let prevMin = 0;
   for (let i = 1; i <= a.length; i++) {
     const curr = [i];
     let rowMin = i;
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
-      if (curr[j] < rowMin) rowMin = curr[j];
+      let d = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d = Math.min(d, prev2[j - 2] + 1);
+      }
+      curr[j] = d;
+      if (d < rowMin) rowMin = d;
     }
-    if (rowMin > max) return Infinity;
+    // A troca olha duas linhas atrás: só dá pra cortar quando as duas passaram.
+    if (rowMin > max && prevMin > max) return Infinity;
+    prevMin = rowMin;
+    prev2 = prev;
     prev = curr;
   }
   return prev[b.length] <= max ? prev[b.length] : Infinity;
@@ -39,7 +52,8 @@ function editDistance(a: string, b: string, max: number): number {
 
 /**
  * Candidato mais próximo de `input` (após normalização frouxa), com no
- * máximo `maxDistance` edições. Empate → primeiro candidato da lista.
+ * máximo `maxDistance` edições. Empate → o de tamanho mais perto do pedido;
+ * persistindo, o primeiro candidato da lista.
  */
 export function closestString(
   input: string,
@@ -50,10 +64,14 @@ export function closestString(
   if (!needle) return null;
   let best: string | null = null;
   let bestDist = maxDistance + 1;
+  let bestLenGap = Infinity;
   for (const candidate of candidates) {
-    const dist = editDistance(needle, normalizeLoose(candidate), maxDistance);
-    if (dist < bestDist) {
+    const normalized = normalizeLoose(candidate);
+    const dist = editDistance(needle, normalized, maxDistance);
+    const lenGap = Math.abs(normalized.length - needle.length);
+    if (dist < bestDist || (dist === bestDist && lenGap < bestLenGap)) {
       bestDist = dist;
+      bestLenGap = lenGap;
       best = candidate;
       if (dist === 0) break;
     }

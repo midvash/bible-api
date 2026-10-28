@@ -11,7 +11,7 @@
 
 import { getVersionCatalog, type VersionCatalog, type VersionDefinition } from '../versions';
 import { BOOKS, serializeBook } from '../books';
-import { CACHE_HEADERS, METADATA_HEADERS, ERROR_5XX_HEADERS, type Env } from '../env';
+import { CACHE_HEADERS, METADATA_HEADERS, ERROR_5XX_HEADERS, contentHeaders, type Env } from '../env';
 import { contentHash, etagFor, normalizeCacheKey, serveWithCache } from '../lib/cache';
 import { legacyErrorResponse } from '../lib/response';
 import { resolveChapter } from '../lib/resolve-chapter';
@@ -35,36 +35,48 @@ function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
 
   const versionCount = catalog.versions.length;
   const languageCount = new Set(catalog.versions.map((v) => v.language)).size;
-  const versionsLabel = versionCount > 0 ? `${versionCount}` : 'Dezenas de';
-  const languagesLabel = languageCount > 0 ? `${languageCount}` : 'vários';
+  const versionsLabel = versionCount > 0 ? `${versionCount}` : 'Dozens of';
+  const languagesLabel = languageCount > 0 ? `${languageCount}` : 'many';
+  const base = 'https://api.midvash.com';
 
   const body = JSON.stringify(
     {
-      name: 'Midvash API Pública',
-      version: '1.0.0',
-      description: 'API pública para acesso a versículos e versões da Bíblia',
+      name: 'Midvash API',
+      version: 'v1',
+      description: 'Free, no-key public Bible API: verses, chapters, books and versions.',
+      documentation: `${base}/docs`,
+      openapi: `${base}/openapi.json`,
       endpoints: {
-        'GET /': { description: 'Documentação da API (este endpoint)', example: 'https://api.midvash.com/' },
-        'GET /versions': { description: 'Lista todas as versões bíblicas disponíveis', example: 'https://api.midvash.com/versions' },
-        'GET /books': { description: 'Lista todos os livros da Bíblia', example: 'https://api.midvash.com/books' },
-        'GET /votd': { description: 'Versículo do dia (query: language, version)', example: 'https://api.midvash.com/votd?language=pt-br&version=almeida-livre' },
-        'GET /{version}/{book}/{chapter}': { description: 'Retorna um capítulo completo', example: 'https://api.midvash.com/almeida-livre/john/3' },
-        'GET /{version}/{book}/{chapter}/{verse}': { description: 'Retorna um versículo específico', example: 'https://api.midvash.com/almeida-livre/john/3/16' },
-        'GET /{version}/{book}/{chapter}/{verse-start}-{verse-end}': { description: 'Retorna um intervalo de versículos', example: 'https://api.midvash.com/almeida-livre/john/3/16-20' },
+        'GET /v1': { description: 'Endpoint discovery for the v1 API ({ data, meta } envelope)', example: `${base}/v1` },
+        'GET /v1/versions': { description: 'List Bible versions', example: `${base}/v1/versions` },
+        'GET /v1/versions/{slug}': { description: 'Get a single version by slug', example: `${base}/v1/versions/kjv` },
+        'GET /v1/books': { description: 'List Bible books', example: `${base}/v1/books` },
+        'GET /v1/books/{slug}': { description: 'Get a single book by slug', example: `${base}/v1/books/john` },
+        'GET /v1/{version}/{book}/{chapter}': { description: 'Get a full chapter (?preview=N truncates text)', example: `${base}/v1/kjv/john/3` },
+        'GET /v1/{version}/{book}/{chapter}/{verse}': { description: 'Get a verse or a range (16 or 16-20)', example: `${base}/v1/kjv/john/3/16-18` },
+        'GET /v1/passages': { description: 'Resolve up to 50 references in one call', example: `${base}/v1/passages?refs=john%203:16,psalms%2023&version=kjv` },
+        'GET /v1/parse': { description: 'Parse a free-text reference into its parts', example: `${base}/v1/parse?q=John%203:16-18` },
+        'GET /v1/votd': { description: 'Verse of the day (query: language, version)', example: `${base}/v1/votd?language=en` },
+        'GET /openapi.json': { description: 'OpenAPI 3.1 spec', example: `${base}/openapi.json` },
+        'GET /docs': { description: 'Interactive API reference', example: `${base}/docs` },
+        'GET /': { description: 'This document (legacy root)', example: `${base}/` },
+        'GET /versions': { description: 'Legacy: list versions', example: `${base}/versions` },
+        'GET /books': { description: 'Legacy: list books', example: `${base}/books` },
+        'GET /votd': { description: 'Legacy: verse of the day', example: `${base}/votd?language=en` },
+        'GET /{version}/{book}/{chapter}': { description: 'Legacy: full chapter', example: `${base}/kjv/john/3` },
+        'GET /{version}/{book}/{chapter}/{verse}': { description: 'Legacy: verse or range', example: `${base}/kjv/john/3/16` },
       },
       features: [
-        'Cache máximo para dados imutáveis (TTL: 1 ano)',
-        'CORS habilitado para acesso público',
-        `Suporte a ${languagesLabel} idiomas`,
-        `${versionsLabel} versões bíblicas disponíveis`,
-        'Acesso rápido via Cloudflare Edge Network',
+        `${versionsLabel} free Bible versions (public domain or open license)`,
+        `${languagesLabel} languages`,
+        'CORS enabled for public access',
+        'Served and cached on the Cloudflare edge',
       ],
       notes: [
-        'Todos os dados são imutáveis e estão em cache por 1 ano',
-        'Use slugs em inglês para os livros (ex: john, genesis, psalms)',
-        'A API aceita slugs de livros em diferentes idiomas',
-        'Para listar versões disponíveis, acesse /versions',
-        'Sem rate limit: a API é pública e cacheada no edge. Não emitimos 429 nem headers X-RateLimit-*. Respeite os ETags (304) e use /v1/passages para agrupar referências.',
+        'New integrations should use /v1; the legacy routes stay for existing clients.',
+        'Book slugs are accepted in English (john, genesis, psalms) and in other languages.',
+        'A version that left the API (reserved rights) is served by the free version of the same language; the response carries the slug that answered.',
+        'No rate limit: the API is public and edge-cached. We do not emit 429 or X-RateLimit-* headers. Please honor ETags (304) and batch references with /v1/passages.',
       ],
     },
     null,
@@ -73,9 +85,9 @@ function getPrebakedRoot(catalog: VersionCatalog): PrebakedRoot {
 
   const result: PrebakedRoot = {
     body,
-    // 'ratelimit' no seed: a lista de notes mudou sem mudar as contagens, então
-    // o ETag precisa mudar para clientes não ficarem presos num 304 antigo.
-    etag: etagFor(['legacy', 'root', 'ratelimit', versionCount, languageCount]),
+    // Semente muda junto com o corpo ('en-v1': inglês + rotas /v1), senão
+    // cliente com ETag antigo fica preso num 304 do texto anterior.
+    etag: etagFor(['legacy', 'root', 'en-v1', versionCount, languageCount]),
   };
   if (versionCount > 0) prebakedRoot = result;
   return result;
@@ -262,7 +274,7 @@ export function handleVerse(
               verses: r.verses,
               copyright: r.version.copyright,
             }),
-            { headers: CACHE_HEADERS },
+            { headers: contentHeaders(r.aliased) },
           ),
           etag: etagFor(['legacy', r.versionSlug, r.book.id, r.chapterNum, 'cr']),
         };
@@ -281,7 +293,7 @@ export function handleVerse(
             reference: r.selection.reference,
             copyright: r.version.copyright,
           }),
-          { headers: CACHE_HEADERS },
+          { headers: contentHeaders(r.aliased) },
         ),
         etag: etagFor([
           'legacy',

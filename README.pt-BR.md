@@ -1,9 +1,11 @@
 # Bible API
 
+[![CI](https://github.com/midvash/bible-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/midvash/bible-api/actions/workflows/ci.yml)
+
 > 🌐 [English](./README.md) · **Português (BR)** · [Español](./README.es.md)
 
 API pública da Bíblia, gratuita, sem chave e somente leitura. Versículos, capítulos, livros e versões
-em **mais de 100 traduções bíblicas livres em 68 idiomas** — servidos a partir
+em **mais de 100 traduções bíblicas livres em mais de 60 idiomas** (lista atualizada em [`/v1/versions`](https://api.midvash.com/v1/versions)) — servidos a partir
 da borda da Cloudflare com cache agressivo. Sustenta o
 [api.midvash.com](https://api.midvash.com).
 

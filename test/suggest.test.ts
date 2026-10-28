@@ -20,6 +20,16 @@ describe('closestString', () => {
     expect(closestString('Song Of Solomon', candidates)).toBe('song-of-solomon');
   });
 
+  it('letras vizinhas trocadas contam como 1 edição (jhon → john, não job)', () => {
+    const books = ['genesis', 'job', 'psalms', 'john', 'acts'];
+    expect(closestString('jhon', books)).toBe('john');
+    expect(closestString('gensis', books)).toBe('genesis');
+  });
+
+  it('empate de distância → tamanho mais perto do pedido', () => {
+    expect(closestString('abc', ['abcde', 'axx'])).toBe('axx');
+  });
+
   it('devolve null quando nada é plausível', () => {
     expect(closestString('apocalipse', candidates)).toBeNull();
     expect(closestString('', candidates)).toBeNull();

@@ -14,7 +14,7 @@
  * cache é responsabilidade de `serveWithCache` (lib/cache).
  */
 
-import { CACHE_HEADERS, ERROR_5XX_HEADERS, JSON_BASE_HEADERS } from '../env';
+import { contentHeaders, ERROR_5XX_HEADERS, JSON_BASE_HEADERS } from '../env';
 
 export interface ResponseMeta {
   total?: number;
@@ -84,11 +84,12 @@ const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
 };
 
 /**
- * Constrói uma Response de sucesso com formato { data, meta }.
+ * Constrói uma Response de sucesso com formato { data, meta }. Imutável,
+ * menos quando a versão foi trocada por alias (`contentHeaders`).
  */
-export function okResponse<T>(data: T, meta?: ResponseMeta): Response {
+export function okResponse<T>(data: T, meta?: ResponseMeta, opts: { aliased?: boolean } = {}): Response {
   const body: ApiSuccess<T> = meta ? { data, meta } : { data };
-  return new Response(JSON.stringify(body), { headers: CACHE_HEADERS });
+  return new Response(JSON.stringify(body), { headers: contentHeaders(opts.aliased ?? false) });
 }
 
 /**

@@ -96,6 +96,7 @@ export function handleV1Chapter(
                 text: p.text,
               },
               { total: r.verses.length, reference, truncated: p.truncated, copyright: r.version.copyright },
+              { aliased: r.aliased },
             ),
             etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr']),
           };
@@ -114,6 +115,7 @@ export function handleV1Chapter(
               verses: r.verses,
             },
             { total: r.verses.length, reference, copyright: r.version.copyright },
+            { aliased: r.aliased },
           ),
           // 'c2': o shape ganhou text/verse/verseEnd — com o ETag antigo,
           // clientes revalidando levariam 304 e nunca veriam os campos novos.
@@ -138,6 +140,7 @@ export function handleV1Chapter(
             total: r.selection.verses.length,
             copyright: r.version.copyright,
           },
+          { aliased: r.aliased },
         ),
         etag: etagFor([
           'v1',
