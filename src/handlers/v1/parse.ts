@@ -21,12 +21,15 @@ import { buildCacheKey, etagFor, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
 import { getVersionCatalog } from '../../versions';
 import { lookupBook } from '../../lib/book-lookup';
+import { formatReference } from '../../lib/chapter';
+import { displayLocale } from '../../lib/locale';
 import { parseReference } from '../../lib/reference';
 
 export function handleV1Parse(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   const q = (url.searchParams.get('q') ?? '').trim();
   const versionParam = (url.searchParams.get('version') ?? '').toLowerCase().trim();
+  const localeParam = url.searchParams.get('locale')?.trim().toLowerCase() || null;
 
   if (!q) {
     return Promise.resolve(errorResponse('INVALID_PARAMS', 'Missing required query param: q.'));
@@ -36,6 +39,9 @@ export function handleV1Parse(request: Request, env: Env, ctx: ExecutionContext)
     endpoint: 'v1-parse',
     q: q.toLowerCase().replace(/\s+/g, ' '),
     version: versionParam || undefined,
+    locale: localeParam ?? undefined,
+    // `ref`: meta.reference passou de "Salmos" a "Salmos 23:1-2".
+    shape: 'ref',
   });
 
   return serveWithCache(request, ctx, cacheKey, 'v1-parse', async () => {
@@ -68,13 +74,22 @@ export function handleV1Parse(request: Request, env: Env, ctx: ExecutionContext)
     // Alias de versão que saiu da API devolve o slug efetivo, como nas rotas
     // de conteúdo.
     let version: string | undefined;
+    let versionLanguage = 'en';
     if (versionParam) {
       const found = (await getVersionCatalog(env)).lookup(versionParam);
       if (!found) {
         return errorResponse('VERSION_NOT_FOUND', `Version "${versionParam}" not found.`);
       }
       version = found.slug;
+      versionLanguage = found.version.language;
     }
+
+    // Referência inteira no idioma da versão (ou do ?locale; sem os dois, en).
+    const locale = displayLocale(versionLanguage, localeParam);
+    const reference =
+      parsed.verseStart === null
+        ? `${book.names[locale]} ${parsed.chapter}`
+        : formatReference(book, parsed.chapter, parsed.verseStart, parsed.verseEnd ?? parsed.verseStart, locale);
 
     const data = {
       bookId: book.id,
@@ -86,8 +101,8 @@ export function handleV1Parse(request: Request, env: Env, ctx: ExecutionContext)
     };
 
     return {
-      response: okResponse(data, { reference: parsed.bookRaw }),
-      etag: etagFor(['v1', 'parse', book.id, parsed.chapter, parsed.verseStart ?? '', parsed.verseEnd ?? '', version ?? '']),
+      response: okResponse(data, { reference }),
+      etag: etagFor(['v1', 'parse', 'ref', locale, book.id, parsed.chapter, parsed.verseStart ?? '', parsed.verseEnd ?? '', version ?? '']),
     };
   });
 }

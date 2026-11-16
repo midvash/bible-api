@@ -23,6 +23,10 @@
  * para mensagens de erro.
  */
 
+import { BOOKS } from '../books';
+import { BOOK_NAME_ALIASES } from '../book-aliases';
+import { lookupBook } from './book-lookup';
+import { LOCALES } from './locale';
 import { normalizeLoose } from './suggest';
 
 export interface ParsedReference {
@@ -54,6 +58,44 @@ const FREE_TEXT_ABBREVIATIONS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Nome por extenso (os 9 idiomas) e apelidos (`book-aliases.ts`) → slug em
+ * inglês, na forma solta. Só pra texto livre: "Salmo 23" e "Psalm 23" chegam
+ * em Salmos. Chave que aponta pra dois livros diferentes fica de fora.
+ */
+const FREE_TEXT_NAMES: ReadonlyMap<string, string> = (() => {
+  const byKey = new Map<string, Set<number>>();
+  const add = (form: string, id: number) => {
+    const key = normalizeLoose(form).normalize('NFC');
+    if (!key) return;
+    const ids = byKey.get(key) ?? new Set<number>();
+    ids.add(id);
+    byKey.set(key, ids);
+  };
+  for (const book of BOOKS) {
+    for (const locale of LOCALES) add(book.names[locale], book.id);
+  }
+  for (const aliases of Object.values(BOOK_NAME_ALIASES)) {
+    for (const [form, id] of Object.entries(aliases)) add(form, id);
+  }
+  const map = new Map<string, string>();
+  for (const [key, ids] of byKey) {
+    if (ids.size !== 1) continue;
+    const book = BOOKS.find((b) => b.id === [...ids][0]);
+    if (book) map.set(key, normalizeLoose(book.slugs.en));
+  }
+  return map;
+})();
+
+/** Forma solta do livro escrito; slug conhecido vence nome e apelido. */
+function freeTextBookQuery(bookRaw: string): string {
+  const abbreviation = FREE_TEXT_ABBREVIATIONS[bookRaw.toLowerCase().replace(/\.$/, '')];
+  if (abbreviation) return abbreviation;
+  const loose = normalizeLoose(bookRaw).normalize('NFC');
+  if (lookupBook(loose).book) return loose;
+  return FREE_TEXT_NAMES.get(loose) ?? loose;
+}
+
+/**
  * Parseia uma referência. Retorna `null` quando a string não tem a forma
  * `<livro> <capítulo>[...]`, quando o capítulo é < 1, ou quando um intervalo
  * de versículos é invertido (fim < início). NÃO garante que o livro exista.
@@ -81,9 +123,7 @@ export function parseReference(input: string): ParsedReference | null {
     bookRaw,
     // NFC recompõe o Hangul que normalizeLoose (NFD) decompôs em jamo, casando
     // com os slugs compostos do índice; ASCII/cirílico passam inalterados.
-    bookQuery:
-      FREE_TEXT_ABBREVIATIONS[bookRaw.toLowerCase().replace(/\.$/, '')] ??
-      normalizeLoose(bookRaw).normalize('NFC'),
+    bookQuery: freeTextBookQuery(bookRaw),
     chapter,
     verseStart,
     verseEnd,
