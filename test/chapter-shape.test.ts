@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { handleV1Chapter } from '../src/handlers/v1/chapters';
+import { handleV1Passages } from '../src/handlers/v1/passages';
 import { parsePreviewParam, previewOfChapter } from '../src/lib/chapter';
 import { handleV1VersionDetail } from '../src/handlers/v1/versions';
 import { handleV1Parse } from '../src/handlers/v1/parse';
@@ -23,6 +24,17 @@ const CATALOG = [
     totalChapters: 1189,
     copyright: 'King James Version (KJV)\nPublic Domain.',
   },
+  {
+    slug: 'nva',
+    name: 'Nova Versão de Acesso Livre',
+    shortName: 'NVA',
+    language: 'pt-br',
+    hasOldTestament: true,
+    hasNewTestament: true,
+    totalBooks: 66,
+    totalChapters: 1189,
+    copyright: 'NVA',
+  },
 ];
 
 const env = {
@@ -34,7 +46,7 @@ const env = {
       if (key === 'catalog/version-aliases.json') {
         return { json: async () => ({ nvt: 'kjv', fora: 'nao-existe' }) };
       }
-      if (key === `kjv/${PS}/23.json`) return { text: async () => JSON.stringify(PSALM23) };
+      if (key === `kjv/${PS}/23.json` || key === `nva/${PS}/23.json`) return { text: async () => JSON.stringify(PSALM23) };
       return null;
     },
   },
@@ -153,20 +165,55 @@ describe('cache key do capítulo — o handler canoniza o preview', () => {
 
   it('preserva preview canônico (clampado) e descarta outros params', async () => {
     expect(await keyFor('https://api.midvash.com/v1/KJV/Psalms/23?preview=5&utm=x')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?preview=40',
+      'https://api.midvash.com/v1/kjv/psalms/23?preview=40&names=bn',
     ]);
   });
 
   it('sem preview válido, chave fica sem query', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?preview=abc')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23',
+      'https://api.midvash.com/v1/kjv/psalms/23?names=bn',
     ]);
   });
 
   it('rota de versículo não ganha preview (segue sem query)', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23/1?preview=100', '1')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23/1',
+      'https://api.midvash.com/v1/kjv/psalms/23/1?names=bn',
     ]);
+  });
+
+  it('?locale entra na chave', async () => {
+    expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?locale=PT-BR')).toEqual([
+      'https://api.midvash.com/v1/kjv/psalms/23?locale=pt-br&names=bn',
+    ]);
+  });
+});
+
+describe('nome do livro no idioma da versão', () => {
+  function call(version: string, query = '', verses?: string) {
+    const path = `/v1/${version}/psalms/23${verses ? `/${verses}` : ''}${query}`;
+    return handleV1Chapter(new Request(`https://api.midvash.com${path}`), env, ctx, version, 'psalms', '23', verses);
+  }
+
+  it('versão em português responde com o nome em português', async () => {
+    const chapter = await json(await call('nva'));
+    expect(chapter.data.bookName).toBe('Salmos');
+    expect(chapter.meta.reference).toBe('Salmos 23');
+    expect(chapter.data.book).toBe('psalms');
+
+    const range = await json(await call('nva', '', '1-2'));
+    expect(range.meta.reference).toBe('Salmos 23:1-2');
+  });
+
+  it('versão em inglês segue em inglês', async () => {
+    const body = await json(await call('kjv'));
+    expect(body.data.bookName).toBe('Psalms');
+    expect(body.meta.reference).toBe('Psalms 23');
+  });
+
+  it('?locale=en devolve o nome em inglês numa versão em português', async () => {
+    const body = await json(await call('nva', '?locale=en', '1'));
+    expect(body.data.bookName).toBe('Psalms');
+    expect(body.meta.reference).toBe('Psalms 23:1');
   });
 });
 
@@ -240,5 +287,21 @@ describe('versão que saiu da API', () => {
     );
     expect(res.status).toBe(200);
     expect((await json(res)).data.version).toBe('kjv');
+  });
+});
+
+describe('nome do livro no /v1/passages', () => {
+  function passages(query: string) {
+    return handleV1Passages(new Request(`https://api.midvash.com/v1/passages?${query}`), env, ctx);
+  }
+
+  it('segue o idioma da versão e aceita ?locale', async () => {
+    const pt = await json(await passages('refs=salmos 23:1,psalms 23&version=nva'));
+    expect(pt.data[0].bookName).toBe('Salmos');
+    expect(pt.data[0].reference).toBe('Salmos 23:1');
+    expect(pt.data[1].reference).toBe('Salmos 23');
+
+    const en = await json(await passages('refs=salmos 23:1&version=nva&locale=en'));
+    expect(en.data[0].reference).toBe('Psalms 23:1');
   });
 });

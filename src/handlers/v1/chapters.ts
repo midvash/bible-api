@@ -16,7 +16,8 @@ import type { Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
 import { resolveChapter } from '../../lib/resolve-chapter';
-import { parsePreviewParam, parseVerseParam, previewOfChapter } from '../../lib/chapter';
+import { formatReference, parsePreviewParam, parseVerseParam, previewOfChapter } from '../../lib/chapter';
+import { displayLocale } from '../../lib/locale';
 
 export function handleV1Chapter(
   request: Request,
@@ -29,12 +30,16 @@ export function handleV1Chapter(
 ): Promise<Response> {
   // `?preview` só vale para capítulo inteiro (sem segmento de versículo) e entra
   // na chave já clampado — o mesmo N que trunca o corpo.
+  const searchParams = new URL(request.url).searchParams;
   const preview =
     verseParam === undefined
-      ? parsePreviewParam(new URL(request.url).searchParams.get('preview'))
+      ? parsePreviewParam(searchParams.get('preview'))
       : null;
+  // `?locale` muda o nome do livro na resposta, então entra na chave. `bn`
+  // separa das entradas antigas, que tinham o nome sempre em inglês.
+  const localeParam = searchParams.get('locale')?.trim().toLowerCase() || null;
 
-  return serveWithCache(request, ctx, normalizeCacheKey(request, { preview }), 'v1-chapter', async () => {
+  return serveWithCache(request, ctx, normalizeCacheKey(request, { preview, locale: localeParam, names: 'bn' }), 'v1-chapter', async () => {
     try {
       // Segmento de versículo inválido ("abc") serve o capítulo inteiro.
       const r = await resolveChapter(env, version, book, parseInt(chapter, 10), parseVerseParam(verseParam));
@@ -80,8 +85,11 @@ export function handleV1Chapter(
           );
       }
 
+      const locale = displayLocale(r.version.language, localeParam);
+      const bookName = r.book.names[locale];
+
       if (!r.selection) {
-        const reference = `${r.book.names.en} ${r.chapterNum}`;
+        const reference = `${bookName} ${r.chapterNum}`;
 
         if (preview) {
           const p = previewOfChapter(r.verses, preview);
@@ -90,7 +98,7 @@ export function handleV1Chapter(
               {
                 version: r.versionSlug,
                 book: r.book.slugs.en,
-                bookName: r.book.names.en,
+                bookName,
                 chapter: r.chapterNum,
                 verse: 1,
                 verseEnd: p.verseEnd,
@@ -99,7 +107,7 @@ export function handleV1Chapter(
               { total: r.verses.length, reference, truncated: p.truncated, copyright: r.version.copyright },
               { notice: r.notice },
             ),
-            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr', ...noticeTag(r.notice)]),
+            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr', 'bn', locale, ...noticeTag(r.notice)]),
           };
         }
 
@@ -108,7 +116,7 @@ export function handleV1Chapter(
             {
               version: r.versionSlug,
               book: r.book.slugs.en,
-              bookName: r.book.names.en,
+              bookName,
               chapter: r.chapterNum,
               verse: 1,
               verseEnd: r.verses.length,
@@ -120,7 +128,7 @@ export function handleV1Chapter(
           ),
           // 'c2': o shape ganhou text/verse/verseEnd — com o ETag antigo,
           // clientes revalidando levariam 304 e nunca veriam os campos novos.
-          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2', 'cr', ...noticeTag(r.notice)]),
+          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2', 'cr', 'bn', locale, ...noticeTag(r.notice)]),
         };
       }
 
@@ -129,7 +137,7 @@ export function handleV1Chapter(
           {
             version: r.versionSlug,
             book: r.book.slugs.en,
-            bookName: r.book.names.en,
+            bookName,
             chapter: r.chapterNum,
             verse: r.selection.range.start,
             verseEnd: r.selection.range.end,
@@ -137,7 +145,7 @@ export function handleV1Chapter(
             verses: r.selection.verses,
           },
           {
-            reference: r.selection.reference,
+            reference: formatReference(r.book, r.chapterNum, r.selection.range.start, r.selection.range.end, locale),
             total: r.selection.verses.length,
             copyright: r.version.copyright,
           },
@@ -152,6 +160,8 @@ export function handleV1Chapter(
           r.selection.range.end,
           // 'cr': meta ganhou copyright; sem bump o 304 esconderia o campo.
           'cr',
+          'bn',
+          locale,
           ...noticeTag(r.notice),
         ]),
       };

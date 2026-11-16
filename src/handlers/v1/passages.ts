@@ -25,6 +25,8 @@ import { getVersionCatalog } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { parseReference } from '../../lib/reference';
 import { noticeTag, versionNoticeHeaders } from '../../lib/version-notice';
+import { formatReference } from '../../lib/chapter';
+import { displayLocale, type ApiLocale } from '../../lib/locale';
 
 const MAX_REFS = 50;
 
@@ -67,6 +69,7 @@ export function handleV1Passages(
   const url = new URL(request.url);
   const refsParam = (url.searchParams.get('refs') ?? '').trim();
   const versionParam = (url.searchParams.get('version') ?? '').toLowerCase().trim();
+  const localeParam = url.searchParams.get('locale')?.trim().toLowerCase() || null;
 
   if (!versionParam) {
     return Promise.resolve(
@@ -103,6 +106,9 @@ export function handleV1Passages(
     endpoint: 'v1-passages',
     version: versionParam,
     refs: normalizedRefs.join('|'),
+    // Nome do livro depende do locale; `bn` separa das entradas só em inglês.
+    locale: localeParam ?? undefined,
+    names: 'bn',
   });
 
   return serveWithCache(request, ctx, cacheKey, 'v1-passages', async () => {
@@ -116,9 +122,10 @@ export function handleV1Passages(
         });
       }
 
+      const locale = displayLocale(found.version.language, localeParam);
       const items: PassageItem[] = [];
       for (const ref of rawRefs) {
-        items.push(await resolveOne(env, found.slug, ref));
+        items.push(await resolveOne(env, found.slug, ref, locale));
       }
 
       const failed = items.filter((it): it is PassageError => 'error' in it).length;
@@ -145,7 +152,7 @@ export function handleV1Passages(
         response: new Response(body, { headers }),
         // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro
         // ETag antigo não servir 304 do shape anterior.
-        etag: etagFor(['v1', 'passages', 'p2', 'cr', versionParam, failed, normalizedRefs.join('|'), ...noticeTag(found.notice)]),
+        etag: etagFor(['v1', 'passages', 'p2', 'cr', 'bn', locale, versionParam, failed, normalizedRefs.join('|'), ...noticeTag(found.notice)]),
       };
     } catch (error) {
       console.error('[v1/passages] Error:', error);
@@ -155,7 +162,12 @@ export function handleV1Passages(
 }
 
 /** Resolve uma referência isolada para um item do batch (nunca lança). */
-async function resolveOne(env: Env, version: string, ref: string): Promise<PassageItem> {
+async function resolveOne(
+  env: Env,
+  version: string,
+  ref: string,
+  locale: ApiLocale,
+): Promise<PassageItem> {
   const parsed = parseReference(ref);
   if (!parsed) {
     return { ref, error: `Could not parse reference: "${ref}".` };
@@ -202,13 +214,13 @@ async function resolveOne(env: Env, version: string, ref: string): Promise<Passa
       ref,
       version: r.versionSlug,
       book: r.book.slugs.en,
-      bookName: r.book.names.en,
+      bookName: r.book.names[locale],
       chapter: r.chapterNum,
       verse: 1,
       verseEnd: r.verses.length,
       text: r.verses.join(' '),
       verses: r.verses,
-      reference: `${r.book.names.en} ${r.chapterNum}`,
+      reference: `${r.book.names[locale]} ${r.chapterNum}`,
     };
   }
 
@@ -216,12 +228,12 @@ async function resolveOne(env: Env, version: string, ref: string): Promise<Passa
     ref,
     version: r.versionSlug,
     book: r.book.slugs.en,
-    bookName: r.book.names.en,
+    bookName: r.book.names[locale],
     chapter: r.chapterNum,
     verse: r.selection.range.start,
     verseEnd: r.selection.range.end,
     text: r.selection.text,
     verses: r.selection.verses,
-    reference: r.selection.reference,
+    reference: formatReference(r.book, r.chapterNum, r.selection.range.start, r.selection.range.end, locale),
   };
 }
