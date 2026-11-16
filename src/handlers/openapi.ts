@@ -152,6 +152,7 @@ const PASSAGE_META_SCHEMA = {
       type: 'string',
       description: 'Direitos e atribuição da versão. Mostre junto do texto (licenças CC BY/CC BY-SA exigem).',
     },
+    shortName: { type: 'string', description: 'Nome curto da versão, o rótulo da citação (`NVA`, `BSB`).' },
     versionNotice: VERSION_NOTICE_SCHEMA,
   },
 } as const;
@@ -367,6 +368,7 @@ const OPENAPI_SPEC = {
                   resolved: { type: 'integer' },
                   failed: { type: 'integer' },
                   copyright: { type: 'string' },
+                  shortName: { type: 'string', description: 'Nome curto da versão, o rótulo da citação (`NVA`, `BSB`).' },
                   versionNotice: VERSION_NOTICE_SCHEMA,
                 },
               },

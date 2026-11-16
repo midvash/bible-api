@@ -141,6 +141,7 @@ export function handleV1Passages(
           resolved,
           failed,
           copyright: found.version.copyright,
+          shortName: found.version.shortName,
           ...(found.notice ? { versionNotice: found.notice } : {}),
         },
       });

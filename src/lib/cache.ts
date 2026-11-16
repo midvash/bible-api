@@ -24,8 +24,9 @@
  *
  * g1 → g2 (16/11/2026): PDT sem "[la ]muerte" e sem os "]]" dos versículos omitidos.
  * g2 → g3: respostas de trecho ganham `readerUrl` (link canônico do leitor).
+ * g3 → g4: meta dos trechos ganha `shortName` (rótulo da citação).
  */
-export const CONTENT_GEN = 'g3';
+export const CONTENT_GEN = 'g4';
 
 /**
  * Cache key estável a partir da URL da request.
