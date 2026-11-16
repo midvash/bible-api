@@ -34,13 +34,13 @@ describe('normalizeCacheKey', () => {
       new Request('https://api.midvash.com/Versions/?locale=pt-pt&utm=x'),
       { locale: 'pt-br', vazio: '', ausente: undefined },
     );
-    expect(key.url).toBe('https://api.midvash.com/versions?locale=pt-br&_g=g3');
+    expect(key.url).toBe('https://api.midvash.com/versions?locale=pt-br&_g=g4');
   });
 
   it('descarta query irrelevante e lowercase o path', () => {
     const key = normalizeCacheKey(new Request('https://api.midvash.com/NVI/John/3?utm=x'));
     expect(new URL(key.url).pathname).toBe('/nvi/john/3');
-    expect(new URL(key.url).search).toBe('?_g=g3');
+    expect(new URL(key.url).search).toBe('?_g=g4');
   });
 });
 
@@ -75,10 +75,10 @@ describe('GET /versions (legado) — chave e corpo usam o mesmo locale', () => {
     expect(grc.versions.map((v: { slug: string }) => v.slug)).toEqual(['tr']);
 
     expect([...store.keys()].sort()).toEqual([
-      'https://api.midvash.com/versions?gen=2&_g=g3',
-      'https://api.midvash.com/versions?locale=en&gen=2&_g=g3',
-      'https://api.midvash.com/versions?locale=grc&gen=2&_g=g3',
-      'https://api.midvash.com/versions?locale=pt-br&gen=2&_g=g3',
+      'https://api.midvash.com/versions?gen=2&_g=g4',
+      'https://api.midvash.com/versions?locale=en&gen=2&_g=g4',
+      'https://api.midvash.com/versions?locale=grc&gen=2&_g=g4',
+      'https://api.midvash.com/versions?locale=pt-br&gen=2&_g=g4',
     ]);
   });
 });

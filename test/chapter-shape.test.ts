@@ -165,25 +165,25 @@ describe('cache key do capítulo — o handler canoniza o preview', () => {
 
   it('preserva preview canônico (clampado) e descarta outros params', async () => {
     expect(await keyFor('https://api.midvash.com/v1/KJV/Psalms/23?preview=5&utm=x')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?preview=40&names=bn&_g=g3',
+      'https://api.midvash.com/v1/kjv/psalms/23?preview=40&names=bn&_g=g4',
     ]);
   });
 
   it('sem preview válido, chave fica sem query', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?preview=abc')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?names=bn&_g=g3',
+      'https://api.midvash.com/v1/kjv/psalms/23?names=bn&_g=g4',
     ]);
   });
 
   it('rota de versículo não ganha preview (segue sem query)', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23/1?preview=100', '1')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23/1?names=bn&_g=g3',
+      'https://api.midvash.com/v1/kjv/psalms/23/1?names=bn&_g=g4',
     ]);
   });
 
   it('?locale entra na chave', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?locale=PT-BR')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?locale=pt-br&names=bn&_g=g3',
+      'https://api.midvash.com/v1/kjv/psalms/23?locale=pt-br&names=bn&_g=g4',
     ]);
   });
 });
@@ -236,6 +236,7 @@ describe('atribuição da versão junto do texto', () => {
     );
     for (const body of [whole, preview, range]) {
       expect(body.meta.copyright).toBe('King James Version (KJV)\nPublic Domain.');
+      expect(body.meta.shortName).toBe('KJV');
     }
   });
 });
@@ -320,6 +321,8 @@ describe('nome do livro no /v1/passages', () => {
     expect(pt.data[0].reference).toBe('Salmos 23:1');
     expect(pt.data[1].reference).toBe('Salmos 23');
     expect(pt.data[0].readerUrl).toBe('https://midvash.com/pt-br/nva/salmos/23#v=1');
+
+    expect(pt.meta.shortName).toBe('NVA');
 
     const en = await json(await passages('refs=salmos 23:1&version=nva&locale=en'));
     expect(en.data[0].reference).toBe('Psalms 23:1');
