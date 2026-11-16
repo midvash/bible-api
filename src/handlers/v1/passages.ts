@@ -27,6 +27,7 @@ import { parseReference } from '../../lib/reference';
 import { noticeTag, versionNoticeHeaders } from '../../lib/version-notice';
 import { formatReference } from '../../lib/chapter';
 import { displayLocale, type ApiLocale } from '../../lib/locale';
+import { readerUrl } from '../../lib/reader-url';
 
 const MAX_REFS = 50;
 
@@ -52,6 +53,7 @@ interface PassageOk {
   text: string;
   verses: string[];
   reference: string;
+  readerUrl: string;
 }
 
 interface PassageError {
@@ -221,6 +223,7 @@ async function resolveOne(
       text: r.verses.join(' '),
       verses: r.verses,
       reference: `${r.book.names[locale]} ${r.chapterNum}`,
+      readerUrl: readerUrl(r.versionSlug, r.version.language, r.book, r.chapterNum),
     };
   }
 
@@ -235,5 +238,13 @@ async function resolveOne(
     text: r.selection.text,
     verses: r.selection.verses,
     reference: formatReference(r.book, r.chapterNum, r.selection.range.start, r.selection.range.end, locale),
+    readerUrl: readerUrl(
+      r.versionSlug,
+      r.version.language,
+      r.book,
+      r.chapterNum,
+      r.selection.range.start,
+      r.selection.range.end,
+    ),
   };
 }

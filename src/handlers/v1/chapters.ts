@@ -18,6 +18,7 @@ import { errorResponse, okResponse } from '../../lib/response';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { formatReference, parsePreviewParam, parseVerseParam, previewOfChapter } from '../../lib/chapter';
 import { displayLocale } from '../../lib/locale';
+import { readerUrl } from '../../lib/reader-url';
 
 export function handleV1Chapter(
   request: Request,
@@ -103,6 +104,7 @@ export function handleV1Chapter(
                 verse: 1,
                 verseEnd: p.verseEnd,
                 text: p.text,
+                readerUrl: readerUrl(r.versionSlug, r.version.language, r.book, r.chapterNum),
               },
               { total: r.verses.length, reference, truncated: p.truncated, copyright: r.version.copyright },
               { notice: r.notice },
@@ -122,6 +124,7 @@ export function handleV1Chapter(
               verseEnd: r.verses.length,
               text: r.verses.join(' '),
               verses: r.verses,
+              readerUrl: readerUrl(r.versionSlug, r.version.language, r.book, r.chapterNum),
             },
             { total: r.verses.length, reference, copyright: r.version.copyright },
             { notice: r.notice },
@@ -143,6 +146,14 @@ export function handleV1Chapter(
             verseEnd: r.selection.range.end,
             text: r.selection.text,
             verses: r.selection.verses,
+            readerUrl: readerUrl(
+              r.versionSlug,
+              r.version.language,
+              r.book,
+              r.chapterNum,
+              r.selection.range.start,
+              r.selection.range.end,
+            ),
           },
           {
             reference: formatReference(r.book, r.chapterNum, r.selection.range.start, r.selection.range.end, locale),

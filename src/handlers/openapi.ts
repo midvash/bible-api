@@ -111,6 +111,10 @@ const PASSAGE_DATA_SCHEMA = {
     version: { type: 'string' },
     book: { type: 'string', description: 'Slug canônico em inglês.' },
     bookName: { type: 'string', description: 'Nome do livro no idioma da versão, ou no `?locale` pedido.' },
+    readerUrl: {
+      type: 'string',
+      description: 'Link do trecho no leitor do midvash.com, no endereço canônico do idioma da versão (`/pt-br/nva/salmos/23#v=1-2`).',
+    },
     chapter: { type: 'integer' },
     verse: { type: 'integer', description: 'Primeiro versículo retornado (1 em capítulo inteiro).' },
     verseEnd: { type: 'integer', description: 'Último versículo retornado.' },
