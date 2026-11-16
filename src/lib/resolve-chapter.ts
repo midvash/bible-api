@@ -13,6 +13,7 @@
  * versículos e sugestões "did you mean".
  */
 
+import type { VersionNotice } from './version-notice';
 import type { Env } from '../env';
 import type { BookDefinition } from '../books';
 import { getVersionCatalog, type VersionDefinition } from '../versions';
@@ -25,7 +26,7 @@ export type ChapterResolution =
       versionSlug: string;
       version: VersionDefinition;
       /** A versão pedida saiu da API e a livre respondeu no lugar. */
-      aliased: boolean;
+      notice: VersionNotice | null;
       book: BookDefinition;
       chapterNum: number;
       /** Todos os versículos do capítulo. */
@@ -70,7 +71,7 @@ export async function resolveChapter(
     return { kind: 'version_not_found', didYouMean: catalog.suggest(versionParam) };
   }
   // Slug efetivo: versão que saiu da API chega aqui já trocada pela livre.
-  const { slug: versionSlug, version, aliased } = found;
+  const { slug: versionSlug, version, notice } = found;
 
   const lookup = lookupBook(bookParam);
   if (!lookup.book) {
@@ -88,7 +89,7 @@ export async function resolveChapter(
   }
 
   if (!range) {
-    return { kind: 'ok', versionSlug, version, aliased, book, chapterNum, verses, selection: null };
+    return { kind: 'ok', versionSlug, version, notice, book, chapterNum, verses, selection: null };
   }
 
   const selected = extractVerses(verses, range.start, range.end);
@@ -106,7 +107,7 @@ export async function resolveChapter(
     kind: 'ok',
     versionSlug,
     version,
-    aliased,
+    notice,
     book,
     chapterNum,
     verses,

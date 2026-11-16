@@ -24,6 +24,7 @@ import { errorResponse } from '../../lib/response';
 import { getVersionCatalog } from '../../versions';
 import { resolveChapter } from '../../lib/resolve-chapter';
 import { parseReference } from '../../lib/reference';
+import { noticeTag, versionNoticeHeaders } from '../../lib/version-notice';
 
 const MAX_REFS = 50;
 
@@ -131,17 +132,20 @@ export function handleV1Passages(
           resolved,
           failed,
           copyright: found.version.copyright,
+          ...(found.notice ? { versionNotice: found.notice } : {}),
         },
       });
 
       // Batch imutável só quando tudo resolveu; senão TTL curto (ver PARTIAL_HEADERS).
       // Versão trocada por alias: 1 dia (ver contentHeaders).
-      const headers = failed > 0 ? PARTIAL_HEADERS : contentHeaders(found.aliased);
+      const headers = failed > 0
+        ? { ...PARTIAL_HEADERS, ...versionNoticeHeaders(found.notice) }
+        : contentHeaders(found.notice);
       return {
         response: new Response(body, { headers }),
         // 'p2': itens de capítulo ganharam text/verse/verseEnd — bump pro
         // ETag antigo não servir 304 do shape anterior.
-        etag: etagFor(['v1', 'passages', 'p2', 'cr', versionParam, failed, normalizedRefs.join('|')]),
+        etag: etagFor(['v1', 'passages', 'p2', 'cr', versionParam, failed, normalizedRefs.join('|'), ...noticeTag(found.notice)]),
       };
     } catch (error) {
       console.error('[v1/passages] Error:', error);

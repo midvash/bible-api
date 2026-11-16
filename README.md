@@ -62,8 +62,10 @@ attribution in `meta.copyright` (or `copyright` on legacy routes and `/v1/votd`)
 to the text; CC licenses require it.
 
 Versions with all rights reserved (NIV, ESV, NVI, NVT…) are not served. A
-request for one of them gets a free version in the same language instead, and
-`data.version` says which one came back.
+request for one of them gets a free version in the same language instead.
+`data.version` says which one came back, `meta.versionNotice` carries
+`{ requested, served, message }`, and every route, legacy included, sends the
+`X-Midvash-Requested-Version` and `X-Midvash-Served-Version` headers.
 
 ## Rate limiting
 

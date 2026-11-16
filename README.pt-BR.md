@@ -62,8 +62,10 @@ aberta (CC BY, CC BY-SA). Toda resposta com texto traz o crédito da versão em
 licenças CC exigem.
 
 Versões com todos os direitos reservados (NIV, ESV, NVI, NVT…) não são
-servidas. Quem pedir uma delas recebe uma versão livre do mesmo idioma, e
-`data.version` diz qual veio.
+servidas. Quem pedir uma delas recebe uma versão livre do mesmo idioma.
+`data.version` diz qual veio, `meta.versionNotice` traz
+`{ requested, served, message }` e toda rota, inclusive a legada, manda os
+headers `X-Midvash-Requested-Version` e `X-Midvash-Served-Version`.
 
 ## Rate limit
 
