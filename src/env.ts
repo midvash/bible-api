@@ -8,6 +8,8 @@
  * Estratégia de cache: URL é o cache-bust. Mudou contrato? Sobe /v2.
  * /v1 e legacy ficam congelados para sempre com `immutable`.
  */
+import { versionNoticeHeaders, type VersionNotice } from './lib/version-notice';
+
 export interface Env {
   R2_BUCKET: R2Bucket;
   /**
@@ -57,9 +59,10 @@ export const METADATA_HEADERS = {
  * Headers de conteúdo bíblico: imutável (1 ano), menos quando a versão pedida
  * saiu da API e respondeu a livre no lugar (alias). Aí 1 dia: o alias pode
  * mudar (licença nova, outra substituta) e a URL `/esv/...` não carrega isso.
+ * A troca também vai nos headers do aviso (`versionNoticeHeaders`).
  */
-export function contentHeaders(aliased: boolean) {
-  return aliased ? METADATA_HEADERS : CACHE_HEADERS;
+export function contentHeaders(notice: VersionNotice | null): Record<string, string> {
+  return notice ? { ...METADATA_HEADERS, ...versionNoticeHeaders(notice) } : CACHE_HEADERS;
 }
 
 /** Erros 5xx — não cachear, deixar retry funcionar. */

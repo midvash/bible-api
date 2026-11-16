@@ -14,6 +14,7 @@
  * cache é responsabilidade de `serveWithCache` (lib/cache).
  */
 
+import type { VersionNotice } from './version-notice';
 import { contentHeaders, ERROR_5XX_HEADERS, JSON_BASE_HEADERS } from '../env';
 
 export interface ResponseMeta {
@@ -85,11 +86,18 @@ const CACHE_TTL_FOR_CODE: Record<ApiErrorCode, number> = {
 
 /**
  * Constrói uma Response de sucesso com formato { data, meta }. Imutável,
- * menos quando a versão foi trocada por alias (`contentHeaders`).
+ * menos quando a versão foi trocada por alias (`contentHeaders`); aí o aviso
+ * vai em `meta.versionNotice` e nos headers.
  */
-export function okResponse<T>(data: T, meta?: ResponseMeta, opts: { aliased?: boolean } = {}): Response {
-  const body: ApiSuccess<T> = meta ? { data, meta } : { data };
-  return new Response(JSON.stringify(body), { headers: contentHeaders(opts.aliased ?? false) });
+export function okResponse<T>(
+  data: T,
+  meta?: ResponseMeta,
+  opts: { notice?: VersionNotice | null } = {},
+): Response {
+  const notice = opts.notice ?? null;
+  const fullMeta = notice ? { ...meta, versionNotice: notice } : meta;
+  const body: ApiSuccess<T> = fullMeta ? { data, meta: fullMeta } : { data };
+  return new Response(JSON.stringify(body), { headers: contentHeaders(notice) });
 }
 
 /**

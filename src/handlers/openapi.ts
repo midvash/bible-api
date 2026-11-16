@@ -114,6 +114,18 @@ const PASSAGE_DATA_SCHEMA = {
   },
 } as const;
 
+const VERSION_NOTICE_SCHEMA = {
+  type: 'object',
+  description:
+    'Presente só quando a versão pedida saiu da API (direitos reservados) e uma versão livre do mesmo idioma respondeu no lugar. A troca também vem nos headers `X-Midvash-Requested-Version` e `X-Midvash-Served-Version`.',
+  required: ['requested', 'served', 'message'],
+  properties: {
+    requested: { type: 'string', examples: ['nvi'] },
+    served: { type: 'string', examples: ['onbv'] },
+    message: { type: 'string' },
+  },
+} as const;
+
 const PASSAGE_META_SCHEMA = {
   type: 'object',
   properties: {
@@ -127,6 +139,7 @@ const PASSAGE_META_SCHEMA = {
       type: 'string',
       description: 'Direitos e atribuição da versão. Mostre junto do texto (licenças CC BY/CC BY-SA exigem).',
     },
+    versionNotice: VERSION_NOTICE_SCHEMA,
   },
 } as const;
 
@@ -258,7 +271,7 @@ const OPENAPI_SPEC = {
           'inteiro), mais `verses[]`. Com `?preview=N` o `text` é truncado em ~N caracteres ' +
           '(terminando em fim de versículo), `verses[]` é omitido e `meta.truncated` indica corte.',
         parameters: [
-          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma; confira `data.version`.' },
+          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma, com o aviso em `meta.versionNotice`.' },
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'psalms' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 23 },
           {
@@ -288,7 +301,7 @@ const OPENAPI_SPEC = {
         operationId: 'getVerse',
         summary: 'Versículo único ("16") ou intervalo ("16-20")',
         parameters: [
-          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma; confira `data.version`.' },
+          { name: 'version', in: 'path', required: true, schema: { type: 'string' }, example: 'almeida-livre', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma, com o aviso em `meta.versionNotice`.' },
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'john' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 3 },
           { name: 'verse', in: 'path', required: true, schema: { type: 'string' }, example: '16-18' },
@@ -323,7 +336,7 @@ const OPENAPI_SPEC = {
             example: 'john 3:16,genesis 1:1-3,psalms 23',
             description: 'Referências em texto livre, separadas por vírgula (máx. 50).',
           },
-          { name: 'version', in: 'query', required: true, schema: { type: 'string' }, example: 'kjv', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma; confira `data.version`.' },
+          { name: 'version', in: 'query', required: true, schema: { type: 'string' }, example: 'kjv', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma, com o aviso em `meta.versionNotice`.' },
         ],
         responses: {
           ...jsonOk(
@@ -338,6 +351,7 @@ const OPENAPI_SPEC = {
                   resolved: { type: 'integer' },
                   failed: { type: 'integer' },
                   copyright: { type: 'string' },
+                  versionNotice: VERSION_NOTICE_SCHEMA,
                 },
               },
             ),

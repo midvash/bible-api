@@ -11,6 +11,7 @@
  * tooltip em vez de Salmos 119 inteiro.
  */
 
+import { noticeTag } from '../../lib/version-notice';
 import type { Env } from '../../env';
 import { etagFor, normalizeCacheKey, serveWithCache } from '../../lib/cache';
 import { errorResponse, okResponse } from '../../lib/response';
@@ -96,9 +97,9 @@ export function handleV1Chapter(
                 text: p.text,
               },
               { total: r.verses.length, reference, truncated: p.truncated, copyright: r.version.copyright },
-              { aliased: r.aliased },
+              { notice: r.notice },
             ),
-            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr']),
+            etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'p', preview, 'cr', ...noticeTag(r.notice)]),
           };
         }
 
@@ -115,11 +116,11 @@ export function handleV1Chapter(
               verses: r.verses,
             },
             { total: r.verses.length, reference, copyright: r.version.copyright },
-            { aliased: r.aliased },
+            { notice: r.notice },
           ),
           // 'c2': o shape ganhou text/verse/verseEnd — com o ETag antigo,
           // clientes revalidando levariam 304 e nunca veriam os campos novos.
-          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2', 'cr']),
+          etag: etagFor(['v1', r.versionSlug, r.book.id, r.chapterNum, 'c2', 'cr', ...noticeTag(r.notice)]),
         };
       }
 
@@ -140,7 +141,7 @@ export function handleV1Chapter(
             total: r.selection.verses.length,
             copyright: r.version.copyright,
           },
-          { aliased: r.aliased },
+          { notice: r.notice },
         ),
         etag: etagFor([
           'v1',
@@ -151,6 +152,7 @@ export function handleV1Chapter(
           r.selection.range.end,
           // 'cr': meta ganhou copyright; sem bump o 304 esconderia o campo.
           'cr',
+          ...noticeTag(r.notice),
         ]),
       };
     } catch (error) {

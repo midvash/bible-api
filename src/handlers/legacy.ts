@@ -277,7 +277,7 @@ export function handleVerse(
               verses: r.verses,
               copyright: r.version.copyright,
             }),
-            { headers: contentHeaders(r.aliased) },
+            { headers: contentHeaders(r.notice) },
           ),
           etag: etagFor(['legacy', r.versionSlug, r.book.id, r.chapterNum, 'cr']),
         };
@@ -296,7 +296,7 @@ export function handleVerse(
             reference: r.selection.reference,
             copyright: r.version.copyright,
           }),
-          { headers: contentHeaders(r.aliased) },
+          { headers: contentHeaders(r.notice) },
         ),
         etag: etagFor([
           'legacy',

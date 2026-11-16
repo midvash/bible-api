@@ -62,8 +62,10 @@ versión en `meta.copyright` (o `copyright` en las rutas legadas y en `/v1/votd`
 junto al texto; las licencias CC lo exigen.
 
 Las versiones con todos los derechos reservados (NIV, ESV, NVI, NTV…) no se
-sirven. Quien pida una de ellas recibe una versión libre del mismo idioma, y
-`data.version` indica cuál llegó.
+sirven. Quien pida una de ellas recibe una versión libre del mismo idioma.
+`data.version` indica cuál llegó, `meta.versionNotice` trae
+`{ requested, served, message }` y toda ruta, incluida la heredada, envía las
+cabeceras `X-Midvash-Requested-Version` y `X-Midvash-Served-Version`.
 
 ## Límite de tasa
 
