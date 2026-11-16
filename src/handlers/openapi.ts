@@ -95,13 +95,22 @@ const BOOK_SCHEMA = {
  * Shape unificado de conteúdo bíblico — versículo, intervalo e capítulo
  * inteiro compartilham os mesmos campos (capítulo = verse: 1 até o último).
  */
+const LOCALE_PARAM = {
+  name: 'locale',
+  in: 'query',
+  schema: { type: 'string', enum: ['en', 'pt-br', 'es', 'fr', 'de', 'it', 'zh', 'ru', 'ko'] },
+  description:
+    'Idioma do nome do livro em `bookName` e `reference`. Sem ele, segue o idioma da versão ' +
+    '(`nva` → "Salmos 23"); versão de idioma fora destes 9 responde em inglês.',
+};
+
 const PASSAGE_DATA_SCHEMA = {
   type: 'object',
   required: ['version', 'book', 'bookName', 'chapter', 'verse', 'verseEnd', 'text'],
   properties: {
     version: { type: 'string' },
     book: { type: 'string', description: 'Slug canônico em inglês.' },
-    bookName: { type: 'string' },
+    bookName: { type: 'string', description: 'Nome do livro no idioma da versão, ou no `?locale` pedido.' },
     chapter: { type: 'integer' },
     verse: { type: 'integer', description: 'Primeiro versículo retornado (1 em capítulo inteiro).' },
     verseEnd: { type: 'integer', description: 'Último versículo retornado.' },
@@ -280,6 +289,7 @@ const OPENAPI_SPEC = {
             schema: { type: 'integer', minimum: 40, maximum: 2000 },
             description: 'Trunca `text` em ~N caracteres (clampado em [40, 2000]). Inválido = ignorado.',
           },
+          LOCALE_PARAM,
         ],
         responses: {
           ...jsonOk(
@@ -305,6 +315,7 @@ const OPENAPI_SPEC = {
           { name: 'book', in: 'path', required: true, schema: { type: 'string' }, example: 'john' },
           { name: 'chapter', in: 'path', required: true, schema: { type: 'integer' }, example: 3 },
           { name: 'verse', in: 'path', required: true, schema: { type: 'string' }, example: '16-18' },
+          LOCALE_PARAM,
         ],
         responses: {
           ...jsonOk(
@@ -337,6 +348,7 @@ const OPENAPI_SPEC = {
             description: 'Referências em texto livre, separadas por vírgula (máx. 50).',
           },
           { name: 'version', in: 'query', required: true, schema: { type: 'string' }, example: 'kjv', description: 'Slug da versão. Slug de versão que saiu (direitos reservados) é servido por uma versão livre do mesmo idioma, com o aviso em `meta.versionNotice`.' },
+          LOCALE_PARAM,
         ],
         responses: {
           ...jsonOk(
