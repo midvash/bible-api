@@ -386,13 +386,15 @@ const OPENAPI_SPEC = {
             required: true,
             schema: { type: 'string' },
             example: 'João 3:16-18',
+            description: 'Aceita slug, nome por extenso nos 9 idiomas, singular ("Salmo 23", "Psalm 23") e abreviações de uso ("Jn 3:16").',
           },
           {
             name: 'version',
             in: 'query',
             schema: { type: 'string' },
-            description: 'Opcional; se passada, é validada e ecoada.',
+            description: 'Opcional; se passada, é validada e ecoada, e `meta.reference` sai no idioma dela.',
           },
+          LOCALE_PARAM,
         ],
         responses: {
           ...jsonOk(

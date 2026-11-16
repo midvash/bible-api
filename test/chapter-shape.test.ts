@@ -290,6 +290,23 @@ describe('versão que saiu da API', () => {
   });
 });
 
+describe('/v1/parse devolve a referência inteira', () => {
+  async function parse(query: string) {
+    return json(await handleV1Parse(new Request(`https://api.midvash.com/v1/parse?${query}`), env, ctx));
+  }
+
+  it('no idioma da versão, com capítulo e versículos', async () => {
+    const pt = await parse('q=Salmo%2023:1-2&version=nva');
+    expect(pt.data.book_slug).toBe('psalms');
+    expect(pt.meta.reference).toBe('Salmos 23:1-2');
+  });
+
+  it('sem versão, em inglês ou no ?locale', async () => {
+    expect((await parse('q=salmos%2023')).meta.reference).toBe('Psalms 23');
+    expect((await parse('q=salmos%2023:4&locale=pt-br')).meta.reference).toBe('Salmos 23:4');
+  });
+});
+
 describe('nome do livro no /v1/passages', () => {
   function passages(query: string) {
     return handleV1Passages(new Request(`https://api.midvash.com/v1/passages?${query}`), env, ctx);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseReference } from '../src/lib/reference';
+import { lookupBook } from '../src/lib/book-lookup';
 
 describe('parseReference', () => {
   it('versículo único', () => {
@@ -86,3 +87,28 @@ describe('abreviação de texto livre', () => {
   });
 });
 
+
+describe('referência com nome, singular ou apelido', () => {
+  // O que importa é chegar no livro certo pelo lookup.
+  const bookOf = (ref: string) => lookupBook(parseReference(ref)!.bookQuery).book?.slugs.en;
+
+  it('aceita o singular de Salmos nos idiomas que o usam', () => {
+    expect(bookOf('Salmo 23:4')).toBe('psalms');
+    expect(bookOf('Psalm 23')).toBe('psalms');
+    expect(bookOf('Psaume 23')).toBe('psalms');
+  });
+
+  it('aceita nomes por extenso e apelidos de outros idiomas', () => {
+    expect(bookOf('Jn 3:16')).toBe('john');
+    expect(bookOf('1 Mose 1:1')).toBe('genesis');
+    expect(bookOf('Song of Songs 2')).toBe('song-of-solomon');
+    expect(bookOf('Иоанна 3:16')).toBe('john');
+  });
+
+  it('não muda o que já resolvia', () => {
+    expect(bookOf('João 3:16')).toBe('john');
+    expect(bookOf('Jo 3:16')).toBe('john');
+    expect(bookOf('Jó 1:1')).toBe('job');
+    expect(bookOf('1 Samuel 3')).toBe('1-samuel');
+  });
+});
