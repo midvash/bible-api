@@ -14,6 +14,19 @@
  */
 
 /**
+ * Geração do conteúdo servido. Entra em toda chave de cache e todo ETag.
+ *
+ * O edge cache guarda texto bíblico por 1 ano e o deploy NÃO o limpa (só
+ * troca o worker e o cache em memória). Corrigiu texto no D1/R2 de uma versão
+ * (`sync-d1-to-r2.ts --diff`)? Suba este valor no mesmo dia: toda resposta
+ * antiga deixa de ser achada e todo cliente que revalida pelo ETag recebe o
+ * corpo novo.
+ *
+ * g1 → g2 (16/11/2026): PDT sem "[la ]muerte" e sem os "]]" dos versículos omitidos.
+ */
+export const CONTENT_GEN = 'g2';
+
+/**
  * Cache key estável a partir da URL da request.
  *
  * - Pathname em lowercase (evita fragmentação `/NVI/John/3` vs `/nvi/john/3`).
@@ -32,7 +45,7 @@ export function normalizeCacheKey(
   if (url.pathname.endsWith('/') && url.pathname.length > 1) {
     url.pathname = url.pathname.slice(0, -1);
   }
-  url.search = Object.entries(params)
+  url.search = Object.entries({ ...params, _g: CONTENT_GEN })
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
     .join('&');
@@ -43,7 +56,7 @@ export function normalizeCacheKey(
  * Cria cache key sintética para endpoints com query params estruturados.
  */
 export function buildCacheKey(parts: Record<string, string | number | undefined>): Request {
-  const sorted = Object.entries(parts)
+  const sorted = Object.entries({ ...parts, _g: CONTENT_GEN })
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
@@ -99,7 +112,7 @@ function cachePut(
  * Mudanças de contrato vivem em /v2 — então o ETag pode ser estável pra sempre.
  */
 export function etagFor(parts: (string | number)[]): string {
-  return `"${parts.join('-').toLowerCase()}"`;
+  return `"${[CONTENT_GEN, ...parts].join('-').toLowerCase()}"`;
 }
 
 /**

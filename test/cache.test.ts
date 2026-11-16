@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildCacheKey, normalizeCacheKey, serveWithCache } from '../src/lib/cache';
+import { buildCacheKey, CONTENT_GEN, etagFor, normalizeCacheKey, serveWithCache } from '../src/lib/cache';
 import { handleVersions } from '../src/handlers/legacy';
 import type { Env } from '../src/env';
 
@@ -34,13 +34,13 @@ describe('normalizeCacheKey', () => {
       new Request('https://api.midvash.com/Versions/?locale=pt-pt&utm=x'),
       { locale: 'pt-br', vazio: '', ausente: undefined },
     );
-    expect(key.url).toBe('https://api.midvash.com/versions?locale=pt-br');
+    expect(key.url).toBe('https://api.midvash.com/versions?locale=pt-br&_g=g2');
   });
 
   it('descarta query irrelevante e lowercase o path', () => {
     const key = normalizeCacheKey(new Request('https://api.midvash.com/NVI/John/3?utm=x'));
     expect(new URL(key.url).pathname).toBe('/nvi/john/3');
-    expect(new URL(key.url).search).toBe('');
+    expect(new URL(key.url).search).toBe('?_g=g2');
   });
 });
 
@@ -75,10 +75,10 @@ describe('GET /versions (legado) — chave e corpo usam o mesmo locale', () => {
     expect(grc.versions.map((v: { slug: string }) => v.slug)).toEqual(['tr']);
 
     expect([...store.keys()].sort()).toEqual([
-      'https://api.midvash.com/versions?gen=2',
-      'https://api.midvash.com/versions?locale=en&gen=2',
-      'https://api.midvash.com/versions?locale=grc&gen=2',
-      'https://api.midvash.com/versions?locale=pt-br&gen=2',
+      'https://api.midvash.com/versions?gen=2&_g=g2',
+      'https://api.midvash.com/versions?locale=en&gen=2&_g=g2',
+      'https://api.midvash.com/versions?locale=grc&gen=2&_g=g2',
+      'https://api.midvash.com/versions?locale=pt-br&gen=2&_g=g2',
     ]);
   });
 });
@@ -153,5 +153,16 @@ describe('serveWithCache', () => {
     );
     expect(res.status).toBe(200);
     expect(await res.text()).toBe('');
+  });
+});
+
+describe('geração de conteúdo', () => {
+  // Texto bíblico corrigido no R2 precisa sair do edge cache de 1 ano: subir
+  // CONTENT_GEN troca toda chave e todo ETag de uma vez, sem purge.
+  it('entra na chave por URL, na chave sintética e no ETag', () => {
+    const url = normalizeCacheKey(new Request('https://api.midvash.com/v1/pdt/romans/8/28-39')).url;
+    expect(new URL(url).searchParams.get('_g')).toBe(CONTENT_GEN);
+    expect(buildCacheKey({ endpoint: 'v1-passages' }).url).toContain(`_g=${CONTENT_GEN}`);
+    expect(etagFor(['v1', 'pdt'])).toContain(CONTENT_GEN.toLowerCase());
   });
 });
