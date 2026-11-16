@@ -23,8 +23,9 @@
  * corpo novo.
  *
  * g1 → g2 (16/11/2026): PDT sem "[la ]muerte" e sem os "]]" dos versículos omitidos.
+ * g2 → g3: respostas de trecho ganham `readerUrl` (link canônico do leitor).
  */
-export const CONTENT_GEN = 'g2';
+export const CONTENT_GEN = 'g3';
 
 /**
  * Cache key estável a partir da URL da request.
