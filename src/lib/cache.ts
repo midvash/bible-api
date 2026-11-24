@@ -26,7 +26,7 @@
  * g2 → g3: respostas de trecho ganham `readerUrl` (link canônico do leitor).
  * g3 → g4: meta dos trechos ganha `shortName` (rótulo da citação).
  */
-export const CONTENT_GEN = 'g4';
+export const CONTENT_GEN = 'g5';
 
 /**
  * Cache key estável a partir da URL da request.
