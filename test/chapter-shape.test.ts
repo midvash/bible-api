@@ -165,25 +165,25 @@ describe('cache key do capítulo — o handler canoniza o preview', () => {
 
   it('preserva preview canônico (clampado) e descarta outros params', async () => {
     expect(await keyFor('https://api.midvash.com/v1/KJV/Psalms/23?preview=5&utm=x')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?preview=40&names=bn&_g=g4',
+      'https://api.midvash.com/v1/kjv/psalms/23?preview=40&names=bn&_g=g5',
     ]);
   });
 
   it('sem preview válido, chave fica sem query', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?preview=abc')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?names=bn&_g=g4',
+      'https://api.midvash.com/v1/kjv/psalms/23?names=bn&_g=g5',
     ]);
   });
 
   it('rota de versículo não ganha preview (segue sem query)', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23/1?preview=100', '1')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23/1?names=bn&_g=g4',
+      'https://api.midvash.com/v1/kjv/psalms/23/1?names=bn&_g=g5',
     ]);
   });
 
   it('?locale entra na chave', async () => {
     expect(await keyFor('https://api.midvash.com/v1/kjv/psalms/23?locale=PT-BR')).toEqual([
-      'https://api.midvash.com/v1/kjv/psalms/23?locale=pt-br&names=bn&_g=g4',
+      'https://api.midvash.com/v1/kjv/psalms/23?locale=pt-br&names=bn&_g=g5',
     ]);
   });
 });

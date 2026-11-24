@@ -85,6 +85,6 @@ describe('/v1/versions enriquecido', () => {
   it('lista é metadata (1 dia, não imutável) com ETag derivado do corpo', async () => {
     const res = await handleV1VersionsList(new Request('https://api.midvash.com/v1/versions'), env, ctx);
     expect(res.headers.get('Cache-Control')).toBe('public, max-age=86400, s-maxage=86400');
-    expect(res.headers.get('ETag')).toMatch(/^"g4-v1-versions-[0-9a-z]+"$/);
+    expect(res.headers.get('ETag')).toMatch(/^"g5-v1-versions-[0-9a-z]+"$/);
   });
 });
